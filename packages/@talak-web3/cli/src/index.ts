@@ -1,0 +1,40 @@
+import { cac } from 'cac';
+import { initCommand } from './commands/init.js';
+import { addCommand } from './commands/add.js';
+import { doctorCommand } from './commands/doctor.js';
+import { generateCommand } from './commands/generate.js';
+import { devCommand } from './commands/dev.js';
+
+const version = '1.0.0';
+
+export const cli = cac('talak')
+  .version(version)
+  .help();
+
+// Register commands
+cli.command('init [name]', 'Initialize a new project')
+  .option('-t, --template <template>', 'Template to use (nextjs, react, hono, express)')
+  .option('-f, --force', 'Overwrite existing files')
+  .action(initCommand);
+
+cli.command('add [integration]', 'Add an integration')
+  .option('-p, --project <path>', 'Project path')
+  .action(addCommand);
+
+cli.command('doctor', 'Check project health')
+  .option('-p, --project <path>', 'Project path')
+  .action(doctorCommand);
+
+cli.command('generate <type> <name>', 'Generate code (component, hook, api-route)')
+  .option('-p, --project <path>', 'Project path')
+  .action(generateCommand);
+
+cli.command('dev', 'Start development server')
+  .option('-p, --port <port>', 'Port to run on')
+  .option('-h, --host', 'Expose to network')
+  .action(devCommand);
+
+// Parse CLI arguments if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  cli.parse();
+}

@@ -1,0 +1,64 @@
+# @talak-web3/plugins
+
+Plugin system for extending talak-web3 functionality.
+
+## Installation
+
+```bash
+npm install @talak-web3/plugins
+# or
+yarn add @talak-web3/plugins
+# or
+pnpm add @talak-web3/plugins
+```
+
+## Creating a Plugin
+
+```typescript
+import { definePlugin } from '@talak-web3/plugins';
+
+const myPlugin = definePlugin({
+  name: 'my-plugin',
+  version: '1.0.0',
+  
+  setup(context) {
+    // Plugin initialization
+    context.on('auth:login', (user) => {
+      console.log(`User ${user.address} logged in`);
+    });
+    
+    return {
+      // Expose plugin API
+      customMethod: () => {
+        // Your logic here
+      },
+    };
+  },
+});
+
+export default myPlugin;
+```
+
+## Using Plugins
+
+```typescript
+import { createTalakClient } from 'talak-web3';
+import myPlugin from './my-plugin';
+
+const client = createTalakClient({
+  plugins: [myPlugin],
+});
+
+// Use plugin API
+client.plugins['my-plugin'].customMethod();
+```
+
+## Official Plugins
+
+- `@talak-web3/plugin-siwe` - SIWE authentication
+- `@talak-web3/plugin-gasless` - Gasless transactions
+- `@talak-web3/plugin-multisig` - Multi-signature support
+
+## License
+
+MIT

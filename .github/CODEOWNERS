@@ -1,0 +1,19 @@
+# Global code owners
+* @dagimabebe
+
+# Security-critical packages
+/packages/talak-web3-auth/ @dagimabebe
+/packages/talak-web3-core/ @dagimabebe
+/packages/talak-web3-middleware/ @dagimabebe
+
+# Documentation
+/docs/ @dagimabebe
+*.md @dagimabebe
+
+# CI/CD configuration
+/.github/ @dagimabebe
+
+# Package configuration
+/package.json @dagimabebe
+/pnpm-workspace.yaml @dagimabebe
+/turbo.json @dagimabebe

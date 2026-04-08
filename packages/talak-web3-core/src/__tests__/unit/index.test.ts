@@ -1,0 +1,147 @@
+/**
+ * Unit tests for talak-web3-core
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { betterWeb3, __resetBetterWeb3 } from '../../index.js';
+
+describe('betterWeb3', () => {
+  afterEach(() => {
+    __resetBetterWeb3();
+  });
+
+  describe('singleton behavior', () => {
+    it('should return the same instance on multiple calls', () => {
+      const instance1 = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+      
+      const instance2 = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      expect(instance1).toBe(instance2);
+    });
+
+    it('should create new instance after reset', () => {
+      const instance1 = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      __resetBetterWeb3();
+
+      const instance2 = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      expect(instance1).not.toBe(instance2);
+    });
+  });
+
+  describe('instance structure', () => {
+    it('should have required properties', () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      expect(instance).toHaveProperty('config');
+      expect(instance).toHaveProperty('hooks');
+      expect(instance).toHaveProperty('context');
+      expect(instance).toHaveProperty('init');
+      expect(instance).toHaveProperty('destroy');
+    });
+
+    it('should have init method', () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      expect(typeof instance.init).toBe('function');
+    });
+
+    it('should have destroy method', () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      expect(typeof instance.destroy).toBe('function');
+    });
+  });
+
+  describe('initialization', () => {
+    it('should initialize without plugins', async () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      await expect(instance.init()).resolves.not.toThrow();
+    });
+
+    it('should initialize with empty plugins array', async () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        plugins: [],
+      });
+
+      await expect(instance.init()).resolves.not.toThrow();
+    });
+  });
+
+  describe('destroy', () => {
+    it('should destroy cleanly', async () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      await instance.init();
+      await expect(instance.destroy()).resolves.not.toThrow();
+    });
+
+    it('should reset singleton on destroy', async () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      await instance.init();
+      await instance.destroy();
+
+      // After destroy, should be able to create new instance
+      const newInstance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      expect(newInstance).not.toBe(instance);
+    });
+  });
+
+  describe('context', () => {
+    it('should have context with required properties', () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      expect(instance.context).toHaveProperty('config');
+      expect(instance.context).toHaveProperty('hooks');
+      expect(instance.context).toHaveProperty('plugins');
+      expect(instance.context).toHaveProperty('auth');
+      expect(instance.context).toHaveProperty('cache');
+      expect(instance.context).toHaveProperty('logger');
+      expect(instance.context).toHaveProperty('requestChain');
+      expect(instance.context).toHaveProperty('responseChain');
+      expect(instance.context).toHaveProperty('rpc');
+    });
+  });
+
+  describe('hooks', () => {
+    it('should have event emitter methods', () => {
+      const instance = betterWeb3({
+        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+      });
+
+      expect(typeof instance.hooks.on).toBe('function');
+      expect(typeof instance.hooks.emit).toBe('function');
+      expect(typeof instance.hooks.off).toBe('function');
+      expect(typeof instance.hooks.clear).toBe('function');
+    });
+  });
+});

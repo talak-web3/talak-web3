@@ -1,0 +1,49 @@
+{
+  "extends": ["@commitlint/config-conventional"],
+  "rules": {
+    "type-enum": [
+      2,
+      "always",
+      [
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "perf",
+        "test",
+        "build",
+        "ci",
+        "chore",
+        "revert",
+        "security"
+      ]
+    ],
+    "scope-enum": [
+      2,
+      "always",
+      [
+        "auth",
+        "core",
+        "rpc",
+        "config",
+        "errors",
+        "types",
+        "utils",
+        "hooks",
+        "middleware",
+        "adapters",
+        "tx",
+        "plugins",
+        "client",
+        "test-utils",
+        "cli",
+        "docs",
+        "deps",
+        "release"
+      ]
+    ],
+    "subject-case": [0],
+    "header-max-length": [2, "always", 100]
+  }
+}

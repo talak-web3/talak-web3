@@ -1,0 +1,70 @@
+{
+  "name": "talak-web3",
+  "version": "1.0.0",
+  "description": "A comprehensive Web3 SDK for blockchain development",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./multichain": {
+      "types": "./dist/multichain.d.ts",
+      "default": "./dist/multichain.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts", 
+      "default": "./dist/react.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.12.0"
+  },
+  "dependencies": {
+    "viem": "^2.21.54",
+    "jose": "^5.9.6",
+    "ioredis": "^5.10.1",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "node build-simple.cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "node build-simple.cjs && npm run pack:check"
+  },
+  "keywords": [
+    "web3",
+    "blockchain",
+    "ethereum",
+    "crypto",
+    "dapp",
+    "wallet",
+    "smart-contracts"
+  ],
+  "author": "Dagim Abebe",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dagimabebe/talak-web3.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dagimabebe/talak-web3/issues"
+  },
+  "homepage": "https://github.com/dagimabebe/talak-web3#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}

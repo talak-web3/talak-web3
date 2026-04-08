@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "baseUrl": ".",
+    "paths": {
+      "@talak-web3/adapters": ["../talak-web3-adapters/dist/index.d.ts"],
+      "@talak-web3/types": ["../talak-web3-types/dist/index.d.ts"]
+    }
+  },
+  "references": [
+    { "path": "../talak-web3-adapters" },
+    { "path": "../talak-web3-types" }
+  ],
+  "include": ["src/**/*.ts"]
+}

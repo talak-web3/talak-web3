@@ -1,0 +1,200 @@
+/**
+ * Mock Refresh Token Store for testing
+ */
+
+import { createHash, randomBytes } from 'node:crypto';
+import type { RefreshStore, RefreshSession } from '@talak-web3/auth';
+
+function sha256Hex(input: string): string {
+  return createHash('sha256').update(input).digest('hex');
+}
+
+/**
+ * Mock implementation of RefreshStore for testing
+ * Tracks all operations for verification
+ */
+export class MockRefreshStore implements RefreshStore {
+  private sessions = new Map<string, RefreshSession>(); // keyed by hash
+  private operationLog: Array<{
+    operation: 'create' | 'rotate' | 'revoke' | 'lookup';
+    address?: string;
+    sessionId?: string;
+    success: boolean;
+    timestamp: number;
+  }> = [];
+
+  /**
+   * Create a new refresh session
+   */
+  async create(address: string, chainId: number, ttlMs: number): Promise<{ token: string; session: RefreshSession }> {
+    const addr = address.toLowerCase();
+    const token = randomBytes(32).toString('base64url');
+    const hash = sha256Hex(token);
+    const id = randomBytes(16).toString('hex');
+    
+    const session: RefreshSession = {
+      id,
+      address: addr,
+      chainId,
+      hash,
+      expiresAt: Date.now() + ttlMs,
+      revoked: false,
+    };
+    
+    this.sessions.set(hash, session);
+    
+    this.operationLog.push({
+      operation: 'create',
+      address: addr,
+      sessionId: id,
+      success: true,
+      timestamp: Date.now(),
+    });
+
+    return { token, session };
+  }
+
+  /**
+   * Look up a session by token
+   */
+  async lookup(token: string): Promise<RefreshSession | null> {
+    const session = this.sessions.get(sha256Hex(token)) ?? null;
+    
+    this.operationLog.push({
+      operation: 'lookup',
+      address: session?.address,
+      sessionId: session?.id,
+      success: session !== null,
+      timestamp: Date.now(),
+    });
+
+    return session;
+  }
+
+  /**
+   * Rotate a refresh token (atomic operation)
+   * Revokes old token and creates new one
+   */
+  async rotate(token: string, ttlMs: number): Promise<{ token: string; session: RefreshSession }> {
+    const hash = sha256Hex(token);
+    const old = this.sessions.get(hash);
+
+    if (!old) {
+      this.operationLog.push({
+        operation: 'rotate',
+        success: false,
+        timestamp: Date.now(),
+      });
+      throw new Error('Refresh session not found');
+    }
+
+    if (old.revoked) {
+      this.operationLog.push({
+        operation: 'rotate',
+        address: old.address,
+        sessionId: old.id,
+        success: false,
+        timestamp: Date.now(),
+      });
+      throw new Error('Refresh token already used or revoked');
+    }
+
+    if (Date.now() > old.expiresAt) {
+      this.operationLog.push({
+        operation: 'rotate',
+        address: old.address,
+        sessionId: old.id,
+        success: false,
+        timestamp: Date.now(),
+      });
+      throw new Error('Refresh token expired');
+    }
+
+    // Revoke old synchronously
+    this.sessions.set(hash, { ...old, revoked: true });
+
+    // Issue new
+    const result = await this.create(old.address, old.chainId, ttlMs);
+
+    this.operationLog.push({
+      operation: 'rotate',
+      address: old.address,
+      sessionId: result.session.id,
+      success: true,
+      timestamp: Date.now(),
+    });
+
+    return result;
+  }
+
+  /**
+   * Revoke a refresh token
+   */
+  async revoke(token: string): Promise<void> {
+    const hash = sha256Hex(token);
+    const session = this.sessions.get(hash);
+    
+    if (session) {
+      this.sessions.set(hash, { ...session, revoked: true });
+      
+      this.operationLog.push({
+        operation: 'revoke',
+        address: session.address,
+        sessionId: session.id,
+        success: true,
+        timestamp: Date.now(),
+      });
+    } else {
+      this.operationLog.push({
+        operation: 'revoke',
+        success: false,
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  /**
+   * Get all sessions for an address
+   */
+  getSessionsForAddress(address: string): RefreshSession[] {
+    const addr = address.toLowerCase();
+    return Array.from(this.sessions.values()).filter(s => s.address === addr);
+  }
+
+  /**
+   * Get operation log for verification
+   */
+  getOperationLog(): Array<{
+    operation: 'create' | 'rotate' | 'revoke' | 'lookup';
+    address?: string;
+    sessionId?: string;
+    success: boolean;
+    timestamp: number;
+  }> {
+    return [...this.operationLog];
+  }
+
+  /**
+   * Clear all sessions and operation log
+   */
+  clear(): void {
+    this.sessions.clear();
+    this.operationLog = [];
+  }
+
+  /**
+   * Get total session count
+   */
+  getSessionCount(): number {
+    return this.sessions.size;
+  }
+
+  /**
+   * Simulate token reuse detection
+   */
+  wasTokenReused(token: string): boolean {
+    const hash = sha256Hex(token);
+    const session = this.sessions.get(hash);
+    return session?.revoked ?? false;
+  }
+}

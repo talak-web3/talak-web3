@@ -1,0 +1,44 @@
+{
+  "name": "@talak-web3/test-utils",
+  "version": "1.0.0",
+  "description": "Testing utilities for talak-web3 packages",
+  "type": "module",
+  "author": "Dagim Abebe",
+  "license": "MIT",
+  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@talak-web3/auth": "workspace:*",
+    "@talak-web3/core": "workspace:*",
+    "@talak-web3/errors": "workspace:*",
+    "@talak-web3/types": "workspace:*",
+    "viem": "^2.21.54"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.9"
+  }
+}

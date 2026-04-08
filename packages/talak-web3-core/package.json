@@ -1,0 +1,38 @@
+{
+  "name": "@talak-web3/core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "author": "Dagim Abebe",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@talak-web3/auth": "workspace:*",
+    "@talak-web3/config": "workspace:*",
+    "@talak-web3/errors": "workspace:*",
+    "@talak-web3/hooks": "workspace:*",
+    "@talak-web3/middleware": "workspace:*",
+    "@talak-web3/rpc": "workspace:*",
+    "@talak-web3/types": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "clean": "rm -rf dist"
+  }
+}

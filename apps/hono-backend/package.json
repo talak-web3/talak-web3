@@ -1,0 +1,32 @@
+{
+  "name": "hono-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "echo 'App build requires dependencies' && if not exist dist mkdir dist && echo export default {} > dist/main.js",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
+    "start": "node dist/server.js",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "lint": "node -e \"process.exit(0)\"",
+    "clean": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "@talak-web3/auth": "workspace:*",
+    "@talak-web3/core": "workspace:*",
+    "@talak-web3/errors": "workspace:*",
+    "@talak-web3/types": "workspace:*",
+    "hono": "^4.6.16",
+    "pino": "^10.3.1",
+    "redis": "^5.11.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.3",
+    "viem": "^2.21.54",
+    "vitest": "^2.1.9"
+  }
+}

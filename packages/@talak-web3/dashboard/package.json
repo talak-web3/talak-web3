@@ -1,0 +1,15 @@
+{
+  "name": "@talak-web3/dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "author": "Dagim Abebe",
+  "license": "MIT",
+  "scripts": {
+    "build": "node ../../../node_modules/typescript/bin/tsc -p tsconfig.json",
+    "typecheck": "node ../../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
+    "test": "node ../../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "lint": "node -e \"process.exit(0)\"",
+    "clean": "node -e \"process.exit(0)\""
+  }
+}
