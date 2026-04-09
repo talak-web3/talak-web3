@@ -56,7 +56,7 @@ await app.init();
 ### React Integration
 
 ```tsx
-import { BetterWeb3Provider, useSIWE } from "talak-web3/react";
+import { TalakWeb3Provider, useSIWE } from "talak-web3/react";
 
 function LoginButton() {
   const { signIn, isAuthenticated, user } = useSIWE();
@@ -70,9 +70,9 @@ function LoginButton() {
 
 function App() {
   return (
-    <BetterWeb3Provider config={{ apiUrl: "https://api.yourdapp.com" }}>
+    <TalakWeb3Provider config={{ apiUrl: "https://api.yourdapp.com" }}>
       <LoginButton />
-    </BetterWeb3Provider>
+    </TalakWeb3Provider>
   );
 }
 ```

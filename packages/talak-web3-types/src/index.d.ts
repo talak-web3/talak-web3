@@ -26,7 +26,7 @@ export interface IAuth {
     coldStart(): Promise<void>;
     validateJwt(token: string): Promise<boolean>;
 }
-export interface BetterWeb3Auth extends IAuth {
+export interface TalakWeb3Auth extends IAuth {
     /** Verify SIWE message + signature and issue JWT pair */
     loginWithSiwe(message: string, signature: string): Promise<{
         accessToken: string;
@@ -44,7 +44,7 @@ export interface BetterWeb3Auth extends IAuth {
     /** Generate a SIWE nonce */
     generateNonce(): string;
 }
-export type BetterWeb3EventsMap = {
+export type TalakWeb3EventsMap = {
     'plugin-load': {
         name: string;
     };
@@ -87,7 +87,7 @@ export type BetterWeb3EventsMap = {
         output: unknown;
     };
 };
-export interface IHookRegistry<Events extends Record<string, unknown> = BetterWeb3EventsMap> {
+export interface IHookRegistry<Events extends Record<string, unknown> = TalakWeb3EventsMap> {
     on<K extends keyof Events>(event: K, handler: (data: Events[K]) => void): () => void;
     off<K extends keyof Events>(event: K, handler: (data: Events[K]) => void): void;
     emit<K extends keyof Events>(event: K, data: Events[K]): void;
@@ -95,9 +95,9 @@ export interface IHookRegistry<Events extends Record<string, unknown> = BetterWe
 }
 export interface IMiddlewareChain<T = unknown, R = unknown> {
     use(handler: MiddlewareHandler<T, R>): void;
-    execute(req: T, ctx: BetterWeb3Context, finalHandler: () => Promise<R>): Promise<R>;
+    execute(req: T, ctx: TalakWeb3Context, finalHandler: () => Promise<R>): Promise<R>;
 }
-export interface BetterWeb3BaseConfig {
+export interface TalakWeb3BaseConfig {
     readonly chains: ReadonlyArray<{
         readonly id: number;
         readonly name: string;
@@ -139,39 +139,39 @@ export interface BetterWeb3BaseConfig {
         readonly network?: string;
     };
 }
-export interface BetterWeb3Plugin {
+export interface TalakWeb3Plugin {
     name: string;
     version: string;
     dependencies?: string[];
-    setup(ctx: BetterWeb3Context): void | Promise<void>;
+    setup(ctx: TalakWeb3Context): void | Promise<void>;
     onBeforeRequest?(req: unknown): Promise<void>;
     onAfterResponse?(res: unknown): Promise<void>;
     onChainChanged?(chainId: number): void;
     onAccountChanged?(address: string | null): void;
     teardown?(): void | Promise<void>;
 }
-export type MiddlewareHandler<T = unknown, R = unknown> = (req: T, next: () => Promise<R>, ctx: BetterWeb3Context) => Promise<R>;
-export interface BetterWeb3Middleware {
+export type MiddlewareHandler<T = unknown, R = unknown> = (req: T, next: () => Promise<R>, ctx: TalakWeb3Context) => Promise<R>;
+export interface TalakWeb3Middleware {
     name: string;
     onRequest?: MiddlewareHandler;
     onResponse?: MiddlewareHandler;
 }
-export interface BetterWeb3Context {
-    readonly config: BetterWeb3BaseConfig;
-    readonly hooks: IHookRegistry<BetterWeb3EventsMap>;
-    readonly plugins: Map<string, BetterWeb3Plugin>;
+export interface TalakWeb3Context {
+    readonly config: TalakWeb3BaseConfig;
+    readonly hooks: IHookRegistry<TalakWeb3EventsMap>;
+    readonly plugins: Map<string, TalakWeb3Plugin>;
     readonly rpc: IRpc;
-    readonly auth: BetterWeb3Auth;
+    readonly auth: TalakWeb3Auth;
     readonly cache: RpcCache;
     readonly logger: Logger;
     readonly requestChain: IMiddlewareChain<unknown, unknown>;
     readonly responseChain: IMiddlewareChain<unknown, unknown>;
     adapters?: Record<string, unknown>;
 }
-export interface BetterWeb3Instance {
-    readonly config: BetterWeb3BaseConfig;
-    readonly hooks: IHookRegistry<BetterWeb3EventsMap>;
-    readonly context: BetterWeb3Context;
+export interface TalakWeb3Instance {
+    readonly config: TalakWeb3BaseConfig;
+    readonly hooks: IHookRegistry<TalakWeb3EventsMap>;
+    readonly context: TalakWeb3Context;
     init(): Promise<void>;
     destroy(): Promise<void>;
 }

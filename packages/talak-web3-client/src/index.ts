@@ -81,16 +81,16 @@ export interface VerifyResponse {
 }
 
 // ---------------------------------------------------------------------------
-// BetterWeb3Client
+// TalakWeb3Client
 // ---------------------------------------------------------------------------
 
-export type BetterWeb3ClientOptions = {
+export type TalakWeb3ClientOptions = {
   baseUrl: string;
   fetch?: typeof fetch;
   storage?: TokenStorage;
 };
 
-export class BetterWeb3Client {
+export class TalakWeb3Client {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
   readonly storage: TokenStorage;
@@ -98,7 +98,7 @@ export class BetterWeb3Client {
   // Mutex to prevent concurrent refresh calls
   private refreshPromise: Promise<RefreshResponse> | null = null;
 
-  constructor(opts: BetterWeb3ClientOptions) {
+  constructor(opts: TalakWeb3ClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, '');
     this.fetchImpl = opts.fetch ?? globalThis.fetch.bind(globalThis);
     this.storage = opts.storage ?? new InMemoryTokenStorage();

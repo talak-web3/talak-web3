@@ -8,7 +8,7 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={{ padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 22, fontWeight: '600' }}>BetterWeb3 React Native Dapp</Text>
+      <Text style={{ fontSize: 22, fontWeight: '600' }}>talak-web3 React Native Dapp</Text>
       <Text>ChainId: {chain.chainId}</Text>
       <Text>Address: {account.address ?? '—'}</Text>
       <Button

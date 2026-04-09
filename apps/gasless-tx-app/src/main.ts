@@ -1,7 +1,7 @@
-import { BetterWeb3Client } from '@talak-web3/client';
+import { TalakWeb3Client } from '@talak-web3/client';
 import { createTransactionBuilder } from '@talak-web3/tx';
 
-const client = new BetterWeb3Client({
+const client = new TalakWeb3Client({
   baseUrl: 'http://localhost:8787',
 });
 

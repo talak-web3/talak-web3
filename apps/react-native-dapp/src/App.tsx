@@ -1,6 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { BetterWeb3Provider } from '@talak-web3/hooks';
+import { TalakWeb3Provider } from '@talak-web3/hooks';
 import { betterWeb3 } from '@talak-web3/core';
 import HomeScreen from './screens/HomeScreen';
 import RpcDemoScreen from './screens/RpcDemoScreen';
@@ -25,14 +25,14 @@ void instance.init();
 
 export default function App() {
   return (
-    <BetterWeb3Provider instance={instance}>
+    <TalakWeb3Provider instance={instance}>
       <NavigationContainer>
         <Stack.Navigator>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="RPC Demo" component={RpcDemoScreen} />
         </Stack.Navigator>
       </NavigationContainer>
-    </BetterWeb3Provider>
+    </TalakWeb3Provider>
   );
 }
 

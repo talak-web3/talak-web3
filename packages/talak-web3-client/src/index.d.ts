@@ -49,17 +49,17 @@ export interface VerifyResponse {
         chainId: number;
     };
 }
-export type BetterWeb3ClientOptions = {
+export type TalakWeb3ClientOptions = {
     baseUrl: string;
     fetch?: typeof fetch;
     storage?: TokenStorage;
 };
-export declare class BetterWeb3Client {
+export declare class TalakWeb3Client {
     private readonly baseUrl;
     private readonly fetchImpl;
     readonly storage: TokenStorage;
     private refreshPromise;
-    constructor(opts: BetterWeb3ClientOptions);
+    constructor(opts: TalakWeb3ClientOptions);
     /**
      * Core request method.
      * Automatically attaches the access token via Authorization header.

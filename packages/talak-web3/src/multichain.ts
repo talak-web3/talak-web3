@@ -1,4 +1,4 @@
-import type { BetterWeb3BaseConfig, BetterWeb3Context, IRpc, RpcOptions } from '@talak-web3/types';
+import type { TalakWeb3BaseConfig, TalakWeb3Context, IRpc, RpcOptions } from '@talak-web3/types';
 import { UnifiedRpc } from '@talak-web3/rpc';
 
 export type ChainRef = {
@@ -15,11 +15,11 @@ export type MultiChainRequest = {
 };
 
 export class MultiChainRouter {
-  private readonly ctx: BetterWeb3Context;
-  private readonly config: BetterWeb3BaseConfig;
+  private readonly ctx: TalakWeb3Context;
+  private readonly config: TalakWeb3BaseConfig;
   private readonly rpcByChainId = new Map<number, IRpc>();
 
-  constructor(ctx: BetterWeb3Context, config: BetterWeb3BaseConfig) {
+  constructor(ctx: TalakWeb3Context, config: TalakWeb3BaseConfig) {
     this.ctx = ctx;
     this.config = config;
   }

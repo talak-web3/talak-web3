@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { BetterWeb3Instance, IHookRegistry } from '@talak-web3/types';
+import type { TalakWeb3Instance, IHookRegistry } from '@talak-web3/types';
 
 // ---------------------------------------------------------------------------
-// HookRegistry — typed pub/sub event bus; used by BetterWeb3Context.hooks
+// HookRegistry — typed pub/sub event bus; used by TalakWeb3Context.hooks
 // ---------------------------------------------------------------------------
 
 type AnyHandler = (data: unknown) => void;
@@ -46,29 +46,29 @@ export class HookRegistry<Events extends Record<string, unknown>> implements IHo
 // React integration — Provider + hooks
 // ---------------------------------------------------------------------------
 
-const BetterWeb3ReactContext = createContext<BetterWeb3Instance | null>(null);
+const TalakWeb3ReactContext = createContext<TalakWeb3Instance | null>(null);
 
-export interface BetterWeb3ProviderProps {
-  instance: BetterWeb3Instance;
+export interface TalakWeb3ProviderProps {
+  instance: TalakWeb3Instance;
   children: ReactNode;
 }
 
-export function BetterWeb3Provider({ instance, children }: BetterWeb3ProviderProps) {
+export function TalakWeb3Provider({ instance, children }: TalakWeb3ProviderProps) {
   return (
-    <BetterWeb3ReactContext.Provider value={instance}>
+    <TalakWeb3ReactContext.Provider value={instance}>
       {children}
-    </BetterWeb3ReactContext.Provider>
+    </TalakWeb3ReactContext.Provider>
   );
 }
 
-export function useBetterWeb3(): BetterWeb3Instance {
-  const ctx = useContext(BetterWeb3ReactContext);
-  if (!ctx) throw new Error('useBetterWeb3 must be used within a BetterWeb3Provider');
+export function useTalakWeb3(): TalakWeb3Instance {
+  const ctx = useContext(TalakWeb3ReactContext);
+  if (!ctx) throw new Error('useTalakWeb3 must be used within a TalakWeb3Provider');
   return ctx;
 }
 
 export function useChain() {
-  const instance = useBetterWeb3();
+  const instance = useTalakWeb3();
   const [chainId, setChainId] = useState<number>(
     instance.config.chains[0]?.id ?? 1,
   );
@@ -85,7 +85,7 @@ export function useChain() {
 }
 
 export function useAccount() {
-  const instance = useBetterWeb3();
+  const instance = useTalakWeb3();
   const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export function useAccount() {
 }
 
 export function useRpc() {
-  const instance = useBetterWeb3();
+  const instance = useTalakWeb3();
   return {
     request: <T = unknown>(method: string, params: unknown[] = []) =>
       instance.context.rpc.request<T>(method, params),
@@ -109,7 +109,7 @@ export function useRpc() {
 }
 
 export function useGasless() {
-  const instance = useBetterWeb3();
+  const instance = useTalakWeb3();
   const [loading, setLoading] = useState(false);
   const [lastHash, setLastHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -138,7 +138,7 @@ export function useGasless() {
 }
 
 export function useIdentity() {
-  const instance = useBetterWeb3();
+  const instance = useTalakWeb3();
   const [profile, setProfile] = useState<{ did?: string; ens?: string; address?: string } | null>(null);
   const [loading, setLoading] = useState(false);
 

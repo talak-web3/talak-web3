@@ -1,4 +1,4 @@
-export declare class BetterWeb3Error extends Error {
+export declare class TalakWeb3Error extends Error {
     readonly code: string;
     readonly status: number;
     readonly data?: unknown;
@@ -10,7 +10,7 @@ export declare class BetterWeb3Error extends Error {
         data?: unknown;
     });
 }
-export declare class AuthError extends BetterWeb3Error {
+export declare class AuthError extends TalakWeb3Error {
     constructor(message?: string);
 }
 //# sourceMappingURL=index.d.ts.map

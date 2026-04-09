@@ -1,6 +1,6 @@
 export {
-  BetterWeb3Provider,
-  useBetterWeb3,
+  TalakWeb3Provider,
+  useTalakWeb3,
   useChain,
   useAccount,
   useRpc,

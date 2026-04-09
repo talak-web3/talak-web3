@@ -43,7 +43,7 @@ export class CookieTokenStorage {
         }
     }
 }
-export class BetterWeb3Client {
+export class TalakWeb3Client {
     baseUrl;
     fetchImpl;
     storage;

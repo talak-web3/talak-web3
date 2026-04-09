@@ -47,17 +47,17 @@ esbuild.buildSync({
 fs.writeFileSync(
   path.join(distDir, 'index.d.ts'),
   [
-    'export type BetterWeb3Instance = any;',
-    'export type BetterWeb3Context = any;',
-    'export type BetterWeb3Plugin = any;',
-    'export type BetterWeb3BaseConfig = any;',
+    'export type TalakWeb3Instance = any;',
+    'export type TalakWeb3Context = any;',
+    'export type TalakWeb3Plugin = any;',
+    'export type TalakWeb3BaseConfig = any;',
     'export type TokenStorage = any;',
     'export type NonceResponse = any;',
     'export type LoginResponse = any;',
     'export type RefreshResponse = any;',
     'export type VerifyResponse = any;',
-    'export declare const betterWeb3: (...args: any[]) => BetterWeb3Instance;',
-    'export declare const BetterWeb3Client: any;',
+    'export declare const betterWeb3: (...args: any[]) => TalakWeb3Instance;',
+    'export declare const TalakWeb3Client: any;',
     'export declare const InMemoryTokenStorage: any;',
     'export declare const CookieTokenStorage: any;',
     'export declare const MainnetPreset: any;',
@@ -76,7 +76,7 @@ fs.writeFileSync(
 );
 fs.writeFileSync(
   path.join(distDir, 'react.d.ts'),
-  'export declare const BetterWeb3Provider: any;\nexport declare const useBetterWeb3: any;\nexport declare const useChain: any;\nexport declare const useAccount: any;\nexport declare const useRpc: any;\nexport declare const useGasless: any;\nexport declare const useIdentity: any;\n',
+  'export declare const TalakWeb3Provider: any;\nexport declare const useTalakWeb3: any;\nexport declare const useChain: any;\nexport declare const useAccount: any;\nexport declare const useRpc: any;\nexport declare const useGasless: any;\nexport declare const useIdentity: any;\n',
   'utf8'
 );
 
