@@ -152,8 +152,9 @@ See [GitHub Releases](https://github.com/dagimabebe/talak-web3/releases) for cha
 
 ## Security
 
-See [SECURITY.md](./SECURITY.md) for security policies and vulnerability disclosure.
+See [SECURITY.md](./SECURITY.md) for security policies and vulnerability disclosure thanks.
 
 ## License
+
 
 MIT © [Dagim Abebe](https://github.com/dagimabebe)
