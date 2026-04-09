@@ -1,7 +1,6 @@
 {
   "name": "@talak-web3/tx",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "author": "Dagim Abebe",
   "license": "MIT",
@@ -19,9 +18,9 @@
     "README.md"
   ],
   "dependencies": {
-    "viem": "^2.21.54",
     "@talak-web3/errors": "workspace:*",
-    "@talak-web3/types": "workspace:*"
+    "@talak-web3/types": "workspace:*",
+    "viem": "^2.21.54"
   },
   "scripts": {
     "build": "node build-simple.cjs",

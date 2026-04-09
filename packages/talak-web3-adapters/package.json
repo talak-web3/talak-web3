@@ -1,7 +1,6 @@
 {
   "name": "@talak-web3/adapters",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "author": "Dagim Abebe",
   "license": "MIT",
@@ -21,13 +20,13 @@
   "dependencies": {
     "@ceramicnetwork/http-client": "^2.33.0",
     "@ceramicnetwork/stream-tile": "^2.33.0",
-    "dids": "^4.0.0",
-    "key-did-provider-ed25519": "^3.0.0",
-    "key-did-resolver": "^3.0.0",
     "@tableland/sdk": "^7.2.1",
-    "ethers": "^6.13.4",
     "@talak-web3/errors": "workspace:*",
-    "@talak-web3/types": "workspace:*"
+    "@talak-web3/types": "workspace:*",
+    "dids": "^4.0.0",
+    "ethers": "^6.13.4",
+    "key-did-provider-ed25519": "^3.0.0",
+    "key-did-resolver": "^3.0.0"
   },
   "scripts": {
     "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",

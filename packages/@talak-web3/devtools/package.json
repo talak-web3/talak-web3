@@ -1,7 +1,6 @@
 {
   "name": "@talak-web3/devtools",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "author": "Dagim Abebe",
   "license": "MIT",

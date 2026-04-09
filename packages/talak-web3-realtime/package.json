@@ -1,7 +1,6 @@
 {
   "name": "@talak-web3/realtime",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "author": "Dagim Abebe",
   "license": "MIT",

@@ -1,5 +1,5 @@
 {
-  "name": "talak-web3",
+  "name": "@dagimabebe/talak-web3",
   "version": "1.0.2",
   "description": "A comprehensive Web3 SDK for blockchain development",
   "type": "module",
@@ -33,9 +33,9 @@
     "node": ">=20.12.0"
   },
   "dependencies": {
-    "viem": "^2.21.54",
-    "jose": "^5.9.6",
     "ioredis": "^5.10.1",
+    "jose": "^5.9.6",
+    "viem": "^2.21.54",
     "zod": "^4.3.6"
   },
   "peerDependencies": {
@@ -48,7 +48,7 @@
     }
   },
   "scripts": {
-    "build": "node build-simple.cjs",
+    "build": "node -e \"const fs=require('fs');if(!fs.existsSync('dist')){throw new Error('dist missing. Build from packages/talak-web3 first.')}console.log('dist is present; publish package is ready.')\"",
     "typecheck": "node ../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "pack:check": "npm pack --dry-run"
@@ -73,6 +73,7 @@
   },
   "homepage": "https://github.com/dagimabebe/talak-web3#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://npm.pkg.github.com"
   }
 }

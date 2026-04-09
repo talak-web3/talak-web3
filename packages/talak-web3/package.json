@@ -33,9 +33,9 @@
     "node": ">=20.12.0"
   },
   "dependencies": {
-    "viem": "^2.21.54",
-    "jose": "^5.9.6",
     "ioredis": "^5.10.1",
+    "jose": "^5.9.6",
+    "viem": "^2.21.54",
     "zod": "^4.3.6"
   },
   "peerDependencies": {
