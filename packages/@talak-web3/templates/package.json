@@ -1,9 +1,22 @@
 {
   "name": "@talak-web3/templates",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "author": "Dagim Abebe",
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node ../../../node_modules/typescript/bin/tsc -p tsconfig.json",
     "typecheck": "node ../../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
