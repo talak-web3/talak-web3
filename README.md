@@ -128,13 +128,14 @@ pnpm typecheck
 
 ## Documentation
 
+- [Workspace package list](./packages.md) - Every monorepo package and app, with links to each README
 - [Getting Started](./docs/MINIMAL_SETUP.md) - First steps with talak-web3
 - [Package Ecosystem](./docs/PACKAGE_ECOSYSTEM.md) - Published package catalog and install names
 - [Architecture](./docs/ARCHITECTURE.md) - System design and patterns
 - [Security](./docs/SECURITY_ARCHITECTURE.md) - Security architecture and threat model
 - [Threat Model](./docs/THREAT_MODEL.md) - Comprehensive threat analysis
 - [API Reference](https://docs.talak.dev/api) - Complete API documentation
-- [Contributing](./CONTRIBUTING.md) - Contribution guidelines
+- [Contributing](./CONTRIBUTING.md) - Contribution guidelines and troubleshooting (for example `npm warn Unknown env config "_dagimabebe-registry"`)
 
 ## Releases
 
