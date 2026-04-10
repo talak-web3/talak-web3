@@ -70,6 +70,13 @@ jobs:
       - name: Run tests
         run: pnpm test
 
+      - name: Sync dist into talak-web3-publish
+        run: |
+          rm -rf talak-web3-publish/dist
+          cp -r packages/talak-web3/dist talak-web3-publish/dist
+          cp -f packages/talak-web3/README.md talak-web3-publish/README.md
+          cp -f LICENSE talak-web3-publish/LICENSE
+
       - name: Prepare package for npm
         working-directory: talak-web3-publish
         run: |
@@ -116,6 +123,13 @@ jobs:
 
       - name: Build packages
         run: pnpm build
+
+      - name: Sync dist into talak-web3-publish
+        run: |
+          rm -rf talak-web3-publish/dist
+          cp -r packages/talak-web3/dist talak-web3-publish/dist
+          cp -f packages/talak-web3/README.md talak-web3-publish/README.md
+          cp -f LICENSE talak-web3-publish/LICENSE
 
       - name: Prepare package for GitHub Packages
         working-directory: talak-web3-publish

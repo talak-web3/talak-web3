@@ -141,6 +141,10 @@ pnpm typecheck
 
 See [GitHub Releases](https://github.com/dagimabebe/talak-web3/releases) for changelog and version history.
 
+## GitHub Packages
+
+Packages listed on your GitHub profile or org **Packages** tab come from **GitHub Packages** (`npm.pkg.github.com`), not from the public npm registry. This repo publishes the unified SDK as `@dagimabebe/talak-web3` via the [**Publish to GitHub Packages** workflow](.github/workflows/publish-github-packages.yml). Open **Actions**, select that workflow, and click **Run workflow** (bump `talak-web3-publish` / `packages/talak-web3` version if the registry reports the version already exists).
+
 ## Packages
 
 | Package | Version | Description |
