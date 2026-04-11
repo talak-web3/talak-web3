@@ -78,7 +78,7 @@ This document provides a comprehensive threat model for talak-web3 using the STR
 |----|--------|------|------------|
 | D1 | Nonce exhaustion | Medium | Rate limiting, nonce cleanup |
 | D2 | Session flooding | Medium | Rate limiting, max sessions |
-| D3 | RPC provider overload | Medium | Circuit breakers, caching |
+| D3 | RPC provider overload | Medium | Health checks, caching, retries |
 | D4 | Computation DoS | Medium | Input size limits, timeouts |
 
 ### Elevation of Privilege (E)

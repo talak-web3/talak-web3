@@ -274,7 +274,6 @@ describe('TalakWeb3Auth', () => {
   });
 
   it('expired refresh token → rotate throws', async () => {
-    // HACK: use a short-lived refresh store TTL for this test
     const shortStore = new InMemoryRefreshStore();
     const auth2 = new TalakWeb3Auth({
       expectedDomain: DOMAIN,

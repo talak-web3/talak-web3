@@ -74,10 +74,10 @@ export declare class TalakWeb3Client {
      * Extract CSRF token from document.cookie for double-submit.
      */
     private getCsrfToken;
-    /** Step 1 of SIWE flow: request a server-issued nonce for an address. */
+    /** Request a server-issued nonce for SIWE authentication. */
     getNonce(address: string): Promise<NonceResponse>;
     /**
-     * Step 4 of SIWE flow: submit signed SIWE message.
+     * Submit signed SIWE message for authentication.
      * Stores both tokens in the configured storage on success.
      */
     loginWithSiwe(message: string, signature: string): Promise<LoginResponse>;

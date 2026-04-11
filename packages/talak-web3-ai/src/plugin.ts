@@ -1,8 +1,6 @@
 import type { TalakWeb3Context } from '@talak-web3/types';
-// Typed as any to avoid coupling to specific OpenAI SDK versions under strict TS settings.
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
 const OpenAI: any = require('openai');
-// Inline minimal error to avoid direct dependency typing issues during strict typecheck.
 class TalakWeb3Error extends Error {
   code: string;
   status: number;

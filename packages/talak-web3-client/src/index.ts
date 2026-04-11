@@ -180,7 +180,7 @@ export class TalakWeb3Client {
   // Auth Endpoints
   // ---------------------------------------------------------------------------
 
-  /** Step 1 of SIWE flow: request a server-issued nonce for an address. */
+  /** Request a server-issued nonce for SIWE authentication. */
   async getNonce(address: string): Promise<NonceResponse> {
     return this.request<NonceResponse>('/auth/nonce', {
       method: 'POST',
@@ -189,7 +189,7 @@ export class TalakWeb3Client {
   }
 
   /**
-   * Step 4 of SIWE flow: submit signed SIWE message.
+   * Submit signed SIWE message for authentication.
    * Stores both tokens in the configured storage on success.
    */
   async loginWithSiwe(message: string, signature: string): Promise<LoginResponse> {

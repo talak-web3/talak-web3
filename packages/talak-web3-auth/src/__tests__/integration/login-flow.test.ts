@@ -35,11 +35,9 @@ describe('Login Flow Integration', () => {
       const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
       const chainId = 1;
 
-      // Step 1: Generate nonce
       const nonce = await auth.createNonce(address);
       expect(nonce).toBeDefined();
 
-      // Step 2: Create SIWE message (normally signed by wallet)
       const issuedAt = new Date().toISOString();
       const message = `example.com wants you to sign in with your Ethereum account:
 
@@ -52,10 +50,6 @@ Version: 1
 Chain ID: ${chainId}
 Nonce: ${nonce}
 Issued At: ${issuedAt}`;
-
-      // Note: In real scenario, user signs this message with their wallet
-      // For this integration test, we're testing the auth flow without actual signing
-      // The signature verification is tested separately
 
       // Verify nonce was created by consuming it
       expect(await nonceStore.consume(address, nonce)).toBe(true);

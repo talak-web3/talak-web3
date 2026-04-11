@@ -19,7 +19,7 @@ This document describes the security architecture of talak-web3, including threa
 | **Tampering** | Modification of data in transit | HTTPS, signature verification |
 | **Repudiation** | User denies performing an action | Audit logging, non-repudiable signatures |
 | **Information Disclosure** | Unauthorized access to sensitive data | Encryption at rest and in transit |
-| **Denial of Service** | System unavailability | Rate limiting, circuit breakers |
+| **Denial of Service** | System unavailability | Rate limiting, RPC health checks, response caching, retry limits |
 | **Elevation of Privilege** | Unauthorized access elevation | RBAC, permission checks |
 
 ### Attack Surface

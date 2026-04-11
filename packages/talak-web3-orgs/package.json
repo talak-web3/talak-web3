@@ -1,6 +1,7 @@
 {
   "name": "@talak-web3/orgs",
   "version": "1.0.1",
+  "deprecated": "This package is deprecated. Import types directly from @talak-web3/types instead. This package will be removed in the next major version.",
   "type": "module",
   "author": "Dagim Abebe",
   "license": "MIT",
