@@ -7,10 +7,11 @@ Command-line interface for scaffolding and maintaining [talak-web3](https://gith
 ```bash
 pnpm add -D @talak-web3/cli
 # or use npx without installing
-npx @talak-web3/cli --help
+npx talak-web3 --help
+npx talak --help
 ```
 
-The package publishes two binaries: **`talak-web3`** and **`create-talak-web3`** (same entry). The program name shown in help is `talak`.
+The package publishes three binaries: **`talak`**, **`talak-web3`**, and **`create-talak-web3`** (same entry). The program name shown in help is `talak`.
 
 ## Commands
 

@@ -1,20 +1,18 @@
 # talak-web3
 
 [![CI](https://github.com/dagimabebe/talak-web3/actions/workflows/ci.yml/badge.svg)](https://github.com/dagimabebe/talak-web3/actions)
-[![codecov](https://codecov.io/gh/dagimabebe/talak-web3/branch/main/graph/badge.svg)](https://codecov.io/gh/dagimabebe/talak-web3)
 [![npm version](https://badge.fury.io/js/talak-web3.svg)](https://www.npmjs.com/package/talak-web3)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> Production-first Web3 backend framework for authentication, RPC resilience, and account abstraction.
+> Web3 backend toolkit for server-side SIWE sessions, RPC failover, and account-abstraction helpers. See [CHANGELOG.md](./CHANGELOG.md) for release notes.
 
 ## Features
 
-- **Server-Authenticated SIWE**: True server-side session management, not client-trust auth
-- **Resilient RPC Routing**: Multi-provider failover with health tracking
-- **Atomic Operations**: Nonce consumption and token rotation for replay resistance
-- **Fail-Closed Security**: System fails securely on infrastructure degradation
-- **Type Safety**: Full TypeScript support with generated types
-- **Multi-Framework**: Support for Next.js, React, Hono, Express, NestJS
+- **Server-authenticated SIWE**: Server-side sessions and pluggable stores (`@talak-web3/auth`, Redis-backed stores in `@talak-web3/auth/stores`)
+- **Resilient RPC routing**: Multi-provider failover with health tracking (`@talak-web3/rpc`)
+- **Replay-resistant flows**: Nonce consumption before signature verification; refresh rotation (use Redis stores in production)
+- **TypeScript-first**: Typed public APIs across packages
+- **Examples**: Next.js, Hono, and React Native sample apps under `apps/` (bring your own HTTP rate limits and deployment hardening)
 
 ## Quick Start
 
@@ -30,8 +28,12 @@ pnpm add talak-web3
 
 ### Initialize Project
 
+The CLI package is `@talak-web3/cli`. Binaries: `talak`, `talak-web3`, and `create-talak-web3` (all equivalent).
+
 ```bash
-npx talak init my-dapp --template nextjs
+npx talak-web3 init my-dapp --template nextjs
+# or
+npx @talak-web3/cli init my-dapp --template nextjs
 cd my-dapp
 npm install
 npm run dev
@@ -39,45 +41,15 @@ npm run dev
 
 ### Manual Setup
 
-```typescript
-import { talakWeb3, MainnetPreset } from "talak-web3";
+Consult [`docs/MINIMAL_SETUP.md`](./docs/MINIMAL_SETUP.md) and the [`@talak-web3/core`](./packages/talak-web3-core/README.md) README — `talakWeb3()` is configured via `@talak-web3/config` presets and plugins; JWT/session secrets are enforced by `@talak-web3/auth` (**`JWT_SECRET` is required when `NODE_ENV=production`**).
 
-const app = talakWeb3({
-  ...MainnetPreset,
-  auth: {
-    domain: "yourdapp.com",
-    secret: process.env.JWT_SECRET!,
-  },
-});
+### React integration
 
-await app.init();
-```
+`talak-web3/react` re-exports hooks from `@talak-web3/hooks` (e.g. `TalakWeb3Provider`, `useTalakWeb3`, `useAccount`, `useChain`). Wire your own SIWE signing flow against your API; there is no `useSIWE` helper in the current release.
 
-### React Integration
+## Package ecosystem
 
-```tsx
-import { TalakWeb3Provider, useSIWE } from "talak-web3/react";
-
-function LoginButton() {
-  const { signIn, isAuthenticated, user } = useSIWE();
-  
-  return (
-    <button onClick={signIn}>
-      {isAuthenticated ? user.address : "Sign In with Ethereum"}
-    </button>
-  );
-}
-
-function App() {
-  return (
-    <TalakWeb3Provider config={{ apiUrl: "https://api.yourdapp.com" }}>
-      <LoginButton />
-    </TalakWeb3Provider>
-  );
-}
-```
-
-## Package Ecosystem
+Highlights below; **all workspace libraries** are listed in [`packages.md`](./packages.md) and [`docs/PACKAGE_ECOSYSTEM.md`](./docs/PACKAGE_ECOSYSTEM.md).
 
 | Package | Version | Description |
 |---------|---------|-------------|
@@ -86,7 +58,7 @@ function App() {
 | `@talak-web3/rpc` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Frpc)](https://www.npmjs.com/package/@talak-web3/rpc) | Provider routing and failover |
 | `@talak-web3/tx` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Ftx)](https://www.npmjs.com/package/@talak-web3/tx) | Account abstraction helpers |
 | `@talak-web3/hooks` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fhooks)](https://www.npmjs.com/package/@talak-web3/hooks) | React hooks and providers |
-| `@talak-web3/cli` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fcli)](https://www.npmjs.com/package/@talak-web3/cli) | CLI tooling and scaffolding |
+| `@talak-web3/cli` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fcli)](https://www.npmjs.com/package/@talak-web3/cli) | CLI scaffolding (`talak-web3`, `talak`, `create-talak-web3`) |
 
 ## Development
 
@@ -119,7 +91,7 @@ pnpm typecheck
 - [ ] Redis configured for session storage
 - [ ] HTTPS enabled with valid certificates
 - [ ] JWT secrets rotated (256-bit minimum)
-- [ ] Rate limiting configured
+- [ ] Rate limiting at your API gateway / edge (library does not ship HTTP middleware for this)
 - [ ] CORS origins restricted
 - [ ] Audit logging enabled
 - [ ] Error tracking configured (Sentry)
@@ -139,7 +111,7 @@ pnpm typecheck
 
 ## Releases
 
-See [GitHub Releases](https://github.com/dagimabebe/talak-web3/releases) for changelog and version history.
+See [CHANGELOG.md](./CHANGELOG.md) and [GitHub Releases](https://github.com/dagimabebe/talak-web3/releases).
 
 ## GitHub Packages
 

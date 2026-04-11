@@ -204,7 +204,16 @@ export interface TalakWeb3BaseConfig {
 
   readonly plugins?: ReadonlyArray<unknown>;
 
-  readonly auth?: { readonly domain?: string; readonly uri?: string; readonly version?: string };
+  readonly auth?: {
+    readonly domain?: string;
+    readonly uri?: string;
+    readonly version?: string;
+    readonly nonceStore?: unknown; // NonceStore instance
+    readonly refreshStore?: unknown; // RefreshStore instance
+    readonly revocationStore?: unknown; // RevocationStore instance
+    readonly accessTtlSeconds?: number;
+    readonly refreshTtlSeconds?: number;
+  };
 
   readonly ai?: { readonly apiKey: string; readonly baseUrl?: string; readonly model?: string };
 
@@ -322,6 +331,69 @@ export interface TalakWeb3Instance {
 
   destroy(): Promise<void>;
 
+}
+
+
+
+// ---------------------------------------------------------------------------
+// AI Agent types (merged from talak-web3-ai)
+// ---------------------------------------------------------------------------
+
+export type ToolDefinition = {
+  name: string;
+  description?: string;
+  /** JSON schema parameters (OpenAI tool format). */
+  parameters: Record<string, unknown>;
+  handler: (input: unknown) => Promise<unknown>;
+};
+
+export type AgentRunInput = {
+  prompt: string;
+  tools?: ToolDefinition[];
+};
+
+export type AgentRunOutput = {
+  text: string;
+  toolCalls?: Array<{ tool: string; input: unknown; output?: unknown }>;
+};
+
+export interface AiAgent {
+  run(input: AgentRunInput): Promise<AgentRunOutput>;
+  /** Streaming run that yields incremental text deltas. */
+  runStream?(input: AgentRunInput): AsyncIterable<{ type: 'text-delta'; delta: string } | { type: 'done'; output: AgentRunOutput }>;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// Analytics types (merged from talak-web3-analytics)
+// ---------------------------------------------------------------------------
+
+export type AnalyticsEvent = {
+  name: string;
+  tsMs: number;
+  properties?: Record<string, unknown>;
+};
+
+export interface AnalyticsSink {
+  ingest(events: AnalyticsEvent[]): Promise<void>;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// Organization types (merged from talak-web3-orgs)
+// ---------------------------------------------------------------------------
+
+export type Role = "member" | "admin" | "owner";
+
+export type Organization = {
+  id: string;
+  name: string;
+};
+
+export interface OrgGate {
+  hasRole(input: { orgId: string; address: string; role: Role }): Promise<boolean>;
 }
 
 

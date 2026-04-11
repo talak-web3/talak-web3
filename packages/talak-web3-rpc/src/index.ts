@@ -15,16 +15,18 @@ export interface RpcEndpoint {
 export class UnifiedRpc implements IRpc {
   private endpoints: RpcEndpoint[];
   ctx: TalakWeb3Context;
-  private readonly healthInterval: ReturnType<typeof setInterval> | undefined;
+  private healthInterval: ReturnType<typeof setInterval> | undefined;
+  private requestIdCounter = 0;
 
-  constructor(ctx: TalakWeb3Context, endpoints: RpcEndpoint[] = []) {
+  constructor(ctx: TalakWeb3Context, endpoints: RpcEndpoint[] = [], options?: { healthCheckIntervalMs?: number }) {
     this.ctx = ctx;
     this.endpoints = endpoints;
 
     if (this.endpoints.length > 0) {
+      const intervalMs = options?.healthCheckIntervalMs ?? 30_000;
       this.healthInterval = setInterval(() => {
         void this.checkAllHealth();
-      }, 30_000);
+      }, intervalMs);
       // Allow process to exit even if interval is pending
       this.healthInterval.unref?.();
     }
@@ -32,6 +34,27 @@ export class UnifiedRpc implements IRpc {
 
   stop(): void {
     if (this.healthInterval) clearInterval(this.healthInterval);
+  }
+  
+  /** Pause health checks temporarily */
+  pauseHealthChecks(): void {
+    if (this.healthInterval) {
+      clearInterval(this.healthInterval);
+      this.healthInterval = undefined;
+    }
+  }
+  
+  /** Resume health checks with specified interval */
+  resumeHealthChecks(intervalMs = 30_000): void {
+    // Don't create duplicate intervals
+    if (this.healthInterval) return;
+    
+    if (this.endpoints.length > 0) {
+      this.healthInterval = setInterval(() => {
+        void this.checkAllHealth();
+      }, intervalMs);
+      this.healthInterval.unref?.();
+    }
   }
 
   async checkAllHealth(): Promise<void> {
@@ -145,10 +168,12 @@ export class UnifiedRpc implements IRpc {
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
+      // Use incrementing counter for unique request IDs
+      this.requestIdCounter = (this.requestIdCounter + 1) % Number.MAX_SAFE_INTEGER;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
+        body: JSON.stringify({ jsonrpc: '2.0', id: this.requestIdCounter, method, params }),
         signal: controller.signal,
       });
 

@@ -1,6 +1,6 @@
 {
   "name": "@talak-web3/auth",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "author": "Dagim Abebe",
   "license": "MIT",
@@ -10,11 +10,18 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./stores": {
+      "types": "./dist/stores/index.d.ts",
+      "import": "./dist/stores/index.js",
+      "require": "./dist/stores/index.cjs"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "dependencies": {
     "@talak-web3/errors": "workspace:*",
@@ -24,7 +31,7 @@
     "viem": "^2.21.54"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

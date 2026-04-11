@@ -1,12 +1,13 @@
 {
   "name": "@talak-web3/cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "author": "Dagim Abebe",
   "license": "MIT",
   "bin": {
     "create-talak-web3": "./dist/bin.js",
-    "talak-web3": "./dist/bin.js"
+    "talak-web3": "./dist/bin.js",
+    "talak": "./dist/bin.js"
   },
   "exports": {
     ".": {

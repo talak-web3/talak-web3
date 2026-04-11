@@ -53,8 +53,8 @@ describe('TalakWeb3Auth', () => {
       const nonce = auth.generateNonce();
 
       expect(nonce).toBeDefined();
-      expect(nonce).toHaveLength(32); // 16 bytes = 32 hex chars
-      expect(nonce).toMatch(/^[a-f0-9]{32}$/);
+      expect(nonce).toHaveLength(64); // 32 bytes = 64 hex chars
+      expect(nonce).toMatch(/^[a-f0-9]{64}$/);
     });
 
     it('should generate unique nonces', () => {

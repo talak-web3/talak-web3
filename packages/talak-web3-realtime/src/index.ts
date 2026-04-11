@@ -54,6 +54,8 @@ export class WebSocketMessagingClient implements MessagingClient {
   private backoffMs = 500;
   private readonly maxBackoffMs: number;
   private destroyed = false;
+  private reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  private heartbeatTimer: ReturnType<typeof setInterval> | undefined;
 
   private readonly pendingConversations = new Map<string, (convs: Conversation[]) => void>();
   private readonly pendingHistory = new Map<string, (msgs: Message[]) => void>();
@@ -71,6 +73,7 @@ export class WebSocketMessagingClient implements MessagingClient {
       this.ws.addEventListener('open', () => {
         this.connected = true;
         this.backoffMs = 500;
+        this.startHeartbeat();
         resolve();
       });
 
@@ -80,6 +83,7 @@ export class WebSocketMessagingClient implements MessagingClient {
 
       this.ws.addEventListener('close', () => {
         this.connected = false;
+        this.stopHeartbeat();
         if (!this.destroyed) this.scheduleReconnect();
       });
 
@@ -96,6 +100,11 @@ export class WebSocketMessagingClient implements MessagingClient {
 
   disconnect(): void {
     this.destroyed = true;
+    this.stopHeartbeat();
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = undefined;
+    }
     this.ws?.close();
   }
 
@@ -139,6 +148,10 @@ export class WebSocketMessagingClient implements MessagingClient {
 
   private handleEnvelope(envelope: WsEnvelope): void {
     switch (envelope.type) {
+      case 'ping':
+        // Respond to server ping
+        this.ws?.send(JSON.stringify({ type: 'pong' }));
+        break;
       case 'pong': break;
       case 'conversations': {
         for (const [id, resolve] of this.pendingConversations) {
@@ -172,6 +185,31 @@ export class WebSocketMessagingClient implements MessagingClient {
   private scheduleReconnect(): void {
     const delay = this.backoffMs;
     this.backoffMs = Math.min(this.backoffMs * 2, this.maxBackoffMs);
-    setTimeout(() => { void this.connect(); }, delay);
+    this.reconnectTimer = setTimeout(() => {
+      if (!this.destroyed) {
+        void this.connect();
+      }
+    }, delay);
+  }
+  
+  private startHeartbeat(): void {
+    // Send ping every 30 seconds to detect dead connections
+    this.heartbeatTimer = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        try {
+          this.ws.send(JSON.stringify({ type: 'ping' }));
+        } catch {
+          // Connection may be dead - will trigger reconnect on close
+        }
+      }
+    }, 30_000);
+    this.heartbeatTimer.unref?.();
+  }
+  
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = undefined;
+    }
   }
 }

@@ -40,6 +40,7 @@ packages:
 
   - "packages/talak-web3-types"
   - "packages/talak-web3-test-utils"
+  - "packages/talak-web3-rate-limit"
 
   - "packages/@talak-web3/cli"
 

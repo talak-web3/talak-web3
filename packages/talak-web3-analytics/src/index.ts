@@ -1,10 +1,11 @@
-export type AnalyticsEvent = {
-  name: string;
-  tsMs: number;
-  properties?: Record<string, unknown>;
-};
+/**
+ * @deprecated This package is now a re-export from @talak-web3/types.
+ * Import directly from @talak-web3/types instead.
+ * This package will be removed in the next major version.
+ */
 
-export interface AnalyticsSink {
-  ingest(events: AnalyticsEvent[]): Promise<void>;
-}
+export {
+  type AnalyticsEvent,
+  type AnalyticsSink,
+} from '@talak-web3/types';
 

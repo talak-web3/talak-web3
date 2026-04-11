@@ -74,6 +74,6 @@
   "homepage": "https://github.com/dagimabebe/talak-web3#readme",
   "publishConfig": {
     "access": "public",
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org"
   }
 }

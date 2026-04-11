@@ -4,11 +4,11 @@ Authentication and session management for talak-web3. Provides secure SIWE (Sign
 
 ## Features
 
-- **SIWE Authentication** - Full EIP-4361 compliant Sign-In with Ethereum
-- **Atomic Nonce Consumption** - Prevents replay attacks with Redis-backed atomic operations
+- **SIWE Authentication** - Sign-In with Ethereum (structured SIWE messages; validate production traffic against your threat model)
+- **Atomic Nonce Consumption** - In-memory dev stores; **production:** `RedisNonceStore` uses a Redis Lua script for atomic GET+DEL per nonce
 - **Refresh Token Rotation** - One-time use refresh tokens with automatic rotation
 - **JWT Session Management** - Short-lived access tokens with secure revocation
-- **Pluggable Storage** - Support for Redis, in-memory, or custom storage backends
+- **Pluggable Storage** - In-memory (dev), Redis implementations in `@talak-web3/auth/stores`, or custom `NonceStore` / `RefreshStore` / `RevocationStore`
 
 ## Installation
 
@@ -53,18 +53,23 @@ const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
 For production, use Redis-backed stores:
 
 ```typescript
+import Redis from 'ioredis';
 import { TalakWeb3Auth } from '@talak-web3/auth';
 import { RedisNonceStore, RedisRefreshStore, RedisRevocationStore } from '@talak-web3/auth/stores';
 
+const redis = new Redis(process.env.REDIS_URL!);
+
 const auth = new TalakWeb3Auth({
-  nonceStore: new RedisNonceStore({ redisUrl: process.env.REDIS_URL }),
-  refreshStore: new RedisRefreshStore({ redisUrl: process.env.REDIS_URL }),
-  revocationStore: new RedisRevocationStore({ redisUrl: process.env.REDIS_URL }),
+  nonceStore: new RedisNonceStore({ redis }),
+  refreshStore: new RedisRefreshStore({ redis }),
+  revocationStore: new RedisRevocationStore({ redis }),
   expectedDomain: 'yourdomain.com',
   accessTtlSeconds: 900, // 15 minutes
   refreshTtlSeconds: 604800, // 7 days
 });
 ```
+
+Use one shared `ioredis` client for all three stores (or separate clients pointing at the same Redis, depending on your pooling strategy).
 
 ## API Reference
 

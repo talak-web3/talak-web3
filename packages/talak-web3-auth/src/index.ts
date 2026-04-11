@@ -1,7 +1,16 @@
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT, jwtVerify, type JWTVerifyOptions } from 'jose';
 import { verifyMessage } from 'viem';
+import { createHash, randomBytes } from 'node:crypto';
 import { TalakWeb3Error } from '@talak-web3/errors';
 import type { TalakWeb3Auth as TalakWeb3AuthInterface } from '@talak-web3/types';
+import type {
+  NonceStore,
+  RefreshSession,
+  RefreshStore,
+  RevocationStore,
+} from './contracts.js';
+
+export type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from './contracts.js';
 
 // ---------------------------------------------------------------------------
 // SIWE message parsing (EIP-4361)
@@ -10,75 +19,96 @@ import type { TalakWeb3Auth as TalakWeb3AuthInterface } from '@talak-web3/types'
 interface SiweFields {
   domain: string;
   address: `0x${string}`;
+  statement?: string;
+  uri: string;
+  version: string;
   chainId: number;
   nonce: string;
   issuedAt: string;
   expirationTime?: string | undefined;
+  notBefore?: string | undefined;
+  requestId?: string | undefined;
+  resources?: string[] | undefined;
 }
 
 function parseSiweMessage(message: string): SiweFields {
+  // Normalize line endings
   message = message.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const firstLine = message.split('\n')[0]?.trim() ?? '';
+  
+  const lines = message.split('\n');
+  
+  // Line 0: "<domain> wants you to sign in with your Ethereum account:"
+  const firstLine = lines[0]?.trim() ?? '';
   const domainMatch = firstLine.match(/^(.+?) wants you to sign in with your Ethereum account:/);
   const domain = domainMatch?.[1]?.trim();
-
-  const addressMatch = message.match(/^(0x[a-fA-F0-9]{40})$/m);
+  
+  // Line 1: The wallet address
+  const addressLine = lines[1]?.trim() ?? '';
+  const addressMatch = addressLine.match(/^(0x[a-fA-F0-9]{40})$/);
+  
+  // Line 2 (optional): Statement
+  let statement: string | undefined;
+  let lineIndex = 2;
+  
+  // Skip empty lines to find statement
+  while (lineIndex < lines.length && lines[lineIndex]?.trim() === '') {
+    lineIndex++;
+  }
+  
+  // Check if next non-empty line is a statement (not a URI line)
+  const potentialStatement = lines[lineIndex]?.trim();
+  if (potentialStatement && !potentialStatement.startsWith('URI: ') && !potentialStatement.startsWith('Version: ')) {
+    statement = potentialStatement;
+    lineIndex++;
+  }
+  
+  // Parse remaining fields from anywhere in the message
+  const uriMatch = message.match(/^URI: (.+)$/m);
+  const versionMatch = message.match(/^Version: (.+)$/m);
   const chainIdMatch = message.match(/^Chain ID: (\d+)$/m);
   const nonceMatch = message.match(/^Nonce: ([A-Za-z0-9]+)$/m);
   const issuedAtMatch = message.match(/^Issued At: (.+)$/m);
   const expirationMatch = message.match(/^Expiration Time: (.+)$/m);
+  const notBeforeMatch = message.match(/^Not Before: (.+)$/m);
+  const requestIdMatch = message.match(/^Request ID: (.+)$/m);
+  
+  // Parse resources (can be multiple lines)
+  const resourcesMatch = message.match(/^Resources:\n([\s\S]*?)(?:\n\n|$)/m);
+  const resources = resourcesMatch
+    ? resourcesMatch[1]
+        .split('\n')
+        .map(r => r.replace(/^- /, '').trim())
+        .filter(r => r.length > 0)
+    : undefined;
 
   if (!domain || !addressMatch?.[1] || !chainIdMatch?.[1] || !nonceMatch?.[1] || !issuedAtMatch?.[1]) {
-    throw new TalakWeb3Error('Invalid SIWE message format', { code: 'AUTH_SIWE_PARSE_ERROR', status: 400 });
+    throw new TalakWeb3Error('Invalid SIWE message format', { 
+      code: 'AUTH_SIWE_PARSE_ERROR', 
+      status: 400,
+      data: {
+        hasDomain: !!domain,
+        hasAddress: !!addressMatch?.[1],
+        hasChainId: !!chainIdMatch?.[1],
+        hasNonce: !!nonceMatch?.[1],
+        hasIssuedAt: !!issuedAtMatch?.[1],
+      }
+    });
   }
 
   return {
     domain,
     address: addressMatch[1] as `0x${string}`,
+    statement,
+    uri: uriMatch?.[1] ?? '',
+    version: versionMatch?.[1] ?? '1',
     chainId: parseInt(chainIdMatch[1], 10),
     nonce: nonceMatch[1],
     issuedAt: issuedAtMatch[1],
     expirationTime: expirationMatch?.[1],
+    notBefore: notBeforeMatch?.[1],
+    requestId: requestIdMatch?.[1],
+    resources,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Nonce store (pluggable)
-// ---------------------------------------------------------------------------
-
-export interface NonceStore {
-  create(address: string, meta?: { ip?: string; ua?: string }): Promise<string>;
-  consume(address: string, nonce: string): Promise<boolean>;
-}
-
-// ---------------------------------------------------------------------------
-// Refresh token store (pluggable)
-// Refresh tokens are OPAQUE random strings; stored as SHA-256 hashes.
-// ---------------------------------------------------------------------------
-
-export interface RefreshSession {
-  id: string;
-  address: string;
-  chainId: number;
-  hash: string;
-  expiresAt: number;
-  revoked: boolean;
-}
-
-export interface RefreshStore {
-  create(address: string, chainId: number, ttlMs: number): Promise<{ token: string; session: RefreshSession }>;
-  rotate(token: string, ttlMs: number): Promise<{ token: string; session: RefreshSession }>;
-  revoke(token: string): Promise<void>;
-  lookup(token: string): Promise<RefreshSession | null>;
-}
-
-// ---------------------------------------------------------------------------
-// JWT Revocation store (pluggable, for access token JTIs)
-// ---------------------------------------------------------------------------
-
-export interface RevocationStore {
-  revoke(jti: string, expiresAtMs: number): Promise<void>;
-  isRevoked(jti: string): Promise<boolean>;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,7 +124,7 @@ export class InMemoryNonceStore implements NonceStore {
     this.ttlMs = Math.min(opts.ttlMs ?? 5 * 60_000, 5 * 60_000); // hard-cap TTL at 5 min
     console.warn(
       '[talak-web3-auth] InMemoryNonceStore is in use. ' +
-      'This is NOT suitable for production. Set REDIS_URL and use RedisNonceStore.',
+      'This is NOT suitable for production. Use RedisNonceStore from @talak-web3/auth/stores with REDIS_URL.',
     );
   }
 
@@ -125,8 +155,6 @@ export class InMemoryNonceStore implements NonceStore {
 // In-memory refresh store — ONLY for development / testing
 // Refresh tokens are opaque; stored as sha256-hex hashes.
 // ---------------------------------------------------------------------------
-
-import { createHash, randomBytes } from 'node:crypto';
 
 function sha256Hex(input: string): string {
   return createHash('sha256').update(input).digest('hex');
@@ -194,6 +222,28 @@ export class InMemoryRevocationStore implements RevocationStore {
   }
 }
 
+function resolveJwtSecretBytes(): Uint8Array {
+  const raw = process.env['JWT_SECRET'];
+  if (raw !== undefined && raw.length > 0) {
+    return new TextEncoder().encode(raw);
+  }
+  if (process.env['NODE_ENV'] === 'production') {
+    throw new TalakWeb3Error(
+      'JWT_SECRET environment variable is required in production',
+      { code: 'AUTH_JWT_SECRET_MISSING', status: 500 },
+    );
+  }
+  console.warn(
+    '[talak-web3-auth] JWT_SECRET is not set — using insecure dev-only default. Set JWT_SECRET for any shared or production environment.',
+  );
+  return new TextEncoder().encode('talak-web3-dev-secret-change-in-production');
+}
+
+const JWT_VERIFY_OPTS: JWTVerifyOptions = {
+  algorithms: ['HS256'],
+  requiredClaims: ['iat', 'exp', 'sub'],
+};
+
 // ---------------------------------------------------------------------------
 // Session payload
 // ---------------------------------------------------------------------------
@@ -224,11 +274,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     refreshTtlSeconds?: number;
     expectedDomain?: string;
   } = {}) {
-    const raw = process.env['JWT_SECRET'] ?? 'talak-web3-dev-secret-change-in-production';
-    if (raw === 'talak-web3-dev-secret-change-in-production') {
-      console.warn('[talak-web3-auth] JWT_SECRET is not set — using insecure default. Set JWT_SECRET in production!');
-    }
-    this.secret = new TextEncoder().encode(raw);
+    this.secret = resolveJwtSecretBytes();
     this.nonceStore = opts.nonceStore ?? new InMemoryNonceStore();
     this.refreshStore = opts.refreshStore ?? new InMemoryRefreshStore();
     this.revocations = opts.revocationStore ?? new InMemoryRevocationStore();
@@ -244,7 +290,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   /** Verify any JWT access token — returns true/false. */
   async validateJwt(token: string): Promise<boolean> {
     try {
-      const { payload } = await jwtVerify(token, this.secret, { requiredClaims: ['iat', 'exp', 'sub'] });
+      const { payload } = await jwtVerify(token, this.secret, JWT_VERIFY_OPTS);
       const jti = payload['jti'];
       if (typeof jti === 'string' && await this.revocations.isRevoked(jti)) return false;
       return true;
@@ -326,7 +372,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   async verifySession(token: string): Promise<SessionPayload> {
     let payload;
     try {
-      ({ payload } = await jwtVerify(token, this.secret, { requiredClaims: ['iat', 'exp', 'sub'] }));
+      ({ payload } = await jwtVerify(token, this.secret, JWT_VERIFY_OPTS));
     } catch (err) {
       throw new TalakWeb3Error('Invalid or expired session token', { code: 'AUTH_TOKEN_INVALID', status: 401, cause: err });
     }
@@ -354,7 +400,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   async revokeSession(accessToken: string, refreshToken?: string): Promise<void> {
     // Revoke access token JTI
     try {
-      const { payload } = await jwtVerify(accessToken, this.secret, { requiredClaims: ['iat', 'exp', 'sub'] });
+      const { payload } = await jwtVerify(accessToken, this.secret, JWT_VERIFY_OPTS);
       const jti = payload['jti'];
       const exp = payload['exp'];
       if (typeof jti === 'string' && typeof exp === 'number') {
@@ -371,7 +417,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
 
   /** Generate a cryptographically random nonce for SIWE messages. */
   generateNonce(): string {
-    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
   }

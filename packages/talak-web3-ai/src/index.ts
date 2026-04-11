@@ -1,25 +1,15 @@
-export type AgentRunInput = {
-  prompt: string;
-  tools?: ToolDefinition[];
-};
+/**
+ * @deprecated This package is now a re-export from @talak-web3/types.
+ * Import directly from @talak-web3/types instead.
+ * This package will be removed in the next major version.
+ */
 
-export type AgentRunOutput = {
-  text: string;
-  toolCalls?: Array<{ tool: string; input: unknown; output?: unknown }>;
-};
+export {
+  type AgentRunInput,
+  type AgentRunOutput,
+  type AiAgent,
+  type ToolDefinition,
+} from '@talak-web3/types';
 
-export interface AiAgent {
-  run(input: AgentRunInput): Promise<AgentRunOutput>;
-  /** Streaming run that yields incremental text deltas. */
-  runStream?(input: AgentRunInput): AsyncIterable<{ type: 'text-delta'; delta: string } | { type: 'done'; output: AgentRunOutput }>;
-}
-
-export type ToolDefinition = {
-  name: string;
-  description?: string;
-  /** JSON schema parameters (OpenAI tool format). */
-  parameters: Record<string, unknown>;
-  handler: (input: unknown) => Promise<unknown>;
-};
-
+// Re-export plugin if it exists
 export * from './plugin';

@@ -1,11 +1,12 @@
-export type Role = "member" | "admin" | "owner";
+/**
+ * @deprecated This package is now a re-export from @talak-web3/types.
+ * Import directly from @talak-web3/types instead.
+ * This package will be removed in the next major version.
+ */
 
-export type Organization = {
-  id: string;
-  name: string;
-};
-
-export interface OrgGate {
-  hasRole(input: { orgId: string; address: string; role: Role }): Promise<boolean>;
-}
+export {
+  type Role,
+  type Organization,
+  type OrgGate,
+} from '@talak-web3/types';
 
