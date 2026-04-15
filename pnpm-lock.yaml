@@ -2503,7 +2503,7 @@ packages:
   '@stablelib/poly1305@1.0.1':
     resolution: {integrity: sha512-1HlG3oTSuQDOhSnLwJRKeTRSAdFNVB/1djy2ZbS35rBSJ/PFqx9cf9qatinWghC2UbfOYD8AcrtbUQl8WoxabA==}
 
-  '@stablelib/random@1.0.2':
+  '@stablelib/random@1.0.9':
     resolution: {integrity: sha512-rIsE83Xpb7clHPVRlBj8qNe5L8ISQOzjghYQm/dZ7VaM2KHYwMW5adjQjrzTZCchFnNCNhkwtnOBa9HTMJCI8w==}
 
   '@stablelib/sha256@1.0.1':
@@ -2807,7 +2807,7 @@ packages:
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
-  array-buffer-byte-length@1.0.2:
+  array-buffer-byte-length@1.0.9:
     resolution: {integrity: sha512-LHE+8BuR7RYGDKvnrmcuSq3tDcKv9OFEXQt/HpbZhY7V6h0zlUXutnAD82GiFx9rdieCMjkvtcsPqBwgUl1Iiw==}
     engines: {node: '>= 0.4'}
 
@@ -2818,7 +2818,7 @@ packages:
     resolution: {integrity: sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==}
     engines: {node: '>=8'}
 
-  arraybuffer.prototype.slice@1.0.4:
+  arraybuffer.prototype.slice@1.0.9:
     resolution: {integrity: sha512-BNoCY6SXXPQ7gF2opIP4GBE+Xw7U+pHMYKuzjgCN3GwiaIR09UUeKfheyIry77QtrCBlC0KK0q5/TER/tYh3PQ==}
     engines: {node: '>= 0.4'}
 
@@ -2896,7 +2896,7 @@ packages:
   babel-preset-expo@11.0.15:
     resolution: {integrity: sha512-rgiMTYwqIPULaO7iZdqyL7aAff9QLOX6OWUtLZBlOrOTreGY1yHah/5+l8MvI6NVc/8Zj5LY4Y5uMSnJIuzTLw==}
 
-  balanced-match@1.0.2:
+  balanced-match@1.0.9:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
   balanced-match@4.0.4:
@@ -2929,7 +2929,7 @@ packages:
     resolution: {integrity: sha512-pX/cYW3dCa87Jrzv6DAr8ivbbJRzEX5yGhdt8IutnX/PCIXfpx+mabWNK/M8qqh+zQ0J3thftUBHW0ByuUlG0w==}
     engines: {node: '>=10.4.0'}
 
-  bintrees@1.0.2:
+  bintrees@1.0.9:
     resolution: {integrity: sha512-VOMgTMwjAaUG580SXn3LacVgjurrbMme7ZZNYGSSV7mmtY6QQRh0Eg3pwIcntQ77DErK1L0NxkbetjcoXzVwKw==}
 
   bl@4.1.0:
@@ -3037,7 +3037,7 @@ packages:
   caip@1.1.1:
     resolution: {integrity: sha512-a3v5lteUUOoyRI0U6qe5ayCCGkF2mCmJ5zQMDnOD2vRjgRg6sm9p8TsRC2h4D4beyqRN9RYniphAPnj/+jQC6g==}
 
-  call-bind-apply-helpers@1.0.2:
+  call-bind-apply-helpers@1.0.9:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
     engines: {node: '>= 0.4'}
 
@@ -3045,7 +3045,7 @@ packages:
     resolution: {integrity: sha512-oKlSFMcMwpUg2ednkhQ454wfWiU/ul3CkJe/PEHcTKuiX6RpbehUiFMXu13HalGZxfUwCQzZG747YXBn1im9ww==}
     engines: {node: '>= 0.4'}
 
-  call-bound@1.0.4:
+  call-bound@1.0.9:
     resolution: {integrity: sha512-+ys997U96po4Kx/ABpBCqhA9EuxJaQWDQg7295H4hBphv3IZg0boBKuwYpt4YXp6MZ5AmZQnU/tyMTlRpaSejg==}
     engines: {node: '>= 0.4'}
 
@@ -3164,7 +3164,7 @@ packages:
     resolution: {integrity: sha512-neHB9xuzh/wk0dIHweyAXv2aPGZIVk3pLMe+/RNzINf17fe0OG96QroktYAUm7SM1PBnzTabaLboqqxDyMU+SQ==}
     engines: {node: '>=6'}
 
-  clone@1.0.4:
+  clone@1.0.9:
     resolution: {integrity: sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==}
     engines: {node: '>=0.8'}
 
@@ -3326,18 +3326,18 @@ packages:
   dag-jose@4.0.0:
     resolution: {integrity: sha512-tw595L3UYoOUT9dSJPbBEG/qpRpw24kRZxa5SLRnlnr+g5L7O8oEs1d3W5TiVA1oJZbthVsf0Vi3zFN66qcEBA==}
 
-  dag-map@1.0.2:
+  dag-map@1.0.9:
     resolution: {integrity: sha512-+LSAiGFwQ9dRnRdOeaj7g47ZFJcOUPukAP8J3A3fuZ1g9Y44BG+P1sgApjLXTQPOzC4+7S9Wr8kXsfpINM4jpw==}
 
   dargs@8.1.0:
     resolution: {integrity: sha512-wAV9QHOsNbwnWdNW2FYvE1P56wtgSbM+3SZcdGiWQILwVjACCXDCI3Ai8QlCjMDB8YK5zySiXZYBiwGmNY3lnw==}
     engines: {node: '>=12'}
 
-  data-view-buffer@1.0.2:
+  data-view-buffer@1.0.9:
     resolution: {integrity: sha512-EmKO5V3OLXh1rtK2wgXRansaK1/mtVdTUEiEI0W8RkvgT05kfxaH29PliLnpLP73yYO6142Q72QNa8Wx/A5CqQ==}
     engines: {node: '>= 0.4'}
 
-  data-view-byte-length@1.0.2:
+  data-view-byte-length@1.0.9:
     resolution: {integrity: sha512-tuhGbE6CfTM9+5ANGf+oQb72Ky/0+s3xKUpHvShfiz2RxMFgFPjsXuRLBVMtvMs15awe45SRb83D6wH4ew6wlQ==}
     engines: {node: '>= 0.4'}
 
@@ -3400,7 +3400,7 @@ packages:
     resolution: {integrity: sha512-h6sMrVB1VMWVrW13mSc6ia/DwYYw5MN6+exNu1OaJeFac5aSAvwM7lZ0NVfTABuSkQelr4h5oebg3KB1XPdjgA==}
     engines: {node: '>=6'}
 
-  defaults@1.0.4:
+  defaults@1.0.9:
     resolution: {integrity: sha512-eFuaLoy/Rxalv2kr+lqMlUnrDWV+3j4pljOIJgLIhI058IQfWJ7vXhyEIHu+HtC738klGALYxOKDO0bQP3tg8A==}
 
   define-data-property@1.1.4:
@@ -3491,7 +3491,7 @@ packages:
   emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
 
-  encodeurl@1.0.2:
+  encodeurl@1.0.9:
     resolution: {integrity: sha512-TPJXq8JqFaVYm2CWmPvnP2Iyo4ZSM7/QKcSmuMLDObfpH5fi7RUGmd/rTDf+rut/saiDiQEeVTNgAmJEdAOx0w==}
     engines: {node: '>= 0.8'}
 
@@ -3733,7 +3733,7 @@ packages:
   fbemitter@3.0.0:
     resolution: {integrity: sha512-KWKaceCwKQU0+HPoop6gn4eOHk50bBv/VxjJtGMfwmJt3D29JpN4H4eisCtIPA+a8GVBam+ldMMpMjJUvpDyHw==}
 
-  fbjs-css-vars@1.0.2:
+  fbjs-css-vars@1.0.9:
     resolution: {integrity: sha512-b2XGFAFdWZWg0phtAWLHCk836A1Xann+I+Dgd3Gk64MHKZO44FfoD1KxyvbSh0qZsIoXQGGlVztIY+oitJPpRQ==}
 
   fbjs@3.0.5:
@@ -3946,7 +3946,7 @@ packages:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
     engines: {node: '>=18'}
 
-  globalthis@1.0.4:
+  globalthis@1.0.9:
     resolution: {integrity: sha512-DpLKbNU4WylpxJykQujfCcwYWiV/Jhm50Goo0wrVILAv5jOr9d+H+UR3PhSCD2rCCEIg0uc+G+muBTwD54JhDQ==}
     engines: {node: '>= 0.4'}
 
@@ -3983,7 +3983,7 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
 
-  has-property-descriptors@1.0.2:
+  has-property-descriptors@1.0.9:
     resolution: {integrity: sha512-55JNKuIW+vq4Ke1BjOTjM2YctQIvCT7GFzHwmfZPGo5wnrgkid0YQtnAleFSqumZm4az3n2BS+erby5ipJdgrg==}
 
   has-proto@1.2.0:
@@ -3994,7 +3994,7 @@ packages:
     resolution: {integrity: sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ==}
     engines: {node: '>= 0.4'}
 
-  has-tostringtag@1.0.2:
+  has-tostringtag@1.0.9:
     resolution: {integrity: sha512-NqADB8VjPFLM2V0VvHUewwwsw0ZWBaIdgo+ieHtK3hasLz4qeCRjYcqfB6AQrBggRKppKF8L52/VqdVsO47Dlw==}
     engines: {node: '>= 0.4'}
 
@@ -4091,7 +4091,7 @@ packages:
     resolution: {integrity: sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==}
     engines: {node: '>=8'}
 
-  inflight@1.0.6:
+  inflight@1.0.9:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
     deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
 
@@ -4162,7 +4162,7 @@ packages:
     resolution: {integrity: sha512-UfoeMA6fIJ8wTYFEUjelnaGI67v6+N7qXJEvQuIGa99l4xsCruSYOVSQ0uPANn4dAzm8lkYPaKLrrijLq7x23w==}
     engines: {node: '>= 0.4'}
 
-  is-data-view@1.0.2:
+  is-data-view@1.0.9:
     resolution: {integrity: sha512-RKtWF8pGmS87i2D6gqQu/l7EYRlVdfzemCJN/P3UOs//x1QE7mfhvzHIApBTRf7axvT6DMGwSwBXYCT0nfB9xw==}
     engines: {node: '>= 0.4'}
 
@@ -4259,7 +4259,7 @@ packages:
     resolution: {integrity: sha512-iPAjerrse27/ygGLxw+EBR9agv9Y6uLeYVJMu+QNCoouJ1/1ri0mGrcWpfCqFZuzzx3WjtwxG098X+n4OuRkPg==}
     engines: {node: '>= 0.4'}
 
-  is-shared-array-buffer@1.0.4:
+  is-shared-array-buffer@1.0.9:
     resolution: {integrity: sha512-ISWac8drv4ZGfwKl5slpHG9OwPNty4jOWPRIhBpxOoD+hqITiwuipOQ2bNthAzwA3B4fIjO4Nln74N0S9byq8A==}
     engines: {node: '>= 0.4'}
 
@@ -4328,7 +4328,7 @@ packages:
     resolution: {integrity: sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==}
     engines: {node: '>=0.10.0'}
 
-  isows@1.0.6:
+  isows@1.0.9:
     resolution: {integrity: sha512-lPHCayd40oW98/I0uvgaHKWCSvkzY27LjWLbtzOm64yQ+G3Q5npjjbdppU65iZXkK1Zt+kH9pfegli0AYfwYYw==}
     peerDependencies:
       ws: '*'
@@ -4450,7 +4450,7 @@ packages:
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
 
-  json-parse-better-errors@1.0.2:
+  json-parse-better-errors@1.0.9:
     resolution: {integrity: sha512-mrqyZKfX5EhL7hvqcV6WG1yYjnjeuYDzDhhcAAUrq8Po85NBQBJP+ZDUT75qZQ98IkUoBqdkExkukOU7Ts2wrw==}
 
   json-parse-even-better-errors@2.3.1:
@@ -4880,7 +4880,7 @@ packages:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
     hasBin: true
 
-  mkdirp@1.0.4:
+  mkdirp@1.0.9:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
     engines: {node: '>=10'}
     hasBin: true
@@ -4894,7 +4894,7 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  multiformats@11.0.2:
+  multiformats@11.0.9:
     resolution: {integrity: sha512-b5mYMkOkARIuVZCpvijFj9a6m5wMVLC7cf/jIPd5D/ARDOfLC5+IFkbgDXQgcU2goIsTD/O9NY4DI/Mt4OGvlg==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
@@ -5102,11 +5102,11 @@ packages:
     resolution: {integrity: sha512-5b6Y85tPxZZ7QytO+BQzysW31HJku27cRIlkbAXaNx+BdcVi+LlRFmVXzeF6a7JCwJpyw5c4b+YSVImQIrBpuQ==}
     engines: {node: '>=10'}
 
-  os-homedir@1.0.2:
+  os-homedir@1.0.9:
     resolution: {integrity: sha512-B5JU3cabzk8c67mRRd3ECmROafjYMXbuzlwtqdM8IbS8ktlTix8aFGb2bAGKrSRIlnfKwovGUUr72JUPyOb6kQ==}
     engines: {node: '>=0.10.0'}
 
-  os-tmpdir@1.0.2:
+  os-tmpdir@1.0.9:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
 
@@ -5422,7 +5422,7 @@ packages:
     peerDependencies:
       react: ^18.3.1
 
-  react-freeze@1.0.4:
+  react-freeze@1.0.9:
     resolution: {integrity: sha512-r4F0Sec0BLxWicc7HEyo2x3/2icUTrRmDjaaRyzzn+7aDyFZliszMDOgLVwSnQnYENOlL1o569Ze2HZefk8clA==}
     engines: {node: '>=10'}
     peerDependencies:
@@ -5746,7 +5746,7 @@ packages:
     resolution: {integrity: sha512-VCjCNfgMsby3tTdo02nbjtM/ewra6jPHmpThenkTYh8pG9ucZ/1P8So4u4FGBek/BjpOVsDCMoLA/iuBKIFXRA==}
     engines: {node: '>= 0.4'}
 
-  side-channel-weakmap@1.0.2:
+  side-channel-weakmap@1.0.9:
     resolution: {integrity: sha512-WPS/HvHQTYnHisLo9McqBHOJk2FkHO/tlpvldyrnem4aeQp4hai3gythswg6p01oSoTl58rcpiFAjF2br2Ak2A==}
     engines: {node: '>= 0.4'}
 
@@ -6196,7 +6196,7 @@ packages:
     resolution: {integrity: sha512-BaXgOuIxz8n8pIq3e7Atg/7s+DpiYrxn4vdot3w9KbnBhcRQq6o3xemQdIfynqSeXeDrF32x+WvfzmOjPiY9lg==}
     engines: {node: '>= 0.4'}
 
-  typed-array-byte-offset@1.0.4:
+  typed-array-byte-offset@1.0.9:
     resolution: {integrity: sha512-bTlAFB/FBYMcuX81gbL4OcpH5PmlFHqlCCpAl8AlEzMz5k53oNDvN8p1PNOWLEmI2x4orp3raOFB51tv9X+MFQ==}
     engines: {node: '>= 0.4'}
 
@@ -6218,7 +6218,7 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  ua-parser-js@1.0.41:
+  ua-parser-js@1.0.91:
     resolution: {integrity: sha512-LbBDqdIC5s8iROCUjMbW1f5dJQTEFB1+KO9ogbvlb3nm9n4YHa5p4KTvFPWvh2Hs8gZMBuiB1/8+pdfe/tDPug==}
     hasBin: true
 
@@ -6319,7 +6319,7 @@ packages:
     peerDependencies:
       react: '>=16.8'
 
-  util-deprecate@1.0.2:
+  util-deprecate@1.0.9:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
   utils-merge@1.0.1:
@@ -6474,7 +6474,7 @@ packages:
     resolution: {integrity: sha512-6iBczoX+kDQ7a3+YJBnh3T+KZRxM/iYNPXicqk66/Qfm1b93iu+yOImkg0zHbj5LNOcNv1TEADiZ0xa34B4q6Q==}
     engines: {node: '>= 0.4'}
 
-  which-collection@1.0.2:
+  which-collection@1.0.9:
     resolution: {integrity: sha512-K4jVyjnBdgvc86Y6BkaLZEN933SwYOuBFkdmBu9ZfkcAbdVbpITnDmjvZ/aQjRXQrv5EPkTnD1s39GiiqbngCw==}
     engines: {node: '>= 0.4'}
 
@@ -6518,7 +6518,7 @@ packages:
     resolution: {integrity: sha512-si7QWI6zUMq56bESFvagtmzMdGOtoxfR+Sez11Mobfc7tm+VkUckk9bW2UeffTGVUbOksxmSw0AA2gs8g71NCQ==}
     engines: {node: '>=12'}
 
-  wrappy@1.0.2:
+  wrappy@1.0.9:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
   write-file-atomic@2.4.3:
@@ -7615,7 +7615,7 @@ snapshots:
       cartonne: 2.2.0
       codeco: 1.4.3
       dag-jose: 4.0.0
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       uint8arrays: 4.0.10
 
   '@ceramicnetwork/common@2.39.0':
@@ -7627,7 +7627,7 @@ snapshots:
       '@didtools/pkh-solana': 0.1.1
       '@didtools/pkh-stacks': 0.1.0
       '@didtools/pkh-tezos': 0.2.2
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       caip: 1.1.1
       cross-fetch: 3.2.0
       flat: 5.0.2
@@ -7635,7 +7635,7 @@ snapshots:
       jet-logger: 1.2.2
       lodash.clonedeep: 4.5.0
       logfmt: 1.4.0
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       rxjs: 7.8.2
       uint8arrays: 4.0.10
     transitivePeerDependencies:
@@ -7670,7 +7670,7 @@ snapshots:
       '@ceramicnetwork/common': 2.39.0
       '@ceramicnetwork/streamid': 2.17.0
       '@ipld/dag-cbor': 7.0.3
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       fast-json-patch: 3.1.1
       object-sizeof: 2.6.5
       uint8arrays: 4.0.10
@@ -7683,13 +7683,13 @@ snapshots:
       '@ceramicnetwork/common': 2.39.0
       '@ceramicnetwork/streamid': 2.17.0
       '@ipld/dag-cbor': 7.0.3
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       ajv: 8.18.0
       ajv-formats: 2.1.1(ajv@8.18.0)
       codeco: 1.4.3
       fast-json-patch: 3.1.1
       json-schema-typed: 8.0.2
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       uint8arrays: 4.0.10
     transitivePeerDependencies:
       - encoding
@@ -7699,7 +7699,7 @@ snapshots:
       '@ceramicnetwork/common': 2.39.0
       '@ceramicnetwork/streamid': 2.17.0
       '@ipld/dag-cbor': 7.0.3
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       dids: 4.0.0
       fast-json-patch: 3.1.1
       lodash.clonedeep: 4.5.0
@@ -7713,7 +7713,7 @@ snapshots:
       '@stablelib/sha256': 1.0.1
       cborg: 1.10.2
       mapmoize: 1.2.1
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       uint8arrays: 4.0.10
       varint: 6.0.0
 
@@ -7833,34 +7833,34 @@ snapshots:
       '@didtools/siwx': 1.0.0
       '@ipld/dag-cbor': 9.2.5
       caip: 1.1.1
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       uint8arrays: 4.0.10
 
   '@didtools/codecs@1.0.1':
     dependencies:
       codeco: 1.4.3
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       uint8arrays: 4.0.10
 
   '@didtools/pkh-ethereum@0.1.0':
     dependencies:
       '@didtools/cacao': 2.1.0
       '@ethersproject/wallet': 5.8.0
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       caip: 1.1.1
 
   '@didtools/pkh-solana@0.1.1':
     dependencies:
       '@didtools/cacao': 2.1.0
       '@noble/curves': 1.9.7
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       caip: 1.1.1
       uint8arrays: 4.0.10
 
   '@didtools/pkh-stacks@0.1.0':
     dependencies:
       '@didtools/cacao': 2.1.0
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       '@stacks/common': 6.16.0
       '@stacks/encryption': 6.17.0
       '@stacks/transactions': 6.17.0
@@ -7874,7 +7874,7 @@ snapshots:
       '@didtools/cacao': 2.1.0
       '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       caip: 1.1.1
       uint8arrays: 4.0.10
 
@@ -9118,7 +9118,7 @@ snapshots:
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
-      mkdirp: 1.0.4
+      mkdirp: 1.0.9
       rimraf: 3.0.2
     transitivePeerDependencies:
       - supports-color
@@ -9280,7 +9280,7 @@ snapshots:
 
   '@stablelib/ed25519@1.0.3':
     dependencies:
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       '@stablelib/sha512': 1.0.1
       '@stablelib/wipe': 1.0.1
 
@@ -9297,7 +9297,7 @@ snapshots:
       '@stablelib/constant-time': 1.0.1
       '@stablelib/wipe': 1.0.1
 
-  '@stablelib/random@1.0.2':
+  '@stablelib/random@1.0.9':
     dependencies:
       '@stablelib/binary': 1.0.1
       '@stablelib/wipe': 1.0.1
@@ -9319,7 +9319,7 @@ snapshots:
   '@stablelib/x25519@1.0.3':
     dependencies:
       '@stablelib/keyagreement': 1.0.1
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       '@stablelib/wipe': 1.0.1
 
   '@stablelib/xchacha20@1.0.1':
@@ -9674,18 +9674,18 @@ snapshots:
 
   argparse@2.0.1: {}
 
-  array-buffer-byte-length@1.0.2:
+  array-buffer-byte-length@1.0.9:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       is-array-buffer: 3.0.5
 
   array-ify@1.0.0: {}
 
   array-union@2.1.0: {}
 
-  arraybuffer.prototype.slice@1.0.4:
+  arraybuffer.prototype.slice@1.0.9:
     dependencies:
-      array-buffer-byte-length: 1.0.2
+      array-buffer-byte-length: 1.0.9
       call-bind: 1.0.8
       define-properties: 1.2.1
       es-abstract: 1.24.1
@@ -9788,7 +9788,7 @@ snapshots:
       - '@babel/preset-env'
       - supports-color
 
-  balanced-match@1.0.2: {}
+  balanced-match@1.0.9: {}
 
   balanced-match@4.0.4: {}
 
@@ -9808,7 +9808,7 @@ snapshots:
 
   bigint-mod-arith@3.3.1: {}
 
-  bintrees@1.0.2: {}
+  bintrees@1.0.9: {}
 
   bl@4.1.0:
     dependencies:
@@ -9838,12 +9838,12 @@ snapshots:
 
   brace-expansion@1.1.12:
     dependencies:
-      balanced-match: 1.0.2
+      balanced-match: 1.0.9
       concat-map: 0.0.1
 
   brace-expansion@2.0.2:
     dependencies:
-      balanced-match: 1.0.2
+      balanced-match: 1.0.9
 
   brace-expansion@5.0.5:
     dependencies:
@@ -9931,21 +9931,21 @@ snapshots:
 
   caip@1.1.1: {}
 
-  call-bind-apply-helpers@1.0.2:
+  call-bind-apply-helpers@1.0.9:
     dependencies:
       es-errors: 1.3.0
       function-bind: 1.1.2
 
   call-bind@1.0.8:
     dependencies:
-      call-bind-apply-helpers: 1.0.2
+      call-bind-apply-helpers: 1.0.9
       es-define-property: 1.0.1
       get-intrinsic: 1.3.0
       set-function-length: 1.2.2
 
-  call-bound@1.0.4:
+  call-bound@1.0.9:
     dependencies:
-      call-bind-apply-helpers: 1.0.2
+      call-bind-apply-helpers: 1.0.9
       get-intrinsic: 1.3.0
 
   caller-callsite@2.0.0:
@@ -9971,7 +9971,7 @@ snapshots:
   cartonne@2.2.0:
     dependencies:
       '@ipld/dag-cbor': 9.2.5
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       multihashes-sync: 1.1.3
       varintes: 2.0.5
 
@@ -10055,7 +10055,7 @@ snapshots:
       kind-of: 6.0.3
       shallow-clone: 3.0.1
 
-  clone@1.0.4: {}
+  clone@1.0.9: {}
 
   clone@2.1.2: {}
 
@@ -10210,34 +10210,34 @@ snapshots:
   dag-jose-utils@3.0.0:
     dependencies:
       '@ipld/dag-cbor': 7.0.3
-      multiformats: 11.0.2
+      multiformats: 11.0.9
 
   dag-jose@4.0.0:
     dependencies:
       '@ipld/dag-cbor': 9.2.5
-      multiformats: 11.0.2
+      multiformats: 11.0.9
 
-  dag-map@1.0.2: {}
+  dag-map@1.0.9: {}
 
   dargs@8.1.0: {}
 
-  data-view-buffer@1.0.2:
+  data-view-buffer@1.0.9:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       es-errors: 1.3.0
-      is-data-view: 1.0.2
+      is-data-view: 1.0.9
 
-  data-view-byte-length@1.0.2:
+  data-view-byte-length@1.0.9:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       es-errors: 1.3.0
-      is-data-view: 1.0.2
+      is-data-view: 1.0.9
 
   data-view-byte-offset@1.0.1:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       es-errors: 1.3.0
-      is-data-view: 1.0.2
+      is-data-view: 1.0.9
 
   dayjs@1.11.20: {}
 
@@ -10270,9 +10270,9 @@ snapshots:
       execa: 1.0.0
       ip-regex: 2.1.0
 
-  defaults@1.0.4:
+  defaults@1.0.9:
     dependencies:
-      clone: 1.0.4
+      clone: 1.0.9
 
   define-data-property@1.1.4:
     dependencies:
@@ -10285,7 +10285,7 @@ snapshots:
   define-properties@1.2.1:
     dependencies:
       define-data-property: 1.1.4
-      has-property-descriptors: 1.0.2
+      has-property-descriptors: 1.0.9
       object-keys: 1.1.1
 
   del@6.1.1:
@@ -10314,7 +10314,7 @@ snapshots:
   did-jwt@6.11.6:
     dependencies:
       '@stablelib/ed25519': 1.0.3
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       '@stablelib/sha256': 1.0.1
       '@stablelib/x25519': 1.0.3
       '@stablelib/xchacha20poly1305': 1.0.1
@@ -10332,11 +10332,11 @@ snapshots:
     dependencies:
       '@didtools/cacao': 2.1.0
       '@didtools/pkh-ethereum': 0.1.0
-      '@stablelib/random': 1.0.2
+      '@stablelib/random': 1.0.9
       dag-jose-utils: 3.0.0
       did-jwt: 6.11.6
       did-resolver: 4.1.0
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       rpc-utils: 0.6.2
       uint8arrays: 4.0.10
 
@@ -10356,7 +10356,7 @@ snapshots:
 
   dunder-proto@1.0.1:
     dependencies:
-      call-bind-apply-helpers: 1.0.2
+      call-bind-apply-helpers: 1.0.9
       es-errors: 1.3.0
       gopd: 1.2.0
 
@@ -10380,7 +10380,7 @@ snapshots:
 
   emoji-regex@9.2.2: {}
 
-  encodeurl@1.0.2: {}
+  encodeurl@1.0.9: {}
 
   encodeurl@2.0.0: {}
 
@@ -10409,13 +10409,13 @@ snapshots:
 
   es-abstract@1.24.1:
     dependencies:
-      array-buffer-byte-length: 1.0.2
-      arraybuffer.prototype.slice: 1.0.4
+      array-buffer-byte-length: 1.0.9
+      arraybuffer.prototype.slice: 1.0.9
       available-typed-arrays: 1.0.7
       call-bind: 1.0.8
-      call-bound: 1.0.4
-      data-view-buffer: 1.0.2
-      data-view-byte-length: 1.0.2
+      call-bound: 1.0.9
+      data-view-buffer: 1.0.9
+      data-view-byte-length: 1.0.9
       data-view-byte-offset: 1.0.1
       es-define-property: 1.0.1
       es-errors: 1.3.0
@@ -10426,20 +10426,20 @@ snapshots:
       get-intrinsic: 1.3.0
       get-proto: 1.0.1
       get-symbol-description: 1.1.0
-      globalthis: 1.0.4
+      globalthis: 1.0.9
       gopd: 1.2.0
-      has-property-descriptors: 1.0.2
+      has-property-descriptors: 1.0.9
       has-proto: 1.2.0
       has-symbols: 1.1.0
       hasown: 2.0.2
       internal-slot: 1.1.0
       is-array-buffer: 3.0.5
       is-callable: 1.2.7
-      is-data-view: 1.0.2
+      is-data-view: 1.0.9
       is-negative-zero: 2.0.3
       is-regex: 1.2.1
       is-set: 2.0.3
-      is-shared-array-buffer: 1.0.4
+      is-shared-array-buffer: 1.0.9
       is-string: 1.1.1
       is-typed-array: 1.1.15
       is-weakref: 1.1.1
@@ -10459,7 +10459,7 @@ snapshots:
       string.prototype.trimstart: 1.0.8
       typed-array-buffer: 1.0.3
       typed-array-byte-length: 1.0.3
-      typed-array-byte-offset: 1.0.4
+      typed-array-byte-offset: 1.0.9
       typed-array-length: 1.0.7
       unbox-primitive: 1.1.0
       which-typed-array: 1.1.20
@@ -10478,7 +10478,7 @@ snapshots:
     dependencies:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
-      has-tostringtag: 1.0.2
+      has-tostringtag: 1.0.9
       hasown: 2.0.2
 
   es-to-primitive@1.3.0:
@@ -10780,17 +10780,17 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  fbjs-css-vars@1.0.2: {}
+  fbjs-css-vars@1.0.9: {}
 
   fbjs@3.0.5:
     dependencies:
       cross-fetch: 3.2.0
-      fbjs-css-vars: 1.0.2
+      fbjs-css-vars: 1.0.9
       loose-envify: 1.4.0
       object-assign: 4.1.1
       promise: 7.3.1
       setimmediate: 1.0.5
-      ua-parser-js: 1.0.41
+      ua-parser-js: 1.0.91
     transitivePeerDependencies:
       - encoding
 
@@ -10813,7 +10813,7 @@ snapshots:
   finalhandler@1.1.2:
     dependencies:
       debug: 2.6.9
-      encodeurl: 1.0.2
+      encodeurl: 1.0.9
       escape-html: 1.0.3
       on-finished: 2.3.0
       parseurl: 1.3.3
@@ -10932,7 +10932,7 @@ snapshots:
   function.prototype.name@1.1.8:
     dependencies:
       call-bind: 1.0.8
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       define-properties: 1.2.1
       functions-have-names: 1.2.3
       hasown: 2.0.2
@@ -10948,7 +10948,7 @@ snapshots:
 
   get-intrinsic@1.3.0:
     dependencies:
-      call-bind-apply-helpers: 1.0.2
+      call-bind-apply-helpers: 1.0.9
       es-define-property: 1.0.1
       es-errors: 1.3.0
       es-object-atoms: 1.1.1
@@ -10972,7 +10972,7 @@ snapshots:
 
   get-symbol-description@1.1.0:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
 
@@ -11008,7 +11008,7 @@ snapshots:
   glob@7.1.6:
     dependencies:
       fs.realpath: 1.0.0
-      inflight: 1.0.6
+      inflight: 1.0.9
       inherits: 2.0.4
       minimatch: 3.1.2
       once: 1.4.0
@@ -11017,7 +11017,7 @@ snapshots:
   glob@7.2.3:
     dependencies:
       fs.realpath: 1.0.0
-      inflight: 1.0.6
+      inflight: 1.0.9
       inherits: 2.0.4
       minimatch: 3.1.2
       once: 1.4.0
@@ -11029,7 +11029,7 @@ snapshots:
 
   globals@14.0.0: {}
 
-  globalthis@1.0.4:
+  globalthis@1.0.9:
     dependencies:
       define-properties: 1.2.1
       gopd: 1.2.0
@@ -11060,7 +11060,7 @@ snapshots:
 
   has-flag@4.0.0: {}
 
-  has-property-descriptors@1.0.2:
+  has-property-descriptors@1.0.9:
     dependencies:
       es-define-property: 1.0.1
 
@@ -11070,7 +11070,7 @@ snapshots:
 
   has-symbols@1.1.0: {}
 
-  has-tostringtag@1.0.2:
+  has-tostringtag@1.0.9:
     dependencies:
       has-symbols: 1.1.0
 
@@ -11168,10 +11168,10 @@ snapshots:
 
   indent-string@4.0.0: {}
 
-  inflight@1.0.6:
+  inflight@1.0.9:
     dependencies:
       once: 1.4.0
-      wrappy: 1.0.2
+      wrappy: 1.0.9
 
   inherits@2.0.4: {}
 
@@ -11229,7 +11229,7 @@ snapshots:
   is-array-buffer@3.0.5:
     dependencies:
       call-bind: 1.0.8
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       get-intrinsic: 1.3.0
 
   is-arrayish@0.2.1: {}
@@ -11237,9 +11237,9 @@ snapshots:
   is-async-function@2.1.1:
     dependencies:
       async-function: 1.0.0
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       get-proto: 1.0.1
-      has-tostringtag: 1.0.2
+      has-tostringtag: 1.0.9
       safe-regex-test: 1.1.0
 
   is-bigint@1.1.0:
@@ -11248,8 +11248,8 @@ snapshots:
 
   is-boolean-object@1.2.2:
     dependencies:
-      call-bound: 1.0.4
-      has-tostringtag: 1.0.2
+      call-bound: 1.0.9
+      has-tostringtag: 1.0.9
 
   is-buffer@1.1.6: {}
 
@@ -11259,16 +11259,16 @@ snapshots:
     dependencies:
       hasown: 2.0.2
 
-  is-data-view@1.0.2:
+  is-data-view@1.0.9:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       get-intrinsic: 1.3.0
       is-typed-array: 1.1.15
 
   is-date-object@1.1.0:
     dependencies:
-      call-bound: 1.0.4
-      has-tostringtag: 1.0.2
+      call-bound: 1.0.9
+      has-tostringtag: 1.0.9
 
   is-directory@0.3.1: {}
 
@@ -11280,7 +11280,7 @@ snapshots:
 
   is-finalizationregistry@1.1.1:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
 
   is-fullwidth-code-point@2.0.0: {}
 
@@ -11288,10 +11288,10 @@ snapshots:
 
   is-generator-function@1.1.2:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       generator-function: 2.0.1
       get-proto: 1.0.1
-      has-tostringtag: 1.0.2
+      has-tostringtag: 1.0.9
       safe-regex-test: 1.1.0
 
   is-glob@2.0.1:
@@ -11314,8 +11314,8 @@ snapshots:
 
   is-number-object@1.1.1:
     dependencies:
-      call-bound: 1.0.4
-      has-tostringtag: 1.0.2
+      call-bound: 1.0.9
+      has-tostringtag: 1.0.9
 
   is-number@7.0.0: {}
 
@@ -11331,16 +11331,16 @@ snapshots:
 
   is-regex@1.2.1:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       gopd: 1.2.0
-      has-tostringtag: 1.0.2
+      has-tostringtag: 1.0.9
       hasown: 2.0.2
 
   is-set@2.0.3: {}
 
-  is-shared-array-buffer@1.0.4:
+  is-shared-array-buffer@1.0.9:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
 
   is-stream@1.1.0: {}
 
@@ -11348,12 +11348,12 @@ snapshots:
 
   is-string@1.1.1:
     dependencies:
-      call-bound: 1.0.4
-      has-tostringtag: 1.0.2
+      call-bound: 1.0.9
+      has-tostringtag: 1.0.9
 
   is-symbol@1.1.1:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       has-symbols: 1.1.0
       safe-regex-test: 1.1.0
 
@@ -11375,11 +11375,11 @@ snapshots:
 
   is-weakref@1.1.1:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
 
   is-weakset@2.0.4:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       get-intrinsic: 1.3.0
 
   is-wsl@1.1.0: {}
@@ -11396,7 +11396,7 @@ snapshots:
 
   isobject@3.0.1: {}
 
-  isows@1.0.6(ws@8.18.0):
+  isows@1.0.9(ws@8.18.0):
     dependencies:
       ws: 8.18.0
 
@@ -11557,14 +11557,14 @@ snapshots:
 
   json-buffer@3.0.1: {}
 
-  json-parse-better-errors@1.0.2: {}
+  json-parse-better-errors@1.0.9: {}
 
   json-parse-even-better-errors@2.3.1: {}
 
   json-schema-deref-sync@0.13.0:
     dependencies:
       clone: 2.1.2
-      dag-map: 1.0.2
+      dag-map: 1.0.9
       is-valid-path: 0.1.1
       lodash: 4.17.23
       md5: 2.2.1
@@ -11613,7 +11613,7 @@ snapshots:
     dependencies:
       '@stablelib/ed25519': 1.0.3
       bigint-mod-arith: 3.3.1
-      multiformats: 11.0.2
+      multiformats: 11.0.9
       nist-weierstrauss: 1.6.1
       uint8arrays: 4.0.10
       varint: 6.0.0
@@ -12069,7 +12069,7 @@ snapshots:
     dependencies:
       minimist: 1.2.8
 
-  mkdirp@1.0.4: {}
+  mkdirp@1.0.9: {}
 
   mlly@1.8.2:
     dependencies:
@@ -12082,7 +12082,7 @@ snapshots:
 
   ms@2.1.3: {}
 
-  multiformats@11.0.2: {}
+  multiformats@11.0.9: {}
 
   multiformats@12.1.3: {}
 
@@ -12093,7 +12093,7 @@ snapshots:
   multihashes-sync@1.1.3:
     dependencies:
       '@noble/hashes': 1.8.0
-      multiformats: 11.0.2
+      multiformats: 11.0.9
 
   mz@2.7.0:
     dependencies:
@@ -12209,7 +12209,7 @@ snapshots:
   object.assign@4.1.7:
     dependencies:
       call-bind: 1.0.8
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
       has-symbols: 1.1.0
@@ -12229,7 +12229,7 @@ snapshots:
 
   once@1.4.0:
     dependencies:
-      wrappy: 1.0.2
+      wrappy: 1.0.9
 
   onetime@2.0.1:
     dependencies:
@@ -12289,14 +12289,14 @@ snapshots:
       strip-ansi: 6.0.1
       wcwidth: 1.0.1
 
-  os-homedir@1.0.2: {}
+  os-homedir@1.0.9: {}
 
-  os-tmpdir@1.0.2: {}
+  os-tmpdir@1.0.9: {}
 
   osenv@0.1.5:
     dependencies:
-      os-homedir: 1.0.2
-      os-tmpdir: 1.0.2
+      os-homedir: 1.0.9
+      os-tmpdir: 1.0.9
 
   own-keys@1.0.1:
     dependencies:
@@ -12378,7 +12378,7 @@ snapshots:
   parse-json@4.0.0:
     dependencies:
       error-ex: 1.3.4
-      json-parse-better-errors: 1.0.2
+      json-parse-better-errors: 1.0.9
 
   parse-json@5.2.0:
     dependencies:
@@ -12600,7 +12600,7 @@ snapshots:
       react: 18.3.1
       scheduler: 0.23.2
 
-  react-freeze@1.0.4(react@18.3.1):
+  react-freeze@1.0.9(react@18.3.1):
     dependencies:
       react: 18.3.1
 
@@ -12618,7 +12618,7 @@ snapshots:
   react-native-screens@4.24.0(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.3.28)(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
-      react-freeze: 1.0.4(react@18.3.1)
+      react-freeze: 1.0.9(react@18.3.1)
       react-native: 0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.3.28)(react@18.3.1)
       warn-once: 0.1.1
 
@@ -12692,13 +12692,13 @@ snapshots:
       process-nextick-args: 2.0.1
       safe-buffer: 5.1.2
       string_decoder: 1.1.1
-      util-deprecate: 1.0.2
+      util-deprecate: 1.0.9
 
   readable-stream@3.6.2:
     dependencies:
       inherits: 2.0.4
       string_decoder: 1.3.0
-      util-deprecate: 1.0.2
+      util-deprecate: 1.0.9
 
   readdirp@4.1.2: {}
 
@@ -12876,7 +12876,7 @@ snapshots:
   safe-array-concat@1.1.3:
     dependencies:
       call-bind: 1.0.8
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       get-intrinsic: 1.3.0
       has-symbols: 1.1.0
       isarray: 2.0.5
@@ -12892,7 +12892,7 @@ snapshots:
 
   safe-regex-test@1.1.0:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       es-errors: 1.3.0
       is-regex: 1.2.1
 
@@ -12926,7 +12926,7 @@ snapshots:
       debug: 2.6.9
       depd: 2.0.0
       destroy: 1.2.0
-      encodeurl: 1.0.2
+      encodeurl: 1.0.9
       escape-html: 1.0.3
       etag: 1.8.1
       fresh: 0.5.2
@@ -12977,14 +12977,14 @@ snapshots:
       function-bind: 1.1.2
       get-intrinsic: 1.3.0
       gopd: 1.2.0
-      has-property-descriptors: 1.0.2
+      has-property-descriptors: 1.0.9
 
   set-function-name@2.0.2:
     dependencies:
       define-data-property: 1.1.4
       es-errors: 1.3.0
       functions-have-names: 1.2.3
-      has-property-descriptors: 1.0.2
+      has-property-descriptors: 1.0.9
 
   set-proto@1.0.0:
     dependencies:
@@ -13021,14 +13021,14 @@ snapshots:
 
   side-channel-map@1.0.1:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
       object-inspect: 1.13.4
 
-  side-channel-weakmap@1.0.2:
+  side-channel-weakmap@1.0.9:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
       object-inspect: 1.13.4
@@ -13040,7 +13040,7 @@ snapshots:
       object-inspect: 1.13.4
       side-channel-list: 1.0.0
       side-channel-map: 1.0.1
-      side-channel-weakmap: 1.0.2
+      side-channel-weakmap: 1.0.9
 
   siginfo@2.0.0: {}
 
@@ -13145,17 +13145,17 @@ snapshots:
   string.prototype.trim@1.2.10:
     dependencies:
       call-bind: 1.0.8
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       define-data-property: 1.1.4
       define-properties: 1.2.1
       es-abstract: 1.24.1
       es-object-atoms: 1.1.1
-      has-property-descriptors: 1.0.2
+      has-property-descriptors: 1.0.9
 
   string.prototype.trimend@1.0.9:
     dependencies:
       call-bind: 1.0.8
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
 
@@ -13249,12 +13249,12 @@ snapshots:
       fs-minipass: 2.1.0
       minipass: 5.0.0
       minizlib: 2.1.2
-      mkdirp: 1.0.4
+      mkdirp: 1.0.9
       yallist: 4.0.0
 
   tdigest@0.1.2:
     dependencies:
-      bintrees: 1.0.2
+      bintrees: 1.0.9
 
   temp-dir@1.0.0: {}
 
@@ -13442,7 +13442,7 @@ snapshots:
 
   typed-array-buffer@1.0.3:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       es-errors: 1.3.0
       is-typed-array: 1.1.15
 
@@ -13454,7 +13454,7 @@ snapshots:
       has-proto: 1.2.0
       is-typed-array: 1.1.15
 
-  typed-array-byte-offset@1.0.4:
+  typed-array-byte-offset@1.0.9:
     dependencies:
       available-typed-arrays: 1.0.7
       call-bind: 1.0.8
@@ -13482,13 +13482,13 @@ snapshots:
       get-proto: 1.0.1
       math-intrinsics: 1.1.0
       typed-array-buffer: 1.0.3
-      typed-array-byte-offset: 1.0.4
+      typed-array-byte-offset: 1.0.9
 
   typescript@5.7.3: {}
 
   typescript@5.9.3: {}
 
-  ua-parser-js@1.0.41: {}
+  ua-parser-js@1.0.91: {}
 
   ufo@1.6.3: {}
 
@@ -13506,7 +13506,7 @@ snapshots:
 
   unbox-primitive@1.1.0:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       has-bigints: 1.1.0
       has-symbols: 1.1.0
       which-boxed-primitive: 1.1.1
@@ -13572,7 +13572,7 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  util-deprecate@1.0.2: {}
+  util-deprecate@1.0.9: {}
 
   utils-merge@1.0.1: {}
 
@@ -13605,7 +13605,7 @@ snapshots:
       '@scure/bip32': 1.6.0
       '@scure/bip39': 1.5.0
       abitype: 1.0.7(typescript@5.7.3)(zod@4.3.6)
-      isows: 1.0.6(ws@8.18.0)
+      isows: 1.0.9(ws@8.18.0)
       ox: 0.1.2(typescript@5.7.3)(zod@4.3.6)
       webauthn-p256: 0.0.10
       ws: 8.18.0
@@ -13771,7 +13771,7 @@ snapshots:
 
   wcwidth@1.0.1:
     dependencies:
-      defaults: 1.0.4
+      defaults: 1.0.9
 
   webauthn-p256@0.0.10:
     dependencies:
@@ -13805,9 +13805,9 @@ snapshots:
 
   which-builtin-type@1.2.1:
     dependencies:
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       function.prototype.name: 1.1.8
-      has-tostringtag: 1.0.2
+      has-tostringtag: 1.0.9
       is-async-function: 2.1.1
       is-date-object: 1.1.0
       is-finalizationregistry: 1.1.1
@@ -13816,10 +13816,10 @@ snapshots:
       is-weakref: 1.1.1
       isarray: 2.0.5
       which-boxed-primitive: 1.1.1
-      which-collection: 1.0.2
+      which-collection: 1.0.9
       which-typed-array: 1.1.20
 
-  which-collection@1.0.2:
+  which-collection@1.0.9:
     dependencies:
       is-map: 2.0.3
       is-set: 2.0.3
@@ -13832,11 +13832,11 @@ snapshots:
     dependencies:
       available-typed-arrays: 1.0.7
       call-bind: 1.0.8
-      call-bound: 1.0.4
+      call-bound: 1.0.9
       for-each: 0.3.5
       get-proto: 1.0.1
       gopd: 1.2.0
-      has-tostringtag: 1.0.2
+      has-tostringtag: 1.0.9
 
   which@1.3.1:
     dependencies:
@@ -13873,7 +13873,7 @@ snapshots:
       string-width: 5.1.2
       strip-ansi: 7.2.0
 
-  wrappy@1.0.2: {}
+  wrappy@1.0.9: {}
 
   write-file-atomic@2.4.3:
     dependencies:

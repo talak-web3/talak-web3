@@ -1,7 +1,7 @@
 # talak-web3
 
 [![CI](https://github.com/dagimabebe/talak-web3/actions/workflows/ci.yml/badge.svg)](https://github.com/dagimabebe/talak-web3/actions)
-[![npm version](https://badge.fury.io/js/talak-web3.svg)](https://www.npmjs.com/package/talak-web3)
+[![npm package](https://img.shields.io/badge/npm_package-1.0.9-green.svg)](https://github.com/dagimabebe/talak-web3/packages)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > Web3 backend toolkit for server-side SIWE sessions, RPC failover, and account-abstraction helpers. See [CHANGELOG.md](./CHANGELOG.md) for release notes.
@@ -19,11 +19,7 @@
 ### Installation
 
 ```bash
-npm install talak-web3
-# or
-yarn add talak-web3
-# or
-pnpm add talak-web3
+npm install @dagimabebe/talak-web3@1.0.9
 ```
 
 ### Initialize Project

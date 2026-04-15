@@ -2,7 +2,7 @@
 
 > Production-grade Web3 backend toolkit for server-side SIWE authentication, resilient RPC routing, and account abstraction.
 
-[![npm version](https://badge.fury.io/js/talak-web3.svg)](https://www.npmjs.com/package/talak-web3)
+[![npm package](https://img.shields.io/badge/npm_package-1.0.9-green.svg)](https://github.com/dagimabebe/talak-web3/packages)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js >=20.12](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)](https://nodejs.org)
 
@@ -18,12 +18,16 @@
 
 ## Installation
 
+### From GitHub Packages (Recommended)
+
 ```bash
-npm install talak-web3
-# or
-yarn add talak-web3
-# or
-pnpm add talak-web3
+npm install @dagimabebe/talak-web3@1.0.9
+```
+
+### From npm
+
+```bash
+npm install talak-web3@1.0.9
 ```
 
 **Requirements:** Node.js >= 20.12.0
