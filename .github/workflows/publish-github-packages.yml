@@ -9,6 +9,9 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/publish-github-packages.yml'
+      - 'talak-web3-publish/package.json'
+      - 'packages/talak-web3/package.json'
+      - 'pnpm-lock.yaml'
 
 concurrency:
   group: github-packages-${{ github.ref }}
