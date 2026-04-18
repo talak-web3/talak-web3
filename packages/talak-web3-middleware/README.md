@@ -17,17 +17,19 @@ pnpm add @talak-web3/middleware
 ### Authentication Middleware
 
 ```typescript
-import { authMiddleware } from '@talak-web3/middleware';
-import express from 'express';
+import { authMiddleware } from "@talak-web3/middleware";
+import express from "express";
 
 const app = express();
 
-app.use(authMiddleware({
-  secret: process.env.JWT_SECRET,
-  issuer: 'myapp.com',
-}));
+app.use(
+  authMiddleware({
+    secret: process.env.JWT_SECRET,
+    issuer: "myapp.com",
+  }),
+);
 
-app.get('/protected', (req, res) => {
+app.get("/protected", (req, res) => {
   res.json({ address: req.user.address });
 });
 ```
@@ -35,26 +37,25 @@ app.get('/protected', (req, res) => {
 ### Authorization Middleware
 
 ```typescript
-import { requireRole } from '@talak-web3/middleware';
+import { requireRole } from "@talak-web3/middleware";
 
-app.post('/admin', requireRole('admin'), (req, res) => {
+app.post("/admin", requireRole("admin"), (req, res) => {});
 
-});
-
-app.post('/holder', requireNFT('0x1111111111111111111111111111111111111111'), (req, res) => {
-
-});
+app.post("/holder", requireNFT("0x1111111111111111111111111111111111111111"), (req, res) => {});
 ```
 
 ### Rate Limiting
 
 ```typescript
-import { rateLimit } from '@talak-web3/middleware';
+import { rateLimit } from "@talak-web3/middleware";
 
-app.use('/api', rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-}));
+app.use(
+  "/api",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+  }),
+);
 ```
 
 ## License

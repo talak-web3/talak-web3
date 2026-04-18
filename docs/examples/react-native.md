@@ -10,20 +10,20 @@
 - react-native: 0.74.5
 - @react-navigation/native: ^6.1.18
 - @react-navigation/native-stack: ^6.10.0
-- @talak-web3/core: workspace:*
-- @talak-web3/hooks: workspace:*
+- @talak-web3/core: workspace:\*
+- @talak-web3/hooks: workspace:\*
 
 ## Source Code
 
 ### src/App.tsx
 
 ```tsx
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { TalakWeb3Provider } from '@talak-web3/hooks';
-import { talakWeb3 } from '@talak-web3/core';
-import HomeScreen from './screens/HomeScreen';
-import RpcDemoScreen from './screens/RpcDemoScreen';
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { TalakWeb3Provider } from "@talak-web3/hooks";
+import { talakWeb3 } from "@talak-web3/core";
+import HomeScreen from "./screens/HomeScreen";
+import RpcDemoScreen from "./screens/RpcDemoScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -32,9 +32,9 @@ const instance = talakWeb3({
   chains: [
     {
       id: 1,
-      name: 'Ethereum',
-      rpcUrls: ['https://cloudflare-eth.com'],
-      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      name: "Ethereum",
+      rpcUrls: ["https://cloudflare-eth.com"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
       testnet: false,
     },
   ] as const,
@@ -60,9 +60,9 @@ export default function App() {
 ### src/screens/HomeScreen.tsx
 
 ```tsx
-import { View, Text, Button } from 'react-native';
-import { useAccount, useChain } from '@talak-web3/hooks';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { View, Text, Button } from "react-native";
+import { useAccount, useChain } from "@talak-web3/hooks";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 export default function HomeScreen({ navigation }: any) {
   const account = useAccount();
@@ -70,14 +70,18 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={{ padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 22, fontWeight: '600' }}>talak-web3 React Native Dapp</Text>
+      <Text style={{ fontSize: 22, fontWeight: "600" }}>talak-web3 React Native Dapp</Text>
       <Text>ChainId: {chain.chainId}</Text>
-      <Text>Address: {account.address ?? '—'}</Text>
+      <Text>Address: {account.address ?? "—"}</Text>
       <Button
-        title={account.isConnected ? 'Disconnect' : 'Connect (mock)'}
-        onPress={() => (account.isConnected ? account.disconnect() : account.connect('0x000000000000000000000000000000000000dEaD'))}
+        title={account.isConnected ? "Disconnect" : "Connect (mock)"}
+        onPress={() =>
+          account.isConnected
+            ? account.disconnect()
+            : account.connect("0x000000000000000000000000000000000000dEaD")
+        }
       />
-      <Button title="Go to RPC demo" onPress={() => navigation.navigate('RPC Demo')} />
+      <Button title="Go to RPC demo" onPress={() => navigation.navigate("RPC Demo")} />
     </View>
   );
 }
@@ -86,26 +90,30 @@ export default function HomeScreen({ navigation }: any) {
 ### src/screens/RpcDemoScreen.tsx
 
 ```tsx
-import { useState } from 'react';
-import { View, Text, TextInput, Button } from 'react-native';
-import { useRpc } from '@talak-web3/hooks';
+import { useState } from "react";
+import { View, Text, TextInput, Button } from "react-native";
+import { useRpc } from "@talak-web3/hooks";
 
 export default function RpcDemoScreen() {
   const rpc = useRpc();
-  const [method, setMethod] = useState('eth_blockNumber');
-  const [params, setParams] = useState('[]');
-  const [result, setResult] = useState<string>('—');
+  const [method, setMethod] = useState("eth_blockNumber");
+  const [params, setParams] = useState("[]");
+  const [result, setResult] = useState<string>("—");
 
   return (
     <View style={{ padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: '600' }}>RPC Demo</Text>
+      <Text style={{ fontSize: 18, fontWeight: "600" }}>RPC Demo</Text>
       <TextInput value={method} onChangeText={setMethod} style={{ borderWidth: 1, padding: 8 }} />
       <TextInput value={params} onChangeText={setParams} style={{ borderWidth: 1, padding: 8 }} />
       <Button
         title="Run"
         onPress={async () => {
           let parsed: unknown[] = [];
-          try { parsed = JSON.parse(params) as unknown[]; } catch { parsed = []; }
+          try {
+            parsed = JSON.parse(params) as unknown[];
+          } catch {
+            parsed = [];
+          }
           const res = await rpc.request(method, parsed);
           setResult(JSON.stringify(res));
         }}

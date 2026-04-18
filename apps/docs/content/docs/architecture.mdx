@@ -33,11 +33,8 @@ Plugins extend Talak Web3 functionality.
 const myPlugin = {
   name: "my-plugin",
   async setup(context) {
-    context.hooks.on("event", () => {
-
-    });
+    context.hooks.on("event", () => {});
     context.requestChain.use(async (req, next) => {
-
       return next();
     });
   },

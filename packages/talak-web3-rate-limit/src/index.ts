@@ -10,21 +10,19 @@ export interface RateLimiter {
 }
 
 export function extractSubnet(ip: string): string {
-
-  if (ip.includes(':')) {
-
-    const parts = ip.split(':');
+  if (ip.includes(":")) {
+    const parts = ip.split(":");
     if (parts.length >= 4) {
-      return parts.slice(0, 4).join(':') + '::/64';
+      return parts.slice(0, 4).join(":") + "::/64";
     }
 
-    return ip.split('::')[0] + '::/64';
+    return ip.split("::")[0] + "::/64";
   }
 
-  const octets = ip.split('.');
+  const octets = ip.split(".");
   if (octets.length === 4) {
-    const lastOctet = parseInt(octets[3] || '0', 10);
-    const subnetLastOctet = lastOctet & 0xFC;
+    const lastOctet = parseInt(octets[3] || "0", 10);
+    const subnetLastOctet = lastOctet & 0xfc;
     return `${octets[0]}.${octets[1]}.${octets[2]}.${subnetLastOctet}/30`;
   }
 
@@ -35,7 +33,6 @@ export function normalizeIpForRateLimit(ip: string): string {
   try {
     return extractSubnet(ip);
   } catch {
-
     return ip;
   }
 }
@@ -75,11 +72,8 @@ export class RedisRateLimiter implements RateLimiter {
   private readonly capacity: number;
   private readonly windowMs: number;
 
-  constructor(
-    redis: any,
-    opts: { capacity: number; windowMs: number },
-  ) {
-    if (!redis) throw new Error('Redis client required for distributed rate limiting');
+  constructor(redis: any, opts: { capacity: number; windowMs: number }) {
+    if (!redis) throw new Error("Redis client required for distributed rate limiting");
     this.redis = redis;
     this.capacity = opts.capacity;
     this.windowMs = opts.windowMs;
@@ -89,15 +83,15 @@ export class RedisRateLimiter implements RateLimiter {
     const fullKey = `rate_limit:${key}`;
     const now = Date.now();
 
-    const res = await this.redis.eval(
+    const res = (await this.redis.eval(
       adaptiveSlidingWindowLua,
       1,
       fullKey,
       String(this.windowMs),
       String(this.capacity),
       String(now),
-      String(cost)
-    ) as unknown;
+      String(cost),
+    )) as unknown;
 
     if (!Array.isArray(res) || res.length < 3) {
       return { allowed: false, remaining: 0 };

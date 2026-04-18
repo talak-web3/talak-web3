@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { MiddlewareChain } from '../../middleware.js';
-import type { TalakWeb3Context } from '@talak-web3/types';
+import { describe, it, expect, beforeEach } from "vitest";
+import { MiddlewareChain } from "../../middleware.js";
+import type { TalakWeb3Context } from "@talak-web3/types";
 
-describe('MiddlewareChain', () => {
+describe("MiddlewareChain", () => {
   let chain: MiddlewareChain;
   const mockContext = {} as TalakWeb3Context;
 
@@ -10,8 +10,8 @@ describe('MiddlewareChain', () => {
     chain = new MiddlewareChain();
   });
 
-  describe('use', () => {
-    it('should add middleware to chain', () => {
+  describe("use", () => {
+    it("should add middleware to chain", () => {
       const middleware = async (ctx: unknown, next: () => Promise<void>) => {
         await next();
       };
@@ -21,7 +21,7 @@ describe('MiddlewareChain', () => {
       expect(chain).toBeDefined();
     });
 
-    it('should add multiple middlewares', () => {
+    it("should add multiple middlewares", () => {
       const middleware1 = async (ctx: unknown, next: () => Promise<void>) => {
         await next();
       };
@@ -36,8 +36,8 @@ describe('MiddlewareChain', () => {
     });
   });
 
-  describe('execute', () => {
-    it('should execute middleware in order', async () => {
+  describe("execute", () => {
+    it("should execute middleware in order", async () => {
       const order: number[] = [];
 
       chain.use(async (_req, next) => {
@@ -57,7 +57,7 @@ describe('MiddlewareChain', () => {
       expect(order).toEqual([1, 2, 3, 4]);
     });
 
-    it('should pass request through middleware', async () => {
+    it("should pass request through middleware", async () => {
       const request = { value: 0 };
 
       chain.use(async (req: typeof request, next) => {
@@ -75,16 +75,17 @@ describe('MiddlewareChain', () => {
       expect(request.value).toBe(11);
     });
 
-    it('should handle empty chain', async () => {
-      await expect(chain.execute({}, mockContext, async () => undefined as unknown)).resolves.not.toThrow();
+    it("should handle empty chain", async () => {
+      await expect(
+        chain.execute({}, mockContext, async () => undefined as unknown),
+      ).resolves.not.toThrow();
     });
 
-    it('should stop chain if next is not called', async () => {
+    it("should stop chain if next is not called", async () => {
       const order: number[] = [];
 
       chain.use(async () => {
         order.push(1);
-
       });
 
       chain.use(async (_req, next) => {
@@ -97,17 +98,17 @@ describe('MiddlewareChain', () => {
       expect(order).toEqual([1]);
     });
 
-    it('should handle async middleware', async () => {
+    it("should handle async middleware", async () => {
       const order: number[] = [];
 
       chain.use(async (_req, next) => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         order.push(1);
         await next();
       });
 
       chain.use(async (_req, next) => {
-        await new Promise(resolve => setTimeout(resolve, 5));
+        await new Promise((resolve) => setTimeout(resolve, 5));
         order.push(2);
         await next();
       });
@@ -117,20 +118,22 @@ describe('MiddlewareChain', () => {
       expect(order).toEqual([1, 2]);
     });
 
-    it('should propagate errors', async () => {
+    it("should propagate errors", async () => {
       chain.use(async () => {
-        throw new Error('Middleware error');
+        throw new Error("Middleware error");
       });
 
-      await expect(chain.execute({}, mockContext, async () => undefined as unknown)).rejects.toThrow('Middleware error');
+      await expect(
+        chain.execute({}, mockContext, async () => undefined as unknown),
+      ).rejects.toThrow("Middleware error");
     });
 
-    it('should not continue after error', async () => {
+    it("should not continue after error", async () => {
       const order: number[] = [];
 
       chain.use(async () => {
         order.push(1);
-        throw new Error('Stop here');
+        throw new Error("Stop here");
       });
 
       chain.use(async (_req, next) => {
@@ -138,7 +141,9 @@ describe('MiddlewareChain', () => {
         await next();
       });
 
-      await expect(chain.execute({}, mockContext, async () => undefined as unknown)).rejects.toThrow();
+      await expect(
+        chain.execute({}, mockContext, async () => undefined as unknown),
+      ).rejects.toThrow();
       expect(order).toEqual([1]);
     });
   });

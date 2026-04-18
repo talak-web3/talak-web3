@@ -15,23 +15,19 @@ pnpm add @talak-web3/plugins
 ## Creating a Plugin
 
 ```typescript
-import { definePlugin } from '@talak-web3/plugins';
+import { definePlugin } from "@talak-web3/plugins";
 
 const myPlugin = definePlugin({
-  name: 'my-plugin',
-  version: '1.0.0',
+  name: "my-plugin",
+  version: "1.0.0",
 
   setup(context) {
-
-    context.on('auth:login', (user) => {
+    context.on("auth:login", (user) => {
       console.log(`User ${user.address} logged in`);
     });
 
     return {
-
-      customMethod: () => {
-
-      },
+      customMethod: () => {},
     };
   },
 });
@@ -42,14 +38,14 @@ export default myPlugin;
 ## Using Plugins
 
 ```typescript
-import { createTalakClient } from 'talak-web3';
-import myPlugin from './my-plugin';
+import { createTalakClient } from "talak-web3";
+import myPlugin from "./my-plugin";
 
 const client = createTalakClient({
   plugins: [myPlugin],
 });
 
-client.plugins['my-plugin'].customMethod();
+client.plugins["my-plugin"].customMethod();
 ```
 
 ## Official Plugins

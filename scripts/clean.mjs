@@ -6,8 +6,6 @@ await Promise.all(
   paths.map(async (p) => {
     try {
       await rm(new URL(`../${p}`, import.meta.url), { recursive: true, force: true });
-    } catch {
-
-    }
+    } catch {}
   }),
 );

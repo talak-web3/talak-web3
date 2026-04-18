@@ -19,15 +19,15 @@ pnpm add @talak-web3/adapters
 Interact with Ceramic Network for decentralized data.
 
 ```typescript
-import { CeramicAdapter } from '@talak-web3/adapters';
+import { CeramicAdapter } from "@talak-web3/adapters";
 
 const ceramic = new CeramicAdapter({
-  ceramicUrl: 'https://ceramic-clay.3boxlabs.com',
+  ceramicUrl: "https://ceramic-clay.3boxlabs.com",
   seed: process.env.CERAMIC_SEED,
 });
 
 const stream = await ceramic.createTile({
-  content: { name: 'My Profile', avatar: 'example-value' },
+  content: { name: "My Profile", avatar: "example-value" },
 });
 ```
 
@@ -36,16 +36,14 @@ const stream = await ceramic.createTile({
 SQL database on the blockchain.
 
 ```typescript
-import { TablelandAdapter } from '@talak-web3/adapters';
+import { TablelandAdapter } from "@talak-web3/adapters";
 
 const tableland = new TablelandAdapter({
   privateKey: process.env.TABLELAND_KEY,
-  chain: 'ethereum-goerli',
+  chain: "ethereum-goerli",
 });
 
-const { name } = await tableland.create(
-  `CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)`
-);
+const { name } = await tableland.create(`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)`);
 
 await tableland.write(`INSERT INTO ${name} (id, name) VALUES (1, 'Alice')`);
 ```

@@ -1,4 +1,4 @@
-import { TalakWeb3Error } from '@talak-web3/errors';
+import { TalakWeb3Error } from "@talak-web3/errors";
 
 export interface RedisLike {
   get(key: string): Promise<string | null>;
@@ -7,7 +7,6 @@ export interface RedisLike {
 }
 
 export interface CircuitBreakerConfig {
-
   redis: RedisLike;
 
   failureThreshold: number;
@@ -24,7 +23,7 @@ export interface CircuitBreakerConfig {
 }
 
 export interface CircuitState {
-  state: 'closed' | 'open' | 'half-open';
+  state: "closed" | "open" | "half-open";
   failures: number;
   successes: number;
   lastFailure?: number;
@@ -44,7 +43,7 @@ export class DistributedCircuitBreaker {
     this.config = {
       latencyThreshold: 2000,
       minRequestsForLatency: 10,
-      ...config
+      ...config,
     };
   }
 
@@ -59,22 +58,22 @@ export class DistributedCircuitBreaker {
   async execute<T>(
     providerId: string,
     operation: () => Promise<T>,
-    timeoutMs: number = 5000
+    timeoutMs: number = 5000,
   ): Promise<T> {
     const state = await this.getState(providerId);
 
-    if (state.state === 'open') {
+    if (state.state === "open") {
       const now = Date.now();
       if (state.openedAt && now - state.openedAt < this.config.halfOpenTimeout) {
-        throw new TalakWeb3Error('Circuit breaker open', {
-          code: 'CIRCUIT_OPEN',
+        throw new TalakWeb3Error("Circuit breaker open", {
+          code: "CIRCUIT_OPEN",
           status: 503,
-          data: { providerId, openedAt: state.openedAt }
+          data: { providerId, openedAt: state.openedAt },
         });
       }
 
       await this.setState(providerId, {
-        state: 'half-open',
+        state: "half-open",
         failures: 0,
         successes: 0,
       });
@@ -83,12 +82,11 @@ export class DistributedCircuitBreaker {
     const startTime = Date.now();
 
     try {
-
       const result = await Promise.race([
         operation(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout')), timeoutMs)
-        )
+          setTimeout(() => reject(new Error("Timeout")), timeoutMs),
+        ),
       ]);
 
       const latency = Date.now() - startTime;
@@ -109,19 +107,18 @@ export class DistributedCircuitBreaker {
 
       if (!data) {
         return {
-          state: 'closed',
+          state: "closed",
           failures: 0,
-          successes: 0
+          successes: 0,
         };
       }
 
       return JSON.parse(data);
     } catch {
-
       return {
-        state: 'closed',
+        state: "closed",
         failures: 0,
-        successes: 0
+        successes: 0,
       };
     }
   }
@@ -130,11 +127,10 @@ export class DistributedCircuitBreaker {
     try {
       const key = this.getKey(providerId);
       await this.config.redis.set(key, JSON.stringify(state), {
-        PX: this.config.windowSize * 2
+        PX: this.config.windowSize * 2,
       });
     } catch (error) {
-
-      console.warn('Failed to update circuit state:', error);
+      console.warn("Failed to update circuit state:", error);
     }
   }
 
@@ -143,17 +139,15 @@ export class DistributedCircuitBreaker {
 
     await this.updateLatencyStats(providerId, latency);
 
-    if (state.state === 'half-open') {
+    if (state.state === "half-open") {
       state.successes++;
 
       if (state.successes >= this.config.successThreshold) {
-
-        state.state = 'closed';
+        state.state = "closed";
         state.failures = 0;
         state.successes = 0;
       }
     } else {
-
       state.failures = Math.max(0, state.failures - 1);
     }
 
@@ -164,20 +158,18 @@ export class DistributedCircuitBreaker {
   private async recordFailure(providerId: string, error: unknown, latency: number): Promise<void> {
     const state = await this.getState(providerId);
 
-    const isLatencyFailure = this.config.latencyThreshold &&
-                             latency > this.config.latencyThreshold;
+    const isLatencyFailure = this.config.latencyThreshold && latency > this.config.latencyThreshold;
 
     const shouldUseAdaptiveThreshold = await this.shouldUseAdaptiveThreshold(providerId);
     let failureWeight = 1;
 
     if (shouldUseAdaptiveThreshold && isLatencyFailure) {
-
       const excessLatency = latency - this.config.latencyThreshold!;
-      failureWeight = Math.min(3, 1 + (excessLatency / this.config.latencyThreshold!));
+      failureWeight = Math.min(3, 1 + excessLatency / this.config.latencyThreshold!);
     }
 
-    const shouldCountFailure = !(error instanceof TalakWeb3Error && error.code === 'CIRCUIT_OPEN') ||
-                              isLatencyFailure;
+    const shouldCountFailure =
+      !(error instanceof TalakWeb3Error && error.code === "CIRCUIT_OPEN") || isLatencyFailure;
 
     if (shouldCountFailure) {
       state.failures += failureWeight;
@@ -187,12 +179,11 @@ export class DistributedCircuitBreaker {
         ? await this.calculateAdaptiveThreshold(providerId)
         : this.config.failureThreshold;
 
-      if (state.state === 'closed' && state.failures >= effectiveThreshold) {
-        state.state = 'open';
+      if (state.state === "closed" && state.failures >= effectiveThreshold) {
+        state.state = "open";
         state.openedAt = Date.now();
-      } else if (state.state === 'half-open') {
-
-        state.state = 'open';
+      } else if (state.state === "half-open") {
+        state.state = "open";
         state.openedAt = Date.now();
       }
     }
@@ -207,10 +198,10 @@ export class DistributedCircuitBreaker {
       const key = this.getLatencyKey(providerId);
       const existing = await this.config.redis.get(key);
 
-      let stats: CircuitState['latencyStats'] = {
+      let stats: CircuitState["latencyStats"] = {
         average: latency,
         count: 1,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
 
       if (existing) {
@@ -221,24 +212,22 @@ export class DistributedCircuitBreaker {
         stats = {
           average: total / newCount,
           count: newCount,
-          lastUpdated: Date.now()
+          lastUpdated: Date.now(),
         };
 
         if (newCount > 1000 || Date.now() - parsed.lastUpdated > 3600000) {
           stats = {
             average: latency,
             count: 1,
-            lastUpdated: Date.now()
+            lastUpdated: Date.now(),
           };
         }
       }
 
       await this.config.redis.set(key, JSON.stringify(stats), {
-        PX: 7200000
+        PX: 7200000,
       });
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   async getStats(providerId: string): Promise<CircuitState> {
@@ -247,16 +236,14 @@ export class DistributedCircuitBreaker {
 
   async reset(providerId: string): Promise<void> {
     await this.setState(providerId, {
-      state: 'closed',
+      state: "closed",
       failures: 0,
-      successes: 0
+      successes: 0,
     });
 
     try {
       await this.config.redis.del(this.getLatencyKey(providerId));
-    } catch {
-
-    }
+    } catch {}
   }
 
   private async shouldUseAdaptiveThreshold(providerId: string): Promise<boolean> {
@@ -270,8 +257,12 @@ export class DistributedCircuitBreaker {
 
       if (!data) return false;
 
-      const stats = JSON.parse(data) as CircuitState['latencyStats'] | undefined;
-      return !!stats && typeof stats.count === 'number' && stats.count >= this.config.minRequestsForLatency;
+      const stats = JSON.parse(data) as CircuitState["latencyStats"] | undefined;
+      return (
+        !!stats &&
+        typeof stats.count === "number" &&
+        stats.count >= this.config.minRequestsForLatency
+      );
     } catch {
       return false;
     }
@@ -284,8 +275,8 @@ export class DistributedCircuitBreaker {
 
       if (!data) return this.config.failureThreshold;
 
-      const stats = JSON.parse(data) as CircuitState['latencyStats'] | undefined;
-      if (!stats || typeof stats.average !== 'number') return this.config.failureThreshold;
+      const stats = JSON.parse(data) as CircuitState["latencyStats"] | undefined;
+      if (!stats || typeof stats.average !== "number") return this.config.failureThreshold;
 
       const baseThreshold = this.config.failureThreshold;
       const latencyRatio = stats.average / this.config.latencyThreshold!;
@@ -307,7 +298,7 @@ export class DistributedCircuitBreaker {
   async isAvailable(providerId: string): Promise<boolean> {
     const state = await this.getState(providerId);
 
-    if (state.state === 'open') {
+    if (state.state === "open") {
       const now = Date.now();
       return !(state.openedAt && now - state.openedAt < this.config.halfOpenTimeout);
     }

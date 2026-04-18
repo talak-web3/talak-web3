@@ -15,22 +15,22 @@ pnpm add @talak-web3/analytics-engine
 ## Usage
 
 ```typescript
-import { createAnalyticsEngine } from '@talak-web3/analytics-engine';
+import { createAnalyticsEngine } from "@talak-web3/analytics-engine";
 
 const analytics = createAnalyticsEngine({
   apiKey: process.env.ANALYTICS_KEY,
 });
 
-analytics.track('wallet_connected', {
-  address: '0x1111111111111111111111111111111111111111',
+analytics.track("wallet_connected", {
+  address: "0x1111111111111111111111111111111111111111",
   chainId: 1,
-  connector: 'metamask',
+  connector: "metamask",
 });
 
-analytics.track('transaction_sent', {
-  hash: '0x1111111111111111111111111111111111111111',
-  value: '1.5',
-  token: 'ETH',
+analytics.track("transaction_sent", {
+  hash: "0x1111111111111111111111111111111111111111",
+  value: "1.5",
+  token: "ETH",
 });
 ```
 

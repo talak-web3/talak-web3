@@ -1,5 +1,5 @@
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function waitFor(
@@ -8,9 +8,9 @@ export async function waitFor(
     timeout?: number;
     interval?: number;
     message?: string;
-  } = {}
+  } = {},
 ): Promise<void> {
-  const { timeout = 5000, interval = 100, message = 'Condition not met' } = options;
+  const { timeout = 5000, interval = 100, message = "Condition not met" } = options;
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {
@@ -30,7 +30,7 @@ export async function retryAsync<T>(
     delay?: number;
     backoff?: number;
     onRetry?: (error: Error, attempt: number) => void;
-  } = {}
+  } = {},
 ): Promise<T> {
   const { retries = 3, delay = 100, backoff = 2, onRetry } = options;
 
@@ -57,7 +57,7 @@ export async function retryAsync<T>(
 export async function parallel<T>(
   items: T[],
   fn: (item: T) => Promise<void>,
-  concurrency: number = 5
+  concurrency: number = 5,
 ): Promise<void> {
   const executing: Promise<void>[] = [];
 
@@ -67,7 +67,10 @@ export async function parallel<T>(
 
     if (executing.length >= concurrency) {
       await Promise.race(executing);
-      executing.splice(executing.findIndex(p => p === promise), 1);
+      executing.splice(
+        executing.findIndex((p) => p === promise),
+        1,
+      );
     }
   }
 
@@ -77,12 +80,10 @@ export async function parallel<T>(
 export function withTimeout<T>(
   promise: Promise<T>,
   ms: number,
-  message: string = 'Operation timed out'
+  message: string = "Operation timed out",
 ): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(message)), ms)
-    ),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(message)), ms)),
   ]);
 }

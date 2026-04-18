@@ -27,4 +27,4 @@ export function nowMs(): number {
   return Date.now();
 }
 
-export * from './migration';
+export * from "./migration";

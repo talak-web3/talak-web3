@@ -61,15 +61,15 @@ nonce_consumption_failures_total: Counter
 ### Metrics
 
 ```typescript
-revocation_pubsub_disconnect_seconds: Gauge
+revocation_pubsub_disconnect_seconds: Gauge;
 
-revocation_pubsub_lag_ms: Histogram
-  buckets: [5, 10, 25, 50, 100, 200]
+revocation_pubsub_lag_ms: Histogram;
+buckets: [5, 10, 25, 50, 100, 200];
 
-revocation_redis_fallback_total: Counter
+revocation_redis_fallback_total: Counter;
 
-revocation_propagation_ms: Histogram
-  buckets: [10, 25, 50, 100, 200, 500]
+revocation_propagation_ms: Histogram;
+buckets: [10, 25, 50, 100, 200, 500];
 ```
 
 ### Alerts
@@ -241,6 +241,7 @@ The following conditions trigger **immediate system shutdown** (not just alerts)
 **Trigger**: Redis connection failures >5 in 30 seconds
 
 **Action**:
+
 ```typescript
 if (redisConnectionFailures > 5 within 30s) {
   logger.critical('Redis unreachable — shutting down to prevent security degradation');
@@ -259,9 +260,10 @@ if (redisConnectionFailures > 5 within 30s) {
 **Trigger**: `time_drift_ms` >10,000ms (10 seconds)
 
 **Action**:
+
 ```typescript
 if (Math.abs(driftMs) > 10_000) {
-  logger.critical('Time drift exceeds critical bound — shutting down');
+  logger.critical("Time drift exceeds critical bound — shutting down");
   process.exit(1);
 }
 ```
@@ -277,9 +279,9 @@ if (Math.abs(driftMs) > 10_000) {
 **Trigger**: `integrity_check_failures_total` > 0
 
 **Action**:
+
 ```typescript
 verifyDependencyIntegrity({ failClosed: true });
-
 ```
 
 **Rationale**: Dependency compromise means all code paths are untrusted. System cannot trust itself.
@@ -293,6 +295,7 @@ verifyDependencyIntegrity({ failClosed: true });
 **Trigger**: `redis_wait_latency_ms` P99 >500ms for 5 minutes
 
 **Action**:
+
 ```typescript
 if (p99WaitLatency > 500ms for 5min) {
   logger.critical('Replication lag exceeds limit — nonce/revocation durability compromised');
@@ -311,9 +314,10 @@ if (p99WaitLatency > 500ms for 5min) {
 **Trigger**: `monotonic_violation_total` > 0
 
 **Action**:
+
 ```typescript
 if (monotonicViolations > 0) {
-  logger.critical('Monotonic time violation — possible clock manipulation attack');
+  logger.critical("Monotonic time violation — possible clock manipulation attack");
   process.exit(1);
 }
 ```
@@ -334,7 +338,6 @@ All kill conditions are enforced at multiple layers:
 
 ```typescript
 async function bootstrap(): Promise<void> {
-
   await assertRedisInfrastructure(redis);
 
   await time.initialize();

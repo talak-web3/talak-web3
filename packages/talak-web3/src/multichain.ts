@@ -1,5 +1,5 @@
-import type { TalakWeb3BaseConfig, TalakWeb3Context, IRpc, RpcOptions } from '@talak-web3/types';
-import { UnifiedRpc } from '@talak-web3/rpc';
+import type { TalakWeb3BaseConfig, TalakWeb3Context, IRpc, RpcOptions } from "@talak-web3/types";
+import { UnifiedRpc } from "@talak-web3/rpc";
 
 export type ChainRef = {
   id: number;
@@ -53,7 +53,7 @@ export type Eip1559Fees = {
 };
 
 export async function estimateEip1559Fees(rpc: IRpc): Promise<Eip1559Fees> {
-  const baseFeeHex = await rpc.request<string>('eth_gasPrice');
+  const baseFeeHex = await rpc.request<string>("eth_gasPrice");
   const baseFee = BigInt(baseFeeHex);
   const priority = 1_500_000_000n;
   const maxFee = baseFee * 2n + priority;

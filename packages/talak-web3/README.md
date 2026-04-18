@@ -38,26 +38,26 @@ npm install talak-web3@1.0.9
 ### Basic Setup
 
 ```typescript
-import { talakWeb3, MainnetPreset } from 'talak-web3';
+import { talakWeb3, MainnetPreset } from "talak-web3";
 
 const app = talakWeb3({
   ...MainnetPreset,
   auth: {
-    domain: 'yourdapp.com',
+    domain: "yourdapp.com",
     secret: process.env.JWT_SECRET,
   },
 });
 
 await app.init();
 
-const nonce = await app.auth.createNonce('0x...');
-const result = await app.rpc.request('eth_blockNumber');
+const nonce = await app.auth.createNonce("0x...");
+const result = await app.rpc.request("eth_blockNumber");
 ```
 
 ### React Integration
 
 ```tsx
-import { TalakWeb3Provider, useAccount, useChain } from 'talak-web3/react';
+import { TalakWeb3Provider, useAccount, useChain } from "talak-web3/react";
 
 function App() {
   return (
@@ -80,20 +80,20 @@ function YourComponent() {
 ### Multi-Chain Support
 
 ```typescript
-import { talakWeb3, MainnetPreset, PolygonPreset } from 'talak-web3';
-import { MultiChainRouter } from 'talak-web3/multichain';
+import { talakWeb3, MainnetPreset, PolygonPreset } from "talak-web3";
+import { MultiChainRouter } from "talak-web3/multichain";
 
 const app = talakWeb3({
   chains: [MainnetPreset, PolygonPreset],
   auth: {
-    domain: 'yourdapp.com',
+    domain: "yourdapp.com",
     secret: process.env.JWT_SECRET,
   },
 });
 
 const router = new MultiChainRouter(app.context);
-const ethBlock = await router.request(1, 'eth_blockNumber');
-const polygonBlock = await router.request(137, 'eth_blockNumber');
+const ethBlock = await router.request(1, "eth_blockNumber");
+const polygonBlock = await router.request(137, "eth_blockNumber");
 ```
 
 ## Core Concepts
@@ -108,9 +108,9 @@ const polygonBlock = await router.request(137, 'eth_blockNumber');
 The SDK implements a secure SIWE authentication flow with short-lived JWTs and rotating refresh tokens:
 
 ```typescript
-import { talakWeb3 } from 'talak-web3';
+import { talakWeb3 } from "talak-web3";
 
-const app = talakWeb3({ auth: { domain: 'yourdapp.com', secret: process.env.JWT_SECRET }});
+const app = talakWeb3({ auth: { domain: "yourdapp.com", secret: process.env.JWT_SECRET } });
 
 const nonce = await app.auth.createNonce(address);
 
@@ -128,15 +128,15 @@ await app.auth.revokeSession(accessToken, refreshToken);
 For production deployments, configure Redis-backed stores for atomic operations:
 
 ```typescript
-import { talakWeb3 } from 'talak-web3';
-import { RedisNonceStore, RedisRefreshStore, RedisRevocationStore } from '@talak-web3/auth/stores';
-import Redis from 'ioredis';
+import { talakWeb3 } from "talak-web3";
+import { RedisNonceStore, RedisRefreshStore, RedisRevocationStore } from "@talak-web3/auth/stores";
+import Redis from "ioredis";
 
 const redis = new Redis(process.env.REDIS_URL);
 
 const app = talakWeb3({
   auth: {
-    domain: 'yourdapp.com',
+    domain: "yourdapp.com",
     secret: process.env.JWT_SECRET,
     nonceStore: new RedisNonceStore(redis),
     refreshStore: new RedisRefreshStore(redis),
@@ -169,7 +169,7 @@ import {
   ConfigManager,
   MultiChainRouter,
   estimateEip1559Fees,
-} from 'talak-web3';
+} from "talak-web3";
 ```
 
 ### Type Exports
@@ -185,45 +185,41 @@ import type {
   LoginResponse,
   RefreshResponse,
   VerifyResponse,
-} from 'talak-web3';
+} from "talak-web3";
 ```
 
 ### Subpath Exports
 
 ```typescript
-import { MultiChainRouter } from 'talak-web3/multichain';
+import { MultiChainRouter } from "talak-web3/multichain";
 
-import {
-  TalakWeb3Provider,
-  useTalakWeb3,
-  useAccount,
-  useChain,
-} from 'talak-web3/react';
+import { TalakWeb3Provider, useTalakWeb3, useAccount, useChain } from "talak-web3/react";
 ```
 
 ## Ecosystem Packages
 
 The `talak-web3` monorepo includes scoped packages for modular usage:
 
-| Package | Description | Install |
-|---------|-------------|---------|
-| `@talak-web3/core` | Core orchestrator and singleton factory | `npm install @talak-web3/core` |
-| `@talak-web3/auth` | SIWE authentication and session management | `npm install @talak-web3/auth` |
-| `@talak-web3/rpc` | RPC provider routing and failover | `npm install @talak-web3/rpc` |
-| `@talak-web3/client` | HTTP client with token management | `npm install @talak-web3/client` |
-| `@talak-web3/hooks` | React hooks and context providers | `npm install @talak-web3/hooks` |
-| `@talak-web3/config` | Configuration presets and validation | `npm install @talak-web3/config` |
-| `@talak-web3/tx` | Account abstraction and gasless transactions | `npm install @talak-web3/tx` |
-| `@talak-web3/types` | Shared TypeScript types | `npm install @talak-web3/types` |
-| `@talak-web3/errors` | Standardized error classes | `npm install @talak-web3/errors` |
-| `@talak-web3/rate-limit` | Rate limiting (memory and Redis) | `npm install @talak-web3/rate-limit` |
-| `@talak-web3/cli` | CLI scaffolding tools | `npm install -g @talak-web3/cli` |
+| Package                  | Description                                  | Install                              |
+| ------------------------ | -------------------------------------------- | ------------------------------------ |
+| `@talak-web3/core`       | Core orchestrator and singleton factory      | `npm install @talak-web3/core`       |
+| `@talak-web3/auth`       | SIWE authentication and session management   | `npm install @talak-web3/auth`       |
+| `@talak-web3/rpc`        | RPC provider routing and failover            | `npm install @talak-web3/rpc`        |
+| `@talak-web3/client`     | HTTP client with token management            | `npm install @talak-web3/client`     |
+| `@talak-web3/hooks`      | React hooks and context providers            | `npm install @talak-web3/hooks`      |
+| `@talak-web3/config`     | Configuration presets and validation         | `npm install @talak-web3/config`     |
+| `@talak-web3/tx`         | Account abstraction and gasless transactions | `npm install @talak-web3/tx`         |
+| `@talak-web3/types`      | Shared TypeScript types                      | `npm install @talak-web3/types`      |
+| `@talak-web3/errors`     | Standardized error classes                   | `npm install @talak-web3/errors`     |
+| `@talak-web3/rate-limit` | Rate limiting (memory and Redis)             | `npm install @talak-web3/rate-limit` |
+| `@talak-web3/cli`        | CLI scaffolding tools                        | `npm install -g @talak-web3/cli`     |
 
 ## Security Architecture
 
 ### Fail-Closed Design
 
 All security-critical operations follow a fail-closed posture:
+
 - If Redis is unavailable → authentication endpoints return `503 Service Unavailable`
 - If rate limiter cannot verify quotas → request is blocked
 - If signature verification fails → session is not issued
@@ -241,22 +237,25 @@ All security-critical operations follow a fail-closed posture:
 Creates or returns the singleton application instance.
 
 **Parameters:**
+
 - `config` — Configuration object or preset (see `MainnetPreset`, `PolygonPreset`)
 
 **Returns:**
+
 - `TalakWeb3Instance` — Application instance with `auth`, `rpc`, `context`, and other capabilities
 
 **Example:**
+
 ```typescript
 const app = talakWeb3({
   auth: {
-    domain: 'yourdapp.com',
+    domain: "yourdapp.com",
     secret: process.env.JWT_SECRET,
   },
   rpc: {
     providers: [
-      { url: 'https://eth.llamarpc.com', priority: 1 },
-      { url: 'https://rpc.ankr.com/eth', priority: 2 },
+      { url: "https://eth.llamarpc.com", priority: 1 },
+      { url: "https://rpc.ankr.com/eth", priority: 2 },
     ],
   },
 });
@@ -267,6 +266,7 @@ const app = talakWeb3({
 Authentication and session management interface.
 
 **Methods:**
+
 - `createNonce(address: string)` — Generate a nonce for SIWE authentication
 - `loginWithSiwe(message: string, signature: string)` — Verify SIWE message and issue tokens
 - `verifySession(accessToken: string)` — Validate JWT and return session payload
@@ -279,19 +279,20 @@ Authentication and session management interface.
 RPC provider with automatic failover.
 
 **Methods:**
+
 - `request(method: string, params?: any[])` — Send JSON-RPC request
 - `stop()` — Stop health checks
 - `start(intervalMs?: number)` — Start/resume health checks
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `JWT_SECRET` | **Yes** (production) | Secret key for JWT signing (min 32 characters) |
-| `REDIS_URL` | **Yes** (production) | Redis connection string for session storage |
-| `NODE_ENV` | No | Environment (`development` or `production`) |
-| `LOG_FORMAT` | No | Set to `json` for structured logging |
-| `SIWE_DOMAIN` | No | SIWE domain override (defaults to auth.domain) |
+| Variable      | Required             | Description                                    |
+| ------------- | -------------------- | ---------------------------------------------- |
+| `JWT_SECRET`  | **Yes** (production) | Secret key for JWT signing (min 32 characters) |
+| `REDIS_URL`   | **Yes** (production) | Redis connection string for session storage    |
+| `NODE_ENV`    | No                   | Environment (`development` or `production`)    |
+| `LOG_FORMAT`  | No                   | Set to `json` for structured logging           |
+| `SIWE_DOMAIN` | No                   | SIWE domain override (defaults to auth.domain) |
 
 ## Examples
 

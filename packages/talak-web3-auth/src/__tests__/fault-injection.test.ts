@@ -1,17 +1,17 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import Redis from 'ioredis';
-import { RedisNonceStore } from '../stores/redis-nonce';
-import { RedisRevocationStore } from '../stores/redis-revocation';
-import { AuthoritativeTime } from '../time';
-import { verifyDependencyIntegrity } from '../integrity';
-import type { DependencyCheck } from '../integrity';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import Redis from "ioredis";
+import { RedisNonceStore } from "../stores/redis-nonce";
+import { RedisRevocationStore } from "../stores/redis-revocation";
+import { AuthoritativeTime } from "../time";
+import { verifyDependencyIntegrity } from "../integrity";
+import type { DependencyCheck } from "../integrity";
 
-describe('FAULT INJECTION: Nonce Durability (I2)', () => {
+describe("FAULT INJECTION: Nonce Durability (I2)", () => {
   let redis: Redis;
   let nonceStore: RedisNonceStore;
 
   beforeEach(() => {
-    redis = new Redis({ host: 'localhost', port: 6379 });
+    redis = new Redis({ host: "localhost", port: 6379 });
     nonceStore = new RedisNonceStore({ redis });
   });
 
@@ -19,8 +19,8 @@ describe('FAULT INJECTION: Nonce Durability (I2)', () => {
     await redis.quit();
   });
 
-  it('should reject nonce reuse after simulated crash', async () => {
-    const address = '0x1234567890abcdef1234567890abcdef12345678';
+  it("should reject nonce reuse after simulated crash", async () => {
+    const address = "0x1234567890abcdef1234567890abcdef12345678";
 
     const nonce = await nonceStore.create(address);
 
@@ -37,26 +37,23 @@ describe('FAULT INJECTION: Nonce Durability (I2)', () => {
     const reuseConsumed = await nonceStore.consume(address, nonce);
     expect(reuseConsumed).toBe(false);
 
-    console.log('[FAULT] Nonce reuse correctly rejected after simulated crash');
+    console.log("[FAULT] Nonce reuse correctly rejected after simulated crash");
   });
 
-  it('should fail closed when Redis unreachable during consumption', async () => {
-    const address = '0x1234567890abcdef1234567890abcdef12345678';
+  it("should fail closed when Redis unreachable during consumption", async () => {
+    const address = "0x1234567890abcdef1234567890abcdef12345678";
 
     const nonce = await nonceStore.create(address);
 
     await redis.quit();
 
-    await expect(nonceStore.consume(address, nonce)).rejects.toThrow(
-      'Redis nonce store failure'
-    );
+    await expect(nonceStore.consume(address, nonce)).rejects.toThrow("Redis nonce store failure");
 
-    console.log('[FAULT] Nonce consumption correctly failed closed on Redis unreachable');
+    console.log("[FAULT] Nonce consumption correctly failed closed on Redis unreachable");
   });
 
-  it('should detect WAIT replication timeout', async () => {
-
-    const address = '0x1234567890abcdef1234567890abcdef12345678';
+  it("should detect WAIT replication timeout", async () => {
+    const address = "0x1234567890abcdef1234567890abcdef12345678";
 
     const storeWithWait = new RedisNonceStore({
       redis,
@@ -69,16 +66,16 @@ describe('FAULT INJECTION: Nonce Durability (I2)', () => {
     const consumed = await storeWithWait.consume(address, nonce);
     expect(consumed).toBe(true);
 
-    console.log('[FAULT] WAIT replication timeout detected (metric would fire)');
+    console.log("[FAULT] WAIT replication timeout detected (metric would fire)");
   });
 });
 
-describe('FAULT INJECTION: Revocation Propagation (I4)', () => {
+describe("FAULT INJECTION: Revocation Propagation (I4)", () => {
   let redis: Redis;
   let revocationStore: RedisRevocationStore;
 
   beforeEach(() => {
-    redis = new Redis({ host: 'localhost', port: 6379 });
+    redis = new Redis({ host: "localhost", port: 6379 });
     revocationStore = new RedisRevocationStore({
       redis,
       enablePubSub: true,
@@ -89,8 +86,8 @@ describe('FAULT INJECTION: Revocation Propagation (I4)', () => {
     await redis.quit();
   });
 
-  it('should fallback to Redis when Pub/Sub broken', async () => {
-    const jti = 'test-revocation-fault-1';
+  it("should fallback to Redis when Pub/Sub broken", async () => {
+    const jti = "test-revocation-fault-1";
     const expiresAt = Date.now() + 3600_000;
 
     await revocationStore.revoke(jti, expiresAt);
@@ -98,24 +95,23 @@ describe('FAULT INJECTION: Revocation Propagation (I4)', () => {
     const isRevoked = await revocationStore.isRevoked(jti);
     expect(isRevoked).toBe(true);
 
-    console.log('[FAULT] Revocation correctly falls back to Redis when Pub/Sub broken');
+    console.log("[FAULT] Revocation correctly falls back to Redis when Pub/Sub broken");
   });
 
-  it('should fail closed when Redis unreachable', async () => {
-    const jti = 'test-revocation-fault-2';
+  it("should fail closed when Redis unreachable", async () => {
+    const jti = "test-revocation-fault-2";
 
     await redis.quit();
 
     await expect(revocationStore.isRevoked(jti)).rejects.toThrow(
-      'Redis revocation store unreachable'
+      "Redis revocation store unreachable",
     );
 
-    console.log('[FAULT] Revocation check correctly failed closed on Redis unreachable');
+    console.log("[FAULT] Revocation check correctly failed closed on Redis unreachable");
   });
 
-  it('should reject token when revocation status uncertain', async () => {
-
-    const jti = 'test-revocation-fault-3';
+  it("should reject token when revocation status uncertain", async () => {
+    const jti = "test-revocation-fault-3";
 
     const storeNonStrict = new RedisRevocationStore({
       redis,
@@ -127,23 +123,22 @@ describe('FAULT INJECTION: Revocation Propagation (I4)', () => {
     const isRevoked = await storeNonStrict.isRevoked(jti);
     expect(isRevoked).toBe(true);
 
-    console.log('[FAULT] Revocation correctly rejects on uncertainty');
+    console.log("[FAULT] Revocation correctly rejects on uncertainty");
   });
 });
 
-describe('FAULT INJECTION: Time Authority (I6)', () => {
+describe("FAULT INJECTION: Time Authority (I6)", () => {
   let redis: Redis;
 
   beforeEach(() => {
-    redis = new Redis({ host: 'localhost', port: 6379 });
+    redis = new Redis({ host: "localhost", port: 6379 });
   });
 
   afterEach(async () => {
     await redis.quit();
   });
 
-  it('should reject when time drift exceeds threshold', async () => {
-
+  it("should reject when time drift exceeds threshold", async () => {
     const mockTimeSource = {
       getTime: async () => Date.now() + 10_000,
     };
@@ -153,12 +148,12 @@ describe('FAULT INJECTION: Time Authority (I6)', () => {
       maxDriftMs: 5_000,
     });
 
-    await expect(time.sync()).rejects.toThrow('Clock drift exceeds threshold');
+    await expect(time.sync()).rejects.toThrow("Clock drift exceeds threshold");
 
-    console.log('[FAULT] Time sync correctly rejected excessive drift');
+    console.log("[FAULT] Time sync correctly rejected excessive drift");
   });
 
-  it('should reject when monotonic time regression detected', async () => {
+  it("should reject when monotonic time regression detected", async () => {
     const time = new AuthoritativeTime({
       redis,
       maxForwardJumpMs: 60_000,
@@ -169,34 +164,32 @@ describe('FAULT INJECTION: Time Authority (I6)', () => {
 
     (time as any).lastObservedTime = firstTime + 100_000;
 
-    expect(() => time.now()).toThrow('Time regression detected');
+    expect(() => time.now()).toThrow("Time regression detected");
 
-    console.log('[FAULT] Monotonic guard correctly rejected time regression');
+    console.log("[FAULT] Monotonic guard correctly rejected time regression");
   });
 
-  it('should fail closed when historical drift exceeded', async () => {
-
-    await redis.set('talak:time:last_drift', '10000');
+  it("should fail closed when historical drift exceeded", async () => {
+    await redis.set("talak:time:last_drift", "10000");
 
     const time = new AuthoritativeTime({
       redis,
       maxDriftMs: 5_000,
     });
 
-    await expect(time['initialize']()).rejects.toThrow('Historical time drift exceeded bound');
+    await expect(time["initialize"]()).rejects.toThrow("Historical time drift exceeded bound");
 
-    console.log('[FAULT] Time initialization correctly failed on historical drift');
+    console.log("[FAULT] Time initialization correctly failed on historical drift");
   });
 });
 
-describe('FAULT INJECTION: Supply Chain Integrity (I10)', () => {
-  it('should exit process when dependency hash mismatch', async () => {
-
+describe("FAULT INJECTION: Supply Chain Integrity (I10)", () => {
+  it("should exit process when dependency hash mismatch", async () => {
     const mockDeps: DependencyCheck[] = [
       {
-        packageName: '@talak-web3/errors',
-        entryPoint: 'main',
-        expectedHash: 'sha256:invalid_hash_to_trigger_failure',
+        packageName: "@talak-web3/errors",
+        entryPoint: "main",
+        expectedHash: "sha256:invalid_hash_to_trigger_failure",
       },
     ];
 
@@ -214,47 +207,46 @@ describe('FAULT INJECTION: Supply Chain Integrity (I10)', () => {
           dependencies: mockDeps,
           failClosed: true,
         });
-      }).toThrow('process.exit(1)');
+      }).toThrow("process.exit(1)");
 
       expect(exitCode).toBe(1);
     } finally {
       process.exit = originalExit;
     }
 
-    console.log('[FAULT] Dependency integrity check correctly triggered process exit');
+    console.log("[FAULT] Dependency integrity check correctly triggered process exit");
   });
 
-  it('should detect tampered dependency at runtime', async () => {
-
+  it("should detect tampered dependency at runtime", async () => {
     expect(() => {
       verifyDependencyIntegrity({
         failClosed: true,
       });
     }).not.toThrow();
 
-    console.log('[FAULT] Dependency integrity check runs successfully for valid deps');
+    console.log("[FAULT] Dependency integrity check runs successfully for valid deps");
   });
 });
 
-describe('FAULT INJECTION: Redis Configuration Assertions', () => {
+describe("FAULT INJECTION: Redis Configuration Assertions", () => {
   let redis: Redis;
 
   beforeEach(() => {
-    redis = new Redis({ host: 'localhost', port: 6379 });
+    redis = new Redis({ host: "localhost", port: 6379 });
   });
 
   afterEach(async () => {
     await redis.quit();
   });
 
-  it('should refuse to start with wrong Redis config', async () => {
-    const { assertRedisConfiguration } = await import('../infrastructure-assertions');
+  it("should refuse to start with wrong Redis config", async () => {
+    const { assertRedisConfiguration } = await import("../infrastructure-assertions");
 
     try {
       await assertRedisConfiguration(redis);
-      console.log('[FAULT] Redis config assertions passed (test Redis configured correctly)');
+      console.log("[FAULT] Redis config assertions passed (test Redis configured correctly)");
     } catch (err) {
-      console.log('[FAULT] Redis config assertions failed (expected in misconfigured environment)');
+      console.log("[FAULT] Redis config assertions failed (expected in misconfigured environment)");
     }
   });
 });

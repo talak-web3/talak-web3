@@ -243,6 +243,7 @@ done
 **These rules are enforced by the application. Violation prevents startup.**
 
 1. **NO manual writes to auth keys**
+
    ```bash
    redis-cli DEL talak:nonce:consumed:*
    redis-cli DEL talak:jti:*
@@ -251,11 +252,13 @@ done
    ```
 
 2. **NO replica promotion without draining auth traffic**
+
    ```bash
 
    ```
 
 3. **NO config changes without restart + verification**
+
    ```bash
 
    redis-cli CONFIG SET appendonly no
@@ -263,11 +266,13 @@ done
    ```
 
 4. **NO mixed-version clusters during deployment**
+
    ```bash
 
    ```
 
 5. **NO disabling of security features**
+
    ```bash
 
    redis-cli CONFIG SET protected-mode no
@@ -277,6 +282,7 @@ done
    ```
 
 6. **ALL config changes must be audited**
+
    ```bash
 
    redis-cli CONFIG REWRITE
@@ -293,10 +299,10 @@ done
 livenessProbe:
   exec:
     command:
-    - redis-cli
-    - -a
-    - $(REDIS_PASSWORD)
-    - PING
+      - redis-cli
+      - -a
+      - $(REDIS_PASSWORD)
+      - PING
   initialDelaySeconds: 10
   periodSeconds: 10
   timeoutSeconds: 3
@@ -309,11 +315,11 @@ livenessProbe:
 readinessProbe:
   exec:
     command:
-    - redis-cli
-    - -a
-    - $(REDIS_PASSWORD)
-    - INFO
-    - replication
+      - redis-cli
+      - -a
+      - $(REDIS_PASSWORD)
+      - INFO
+      - replication
   initialDelaySeconds: 5
   periodSeconds: 5
   timeoutSeconds: 3
@@ -329,18 +335,18 @@ async function redisHealthCheck(): Promise<boolean> {
     await redis.ping();
 
     // Check replication
-    const info = await redis.info('replication');
+    const info = await redis.info("replication");
     const role = info.match(/role:(master|slave)/)?.[1];
 
-    if (role === 'master') {
-      const connectedReplicas = parseInt(info.match(/connected_slaves:(\d+)/)?.[1] || '0');
+    if (role === "master") {
+      const connectedReplicas = parseInt(info.match(/connected_slaves:(\d+)/)?.[1] || "0");
       if (connectedReplicas < 1) {
         return false; // No replicas connected
       }
     }
 
     // Check replication lag
-    const lag = parseInt(info.match(/master_repl_offset:(\d+)/)?.[1] || '0');
+    const lag = parseInt(info.match(/master_repl_offset:(\d+)/)?.[1] || "0");
     if (lag > 10000) {
       return false; // Replication lag too high
     }

@@ -23,15 +23,15 @@ pnpm add @talak-web3/core
 ## Quick Start
 
 ```typescript
-import { talakWeb3 } from '@talak-web3/core';
+import { talakWeb3 } from "@talak-web3/core";
 
 const app = talakWeb3({
   chains: [
-    { id: 1, rpcUrls: ['https://eth-mainnet.g.alchemy.com/v2/demo_api_key'] },
-    { id: 137, rpcUrls: ['https://polygon-mainnet.g.alchemy.com/v2/demo_api_key'] },
+    { id: 1, rpcUrls: ["https://eth-mainnet.g.alchemy.com/v2/demo_api_key"] },
+    { id: 137, rpcUrls: ["https://polygon-mainnet.g.alchemy.com/v2/demo_api_key"] },
   ],
   auth: {
-    domain: 'yourdomain.com',
+    domain: "yourdomain.com",
     secret: process.env.JWT_SECRET,
   },
 });
@@ -39,7 +39,7 @@ const app = talakWeb3({
 await app.init();
 
 const blockNumber = await app.context.rpc.request({
-  method: 'eth_blockNumber',
+  method: "eth_blockNumber",
   chainId: 1,
 });
 
@@ -102,12 +102,11 @@ Middleware follows the onion pattern:
 
 ```typescript
 app.context.requestChain.use(async (request, next) => {
-
-  console.log('Before:', request);
+  console.log("Before:", request);
 
   const response = await next();
 
-  console.log('After:', response);
+  console.log("After:", response);
 
   return response;
 });

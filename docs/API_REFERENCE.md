@@ -9,19 +9,19 @@ Complete API reference for talak-web3.
 Creates a new talak-web3 application instance.
 
 ```typescript
-import { talakWeb3, MainnetPreset } from 'talak-web3';
+import { talakWeb3, MainnetPreset } from "talak-web3";
 
 const app = talakWeb3({
   ...MainnetPreset,
   auth: {
-    domain: 'myapp.com',
+    domain: "myapp.com",
     secret: process.env.JWT_SECRET!,
     sessionDuration: 900,
   },
   rpc: {
     providers: [
-      { url: 'https://eth-mainnet.g.alchemy.com/v2/demo_api_key', weight: 1 },
-      { url: 'https://mainnet.infura.io/v3/demo_project_id', weight: 1 },
+      { url: "https://eth-mainnet.g.alchemy.com/v2/demo_api_key", weight: 1 },
+      { url: "https://mainnet.infura.io/v3/demo_project_id", weight: 1 },
     ],
   },
 });
@@ -31,15 +31,15 @@ await app.init();
 
 #### Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `auth.domain` | `string` | required | SIWE domain |
-| `auth.secret` | `string` | required | JWT signing secret |
-| `auth.sessionDuration` | `number` | `900` | Access token TTL in seconds |
-| `auth.refreshDuration` | `number` | `604800` | Refresh token TTL in seconds |
-| `rpc.providers` | `ProviderConfig[]` | `[]` | RPC provider configurations |
-| `rpc.timeout` | `number` | `30000` | RPC request timeout in ms |
-| `redis.url` | `string` | `undefined` | Redis connection URL |
+| Option                 | Type               | Default     | Description                  |
+| ---------------------- | ------------------ | ----------- | ---------------------------- |
+| `auth.domain`          | `string`           | required    | SIWE domain                  |
+| `auth.secret`          | `string`           | required    | JWT signing secret           |
+| `auth.sessionDuration` | `number`           | `900`       | Access token TTL in seconds  |
+| `auth.refreshDuration` | `number`           | `604800`    | Refresh token TTL in seconds |
+| `rpc.providers`        | `ProviderConfig[]` | `[]`        | RPC provider configurations  |
+| `rpc.timeout`          | `number`           | `30000`     | RPC request timeout in ms    |
+| `redis.url`            | `string`           | `undefined` | Redis connection URL         |
 
 ### Context API
 
@@ -53,7 +53,6 @@ Generates a new SIWE nonce.
 
 ```typescript
 const nonce = await app.context.auth.generateNonce();
-
 ```
 
 ##### `verifySignature(message, signature)`
@@ -62,7 +61,6 @@ Verifies a SIWE signature.
 
 ```typescript
 const result = await app.context.auth.verifySignature(message, signature);
-
 ```
 
 ##### `createSession(address, chainId)`
@@ -71,7 +69,6 @@ Creates a new session.
 
 ```typescript
 const session = await app.context.auth.createSession(address, chainId);
-
 ```
 
 ##### `verifySession(token)`
@@ -80,7 +77,6 @@ Verifies an access token.
 
 ```typescript
 const session = await app.context.auth.verifySession(token);
-
 ```
 
 ##### `refreshSession(refreshToken)`
@@ -89,7 +85,6 @@ Refreshes a session using a refresh token.
 
 ```typescript
 const newSession = await app.context.auth.refreshSession(refreshToken);
-
 ```
 
 ##### `revokeSession(token)`
@@ -117,9 +112,9 @@ const provider = await app.context.rpc.getProvider(1);
 Makes an RPC request.
 
 ```typescript
-const balance = await app.context.rpc.request(1, 'eth_getBalance', [
-  '0x1111111111111111111111111111111111111111',
-  'latest',
+const balance = await app.context.rpc.request(1, "eth_getBalance", [
+  "0x1111111111111111111111111111111111111111",
+  "latest",
 ]);
 ```
 
@@ -130,20 +125,13 @@ const balance = await app.context.rpc.request(1, 'eth_getBalance', [
 Hook for Sign-In with Ethereum.
 
 ```typescript
-import { useSIWE } from 'talak-web3/react';
+import { useSIWE } from "talak-web3/react";
 
-const {
-  signIn,
-  signOut,
-  isAuthenticated,
-  isLoading,
-  user,
-  error,
-} = useSIWE({
-  domain: 'myapp.com',
-  uri: 'https://myapp.com/login',
-  onSuccess: (user) => console.log('Logged in:', user),
-  onError: (error) => console.error('Login failed:', error),
+const { signIn, signOut, isAuthenticated, isLoading, user, error } = useSIWE({
+  domain: "myapp.com",
+  uri: "https://myapp.com/login",
+  onSuccess: (user) => console.log("Logged in:", user),
+  onError: (error) => console.error("Login failed:", error),
 });
 ```
 
@@ -152,13 +140,9 @@ const {
 Hook for accessing session state.
 
 ```typescript
-import { useSession } from 'talak-web3/react';
+import { useSession } from "talak-web3/react";
 
-const {
-  session,
-  isAuthenticated,
-  isLoading,
-} = useSession();
+const { session, isAuthenticated, isLoading } = useSession();
 ```
 
 ### `useWallet()`
@@ -166,16 +150,9 @@ const {
 Hook for wallet interactions.
 
 ```typescript
-import { useWallet } from 'talak-web3/react';
+import { useWallet } from "talak-web3/react";
 
-const {
-  connect,
-  disconnect,
-  address,
-  chainId,
-  isConnected,
-  isConnecting,
-} = useWallet();
+const { connect, disconnect, address, chainId, isConnected, isConnecting } = useWallet();
 ```
 
 ## Error Handling
@@ -183,7 +160,7 @@ const {
 ### Error Classes
 
 ```typescript
-import { AuthError, RpcError, ValidationError } from '@talak-web3/errors';
+import { AuthError, RpcError, ValidationError } from "@talak-web3/errors";
 
 try {
   await verifySignature(message, signature);
@@ -206,16 +183,16 @@ try {
 
 ### Error Codes
 
-| Code | Description |
-|------|-------------|
-| `AUTH_INVALID_SIGNATURE` | Signature verification failed |
-| `AUTH_EXPIRED_NONCE` | Nonce has expired |
-| `AUTH_INVALID_TOKEN` | JWT token is invalid |
-| `AUTH_SESSION_REVOKED` | Session has been revoked |
-| `RPC_PROVIDER_ERROR` | RPC provider returned error |
-| `RPC_TIMEOUT` | RPC request timed out |
-| `RPC_ALL_PROVIDERS_FAILED` | All providers failed |
-| `VALIDATION_INVALID_INPUT` | Input validation failed |
+| Code                       | Description                   |
+| -------------------------- | ----------------------------- |
+| `AUTH_INVALID_SIGNATURE`   | Signature verification failed |
+| `AUTH_EXPIRED_NONCE`       | Nonce has expired             |
+| `AUTH_INVALID_TOKEN`       | JWT token is invalid          |
+| `AUTH_SESSION_REVOKED`     | Session has been revoked      |
+| `RPC_PROVIDER_ERROR`       | RPC provider returned error   |
+| `RPC_TIMEOUT`              | RPC request timed out         |
+| `RPC_ALL_PROVIDERS_FAILED` | All providers failed          |
+| `VALIDATION_INVALID_INPUT` | Input validation failed       |
 
 ## Types
 
@@ -227,7 +204,7 @@ interface SIWEMessage {
   address: string;
   statement?: string;
   uri: string;
-  version: '1';
+  version: "1";
   chainId: number;
   nonce: string;
   issuedAt: string;
@@ -266,15 +243,15 @@ interface ProviderConfig {
 ### Auth Events
 
 ```typescript
-app.on('auth:login', ({ address, chainId }) => {
+app.on("auth:login", ({ address, chainId }) => {
   console.log(`User ${address} logged in`);
 });
 
-app.on('auth:logout', ({ address }) => {
+app.on("auth:logout", ({ address }) => {
   console.log(`User ${address} logged out`);
 });
 
-app.on('auth:token_refresh', ({ address }) => {
+app.on("auth:token_refresh", ({ address }) => {
   console.log(`Token refreshed for ${address}`);
 });
 ```
@@ -282,11 +259,11 @@ app.on('auth:token_refresh', ({ address }) => {
 ### RPC Events
 
 ```typescript
-app.on('rpc:request', ({ chainId, method, duration }) => {
+app.on("rpc:request", ({ chainId, method, duration }) => {
   console.log(`RPC ${method} took ${duration}ms`);
 });
 
-app.on('rpc:failover', ({ from, to, chainId }) => {
+app.on("rpc:failover", ({ from, to, chainId }) => {
   console.log(`Failover from ${from} to ${to}`);
 });
 ```
@@ -296,17 +273,19 @@ app.on('rpc:failover', ({ from, to, chainId }) => {
 ### Express Middleware
 
 ```typescript
-import { authMiddleware } from '@talak-web3/middleware';
-import express from 'express';
+import { authMiddleware } from "@talak-web3/middleware";
+import express from "express";
 
 const app = express();
 
-app.use(authMiddleware({
-  secret: process.env.JWT_SECRET!,
-  issuer: 'myapp.com',
-}));
+app.use(
+  authMiddleware({
+    secret: process.env.JWT_SECRET!,
+    issuer: "myapp.com",
+  }),
+);
 
-app.get('/protected', (req, res) => {
+app.get("/protected", (req, res) => {
   res.json({ address: req.user.address });
 });
 ```
@@ -314,14 +293,17 @@ app.get('/protected', (req, res) => {
 ### Hono Middleware
 
 ```typescript
-import { authMiddleware } from '@talak-web3/middleware/hono';
-import { Hono } from 'hono';
+import { authMiddleware } from "@talak-web3/middleware/hono";
+import { Hono } from "hono";
 
 const app = new Hono();
 
-app.use('/api/*', authMiddleware({
-  secret: process.env.JWT_SECRET!,
-}));
+app.use(
+  "/api/*",
+  authMiddleware({
+    secret: process.env.JWT_SECRET!,
+  }),
+);
 ```
 
 ## Utilities
@@ -329,18 +311,18 @@ app.use('/api/*', authMiddleware({
 ### Address Utilities
 
 ```typescript
-import { isAddress, getAddress, shortenAddress } from 'talak-web3';
+import { isAddress, getAddress, shortenAddress } from "talak-web3";
 
-isAddress('0x1111111111111111111111111111111111111111');
-getAddress('0x1111111111111111111111111111111111111111');
-shortenAddress('0x1111111111111111111111111111111111111111');
+isAddress("0x1111111111111111111111111111111111111111");
+getAddress("0x1111111111111111111111111111111111111111");
+shortenAddress("0x1111111111111111111111111111111111111111");
 ```
 
 ### Formatting
 
 ```typescript
-import { formatEther, parseEther } from 'talak-web3';
+import { formatEther, parseEther } from "talak-web3";
 
 formatEther(1000000000000000000n);
-parseEther('1.0');
+parseEther("1.0");
 ```

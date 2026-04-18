@@ -1,4 +1,4 @@
-import { register, Counter, Histogram, Gauge, Registry } from 'prom-client';
+import { register, Counter, Histogram, Gauge, Registry } from "prom-client";
 
 export class PrometheusMetrics {
   private registry: Registry;
@@ -36,101 +36,101 @@ export class PrometheusMetrics {
 
   private initAuthMetrics(): void {
     this.authSuccessCounter = new Counter({
-      name: 'talak_auth_success_total',
-      help: 'Total number of successful authentication attempts',
-      labelNames: ['environment', 'method'],
+      name: "talak_auth_success_total",
+      help: "Total number of successful authentication attempts",
+      labelNames: ["environment", "method"],
       registers: [this.registry],
     });
 
     this.authFailureCounter = new Counter({
-      name: 'talak_auth_failure_total',
-      help: 'Total number of failed authentication attempts',
-      labelNames: ['environment', 'method', 'reason'],
+      name: "talak_auth_failure_total",
+      help: "Total number of failed authentication attempts",
+      labelNames: ["environment", "method", "reason"],
       registers: [this.registry],
     });
 
     this.authDurationHistogram = new Histogram({
-      name: 'talak_auth_duration_seconds',
-      help: 'Duration of authentication operations in seconds',
-      labelNames: ['environment', 'operation'],
+      name: "talak_auth_duration_seconds",
+      help: "Duration of authentication operations in seconds",
+      labelNames: ["environment", "operation"],
       buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
       registers: [this.registry],
     });
 
     this.authActiveSessionsGauge = new Gauge({
-      name: 'talak_auth_active_sessions',
-      help: 'Number of currently active authentication sessions',
-      labelNames: ['environment'],
+      name: "talak_auth_active_sessions",
+      help: "Number of currently active authentication sessions",
+      labelNames: ["environment"],
       registers: [this.registry],
     });
   }
 
   private initRateLimitMetrics(): void {
     this.rateLimitHitCounter = new Counter({
-      name: 'talak_rate_limit_hit_total',
-      help: 'Total number of rate limit violations',
-      labelNames: ['environment', 'type', 'reason'],
+      name: "talak_rate_limit_hit_total",
+      help: "Total number of rate limit violations",
+      labelNames: ["environment", "type", "reason"],
       registers: [this.registry],
     });
 
     this.rateLimitPenaltyCounter = new Counter({
-      name: 'talak_rate_limit_penalty_total',
-      help: 'Total number of rate limit penalties applied',
-      labelNames: ['environment', 'type', 'severity'],
+      name: "talak_rate_limit_penalty_total",
+      help: "Total number of rate limit penalties applied",
+      labelNames: ["environment", "type", "severity"],
       registers: [this.registry],
     });
 
     this.rateLimitActiveBucketsGauge = new Gauge({
-      name: 'talak_rate_limit_active_buckets',
-      help: 'Number of active rate limit buckets',
-      labelNames: ['environment', 'type'],
+      name: "talak_rate_limit_active_buckets",
+      help: "Number of active rate limit buckets",
+      labelNames: ["environment", "type"],
       registers: [this.registry],
     });
   }
 
   private initSecurityMetrics(): void {
     this.securityEventCounter = new Counter({
-      name: 'talak_security_event_total',
-      help: 'Total number of security events',
-      labelNames: ['environment', 'type', 'severity'],
+      name: "talak_security_event_total",
+      help: "Total number of security events",
+      labelNames: ["environment", "type", "severity"],
       registers: [this.registry],
     });
 
     this.suspiciousActivityCounter = new Counter({
-      name: 'talak_suspicious_activity_total',
-      help: 'Total number of suspicious activities detected',
-      labelNames: ['environment', 'pattern', 'risk_level'],
+      name: "talak_suspicious_activity_total",
+      help: "Total number of suspicious activities detected",
+      labelNames: ["environment", "pattern", "risk_level"],
       registers: [this.registry],
     });
 
     this.securityRiskScoreGauge = new Gauge({
-      name: 'talak_security_risk_score',
-      help: 'Current security risk score (0-1)',
-      labelNames: ['environment', 'source'],
+      name: "talak_security_risk_score",
+      help: "Current security risk score (0-1)",
+      labelNames: ["environment", "source"],
       registers: [this.registry],
     });
   }
 
   private initSystemMetrics(): void {
     this.redisConnectionGauge = new Gauge({
-      name: 'talak_redis_connection_status',
-      help: 'Redis connection status (1=connected, 0=disconnected)',
-      labelNames: ['environment', 'instance'],
+      name: "talak_redis_connection_status",
+      help: "Redis connection status (1=connected, 0=disconnected)",
+      labelNames: ["environment", "instance"],
       registers: [this.registry],
     });
 
     this.jwtSigningDurationHistogram = new Histogram({
-      name: 'talak_jwt_signing_duration_seconds',
-      help: 'Duration of JWT signing operations in seconds',
-      labelNames: ['environment', 'key_id'],
+      name: "talak_jwt_signing_duration_seconds",
+      help: "Duration of JWT signing operations in seconds",
+      labelNames: ["environment", "key_id"],
       buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5],
       registers: [this.registry],
     });
 
     this.jwtVerificationDurationHistogram = new Histogram({
-      name: 'talak_jwt_verification_duration_seconds',
-      help: 'Duration of JWT verification operations in seconds',
-      labelNames: ['environment', 'key_id'],
+      name: "talak_jwt_verification_duration_seconds",
+      help: "Duration of JWT verification operations in seconds",
+      labelNames: ["environment", "key_id"],
       buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5],
       registers: [this.registry],
     });
@@ -138,23 +138,23 @@ export class PrometheusMetrics {
 
   private initRpcMetrics(): void {
     this.rpcRequestCounter = new Counter({
-      name: 'talak_rpc_request_total',
-      help: 'Total number of RPC requests',
-      labelNames: ['environment', 'chain_id', 'method', 'status'],
+      name: "talak_rpc_request_total",
+      help: "Total number of RPC requests",
+      labelNames: ["environment", "chain_id", "method", "status"],
       registers: [this.registry],
     });
 
     this.rpcErrorCounter = new Counter({
-      name: 'talak_rpc_error_total',
-      help: 'Total number of RPC errors',
-      labelNames: ['environment', 'chain_id', 'method', 'error_type'],
+      name: "talak_rpc_error_total",
+      help: "Total number of RPC errors",
+      labelNames: ["environment", "chain_id", "method", "error_type"],
       registers: [this.registry],
     });
 
     this.rpcDurationHistogram = new Histogram({
-      name: 'talak_rpc_duration_seconds',
-      help: 'Duration of RPC requests in seconds',
-      labelNames: ['environment', 'chain_id', 'method'],
+      name: "talak_rpc_duration_seconds",
+      help: "Duration of RPC requests in seconds",
+      labelNames: ["environment", "chain_id", "method"],
       buckets: [0.1, 0.25, 0.5, 1, 2.5, 5, 10, 25, 50],
       registers: [this.registry],
     });
@@ -201,15 +201,24 @@ export class PrometheusMetrics {
   }
 
   setRedisConnectionStatus(instance: string, connected: boolean): void {
-    this.redisConnectionGauge.set({ environment: this.getEnvironment(), instance }, connected ? 1 : 0);
+    this.redisConnectionGauge.set(
+      { environment: this.getEnvironment(), instance },
+      connected ? 1 : 0,
+    );
   }
 
   recordJwtSigning(keyId: string, duration: number): void {
-    this.jwtSigningDurationHistogram.observe({ environment: this.getEnvironment(), key_id: keyId }, duration / 1000);
+    this.jwtSigningDurationHistogram.observe(
+      { environment: this.getEnvironment(), key_id: keyId },
+      duration / 1000,
+    );
   }
 
   recordJwtVerification(keyId: string, duration: number): void {
-    this.jwtVerificationDurationHistogram.observe({ environment: this.getEnvironment(), key_id: keyId }, duration / 1000);
+    this.jwtVerificationDurationHistogram.observe(
+      { environment: this.getEnvironment(), key_id: keyId },
+      duration / 1000,
+    );
   }
 
   recordRpcRequest(chainId: string, method: string, status: string, duration: number): void {
@@ -219,7 +228,12 @@ export class PrometheusMetrics {
   }
 
   recordRpcError(chainId: string, method: string, errorType: string): void {
-    this.rpcErrorCounter.inc({ environment: this.getEnvironment(), chain_id: chainId, method, error_type: errorType });
+    this.rpcErrorCounter.inc({
+      environment: this.getEnvironment(),
+      chain_id: chainId,
+      method,
+      error_type: errorType,
+    });
   }
 
   getMetrics(): string {
@@ -231,7 +245,7 @@ export class PrometheusMetrics {
   }
 
   private getEnvironment(): string {
-    return process.env['NODE_ENV'] ?? 'development';
+    return process.env["NODE_ENV"] ?? "development";
   }
 
   reset(): void {
@@ -250,18 +264,18 @@ export function createMetricsMiddleware(metrics: PrometheusMetrics) {
     const method = c.req.method;
     const status = c.res.status;
 
-    if (path.startsWith('/auth/')) {
+    if (path.startsWith("/auth/")) {
       if (status >= 200 && status < 300) {
         metrics.recordAuthSuccess(method, duration);
       } else {
         metrics.recordAuthFailure(method, `http_${status}`, duration);
       }
-    } else if (path.startsWith('/rpc/')) {
-      const chainId = c.req.param('chainId') || 'unknown';
-      const rpcMethod = c.get('rpcMethod') || 'unknown';
+    } else if (path.startsWith("/rpc/")) {
+      const chainId = c.req.param("chainId") || "unknown";
+      const rpcMethod = c.get("rpcMethod") || "unknown";
 
       if (status >= 200 && status < 300) {
-        metrics.recordRpcRequest(chainId, rpcMethod, 'success', duration);
+        metrics.recordRpcRequest(chainId, rpcMethod, "success", duration);
       } else {
         metrics.recordRpcError(chainId, rpcMethod, `http_${status}`);
       }
@@ -281,7 +295,6 @@ export class MetricsHealthChecker {
     const metricsData: Record<string, any> = {};
 
     try {
-
       const registry = this.metrics.getRegistry();
       const metricNames = registry.getMetricsAsJSON().map((m: any) => m.name);
 
@@ -289,26 +302,26 @@ export class MetricsHealthChecker {
       metricsData.metric_names = metricNames;
 
       const criticalMetrics = [
-        'talak_auth_success_total',
-        'talak_auth_failure_total',
-        'talak_rate_limit_hit_total',
-        'talak_security_event_total',
-        'talak_redis_connection_status',
+        "talak_auth_success_total",
+        "talak_auth_failure_total",
+        "talak_rate_limit_hit_total",
+        "talak_security_event_total",
+        "talak_redis_connection_status",
       ];
 
-      const missingMetrics = criticalMetrics.filter(name => !metricNames.includes(name));
+      const missingMetrics = criticalMetrics.filter((name) => !metricNames.includes(name));
       if (missingMetrics.length > 0) {
-        issues.push(`Missing critical metrics: ${missingMetrics.join(', ')}`);
+        issues.push(`Missing critical metrics: ${missingMetrics.join(", ")}`);
       }
 
-      const redisMetric = registry.getSingleMetric('talak_redis_connection_status');
+      const redisMetric = registry.getSingleMetric("talak_redis_connection_status");
       if (redisMetric) {
         const redisStatus = await redisMetric.get();
         if (redisStatus.values && redisStatus.values.length > 0) {
           const isConnected = redisStatus.values[0].value === 1;
           metricsData.redis_connected = isConnected;
           if (!isConnected) {
-            issues.push('Redis connection is down');
+            issues.push("Redis connection is down");
           }
         }
       }

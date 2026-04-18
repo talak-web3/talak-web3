@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import Redis from 'ioredis';
-import { RedisNonceStore } from '../../stores/redis-nonce.js';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import Redis from "ioredis";
+import { RedisNonceStore } from "../../stores/redis-nonce.js";
 
-describe('Adversarial: Nonce Crash Replay', () => {
+describe("Adversarial: Nonce Crash Replay", () => {
   let redis: Redis;
   let nonceStore: RedisNonceStore;
-  const testAddress = '0x1234567890abcdef1234567890abcdef12345678';
+  const testAddress = "0x1234567890abcdef1234567890abcdef12345678";
 
   beforeEach(async () => {
     redis = new Redis({
-      host: 'localhost',
+      host: "localhost",
       port: 6379,
       db: 15,
     });
@@ -23,8 +23,7 @@ describe('Adversarial: Nonce Crash Replay', () => {
     await redis.quit();
   });
 
-  it('should prevent nonce replay after simulated crash (consumed set persists)', async () => {
-
+  it("should prevent nonce replay after simulated crash (consumed set persists)", async () => {
     const nonce = await nonceStore.create(testAddress);
 
     const firstConsume = await nonceStore.consume(testAddress, nonce);
@@ -37,7 +36,7 @@ describe('Adversarial: Nonce Crash Replay', () => {
     expect(replayAttempt).toBe(false);
   });
 
-  it('should handle concurrent consumption atomically', async () => {
+  it("should handle concurrent consumption atomically", async () => {
     const nonce = await nonceStore.create(testAddress);
 
     const results = await Promise.all([
@@ -46,17 +45,16 @@ describe('Adversarial: Nonce Crash Replay', () => {
       nonceStore.consume(testAddress, nonce),
     ]);
 
-    const successCount = results.filter(r => r).length;
+    const successCount = results.filter((r) => r).length;
     expect(successCount).toBe(1);
   });
 
-  it('should reject non-existent nonce', async () => {
-    const result = await nonceStore.consume(testAddress, 'nonexistent-nonce');
+  it("should reject non-existent nonce", async () => {
+    const result = await nonceStore.consume(testAddress, "nonexistent-nonce");
     expect(result).toBe(false);
   });
 
-  it('should handle expired nonces correctly', async () => {
-
+  it("should handle expired nonces correctly", async () => {
     const shortTtlStore = new RedisNonceStore({
       redis,
       ttlMs: 100,
@@ -64,13 +62,13 @@ describe('Adversarial: Nonce Crash Replay', () => {
 
     const nonce = await shortTtlStore.create(testAddress);
 
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     const result = await shortTtlStore.consume(testAddress, nonce);
     expect(result).toBe(false);
   });
 
-  it('should maintain consumed set with proper TTL', async () => {
+  it("should maintain consumed set with proper TTL", async () => {
     const nonce = await nonceStore.create(testAddress);
     await nonceStore.consume(testAddress, nonce);
 

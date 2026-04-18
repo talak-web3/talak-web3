@@ -1,6 +1,6 @@
-import type Redis from 'ioredis';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { NonceStore } from '../contracts.js';
+import type Redis from "ioredis";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { NonceStore } from "../contracts.js";
 
 const CONSUME_NONCE_DETERMINISTIC_LUA = `
 -- KEYS[1] = consumed set (SOURCE OF TRUTH)
@@ -36,7 +36,6 @@ return 1
 `;
 
 export interface RedisNonceStoreOptions {
-
   redis: Redis;
 
   ttlMs?: number;
@@ -61,7 +60,7 @@ export class RedisNonceStore implements NonceStore {
   constructor(opts: RedisNonceStoreOptions) {
     this.redis = opts.redis;
     this.ttlMs = Math.min(opts.ttlMs ?? 5 * 60_000, 5 * 60_000);
-    this.prefix = opts.keyPrefix ?? 'talak:nonce:';
+    this.prefix = opts.keyPrefix ?? "talak:nonce:";
     this.consumedRetentionMs = this.ttlMs * 2;
     this.waitReplicas = opts.waitReplicas ?? 1;
     this.waitTimeoutMs = opts.waitTimeoutMs ?? 100;
@@ -77,7 +76,7 @@ export class RedisNonceStore implements NonceStore {
 
   async create(address: string, _meta?: { ip?: string; ua?: string }): Promise<string> {
     const addr = address.toLowerCase();
-    const nonce = crypto.randomUUID().replace(/-/g, '');
+    const nonce = crypto.randomUUID().replace(/-/g, "");
     const now = Date.now();
 
     await this.redis.zadd(this.pendingKey(addr), now, nonce);
@@ -93,39 +92,35 @@ export class RedisNonceStore implements NonceStore {
     const pendingKey = this.pendingKey(addr);
 
     try {
-
-      const result = await this.redis.eval(
+      const result = (await this.redis.eval(
         CONSUME_NONCE_DETERMINISTIC_LUA,
         2,
         consumedKey,
         pendingKey,
         nonce,
-        this.ttlMs.toString()
-      ) as number;
+        this.ttlMs.toString(),
+      )) as number;
 
       if (result !== 1) {
         return false;
       }
 
-      const replicasAcknowledged = await this.redis.wait(
+      const replicasAcknowledged = (await this.redis.wait(
         this.waitReplicas,
-        this.waitTimeoutMs
-      ) as number;
+        this.waitTimeoutMs,
+      )) as number;
 
       if (replicasAcknowledged < this.waitReplicas) {
-
-        console.error(
-          '[AUTH] CRITICAL: Nonce replication acknowledgment failed',
-          { expected: this.waitReplicas, actual: replicasAcknowledged }
-        );
-
+        console.error("[AUTH] CRITICAL: Nonce replication acknowledgment failed", {
+          expected: this.waitReplicas,
+          actual: replicasAcknowledged,
+        });
       }
 
       return true;
     } catch (err) {
-
-      throw new TalakWeb3Error('Redis nonce store failure — failing closed', {
-        code: 'AUTH_REDIS_NONCE_ERROR',
+      throw new TalakWeb3Error("Redis nonce store failure — failing closed", {
+        code: "AUTH_REDIS_NONCE_ERROR",
         status: 503,
         cause: err,
       });
@@ -140,9 +135,8 @@ export class RedisNonceStore implements NonceStore {
       const result = await this.redis.sismember(consumedKey, nonce);
       return result === 1;
     } catch (err) {
-
-      throw new TalakWeb3Error('Redis nonce verification failure — failing closed', {
-        code: 'AUTH_REDIS_NONCE_ERROR',
+      throw new TalakWeb3Error("Redis nonce verification failure — failing closed", {
+        code: "AUTH_REDIS_NONCE_ERROR",
         status: 503,
         cause: err,
       });

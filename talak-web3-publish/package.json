@@ -2,6 +2,29 @@
   "name": "@dagimabebe/talak-web3",
   "version": "1.0.9",
   "description": "A comprehensive Web3 SDK for blockchain development",
+  "keywords": [
+    "blockchain",
+    "crypto",
+    "dapp",
+    "ethereum",
+    "smart-contracts",
+    "wallet",
+    "web3"
+  ],
+  "homepage": "https://github.com/dagimabebe/talak-web3#readme",
+  "bugs": {
+    "url": "https://github.com/dagimabebe/talak-web3/issues"
+  },
+  "license": "MIT",
+  "author": "Dagim Abebe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dagimabebe/talak-web3.git"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,12 +48,15 @@
       "default": "./dist/react.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "engines": {
-    "node": ">=20.12.0"
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "node -e \"const fs=require('fs');if(!fs.existsSync('dist')){throw new Error('dist missing. Build from packages/talak-web3 first.')}console.log('dist is present; publish package is ready.')\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "pack:check": "npm pack --dry-run"
   },
   "dependencies": {
     "ioredis": "^5.10.1",
@@ -47,33 +73,7 @@
       "optional": true
     }
   },
-  "scripts": {
-    "build": "node -e \"const fs=require('fs');if(!fs.existsSync('dist')){throw new Error('dist missing. Build from packages/talak-web3 first.')}console.log('dist is present; publish package is ready.')\"",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "pack:check": "npm pack --dry-run"
-  },
-  "keywords": [
-    "web3",
-    "blockchain",
-    "ethereum",
-    "crypto",
-    "dapp",
-    "wallet",
-    "smart-contracts"
-  ],
-  "author": "Dagim Abebe",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dagimabebe/talak-web3.git"
-  },
-  "bugs": {
-    "url": "https://github.com/dagimabebe/talak-web3/issues"
-  },
-  "homepage": "https://github.com/dagimabebe/talak-web3#readme",
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
+  "engines": {
+    "node": ">=20.12.0"
   }
 }

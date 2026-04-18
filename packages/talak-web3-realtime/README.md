@@ -15,28 +15,36 @@ pnpm add @talak-web3/realtime
 ## Usage
 
 ```typescript
-import { createRealtimeClient } from '@talak-web3/realtime';
+import { createRealtimeClient } from "@talak-web3/realtime";
 
 const realtime = createRealtimeClient({
-  url: 'wss://ws.talak.dev',
+  url: "wss://ws.talak.dev",
 });
 
-realtime.subscribe('block', (block) => {
-  console.log('New block:', block.number);
+realtime.subscribe("block", (block) => {
+  console.log("New block:", block.number);
 });
 
-realtime.subscribe('transactions', {
-  address: '0x1111111111111111111111111111111111111111',
-}, (tx) => {
-  console.log('New transaction:', tx.hash);
-});
+realtime.subscribe(
+  "transactions",
+  {
+    address: "0x1111111111111111111111111111111111111111",
+  },
+  (tx) => {
+    console.log("New transaction:", tx.hash);
+  },
+);
 
-realtime.subscribe('events', {
-  address: '0x1111111111111111111111111111111111111111',
-  event: 'Transfer',
-}, (event) => {
-  console.log('Transfer:', event);
-});
+realtime.subscribe(
+  "events",
+  {
+    address: "0x1111111111111111111111111111111111111111",
+    event: "Transfer",
+  },
+  (event) => {
+    console.log("Transfer:", event);
+  },
+);
 ```
 
 ## Features

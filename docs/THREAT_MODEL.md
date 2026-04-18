@@ -11,6 +11,7 @@ This document defines the **security contract** for the talak-web3 authenticatio
 ## System Overview
 
 Talak-web3 provides wallet-based authentication (SIWE) for decentralized applications with:
+
 - Short-lived JWT access tokens (15 min)
 - Opaque refresh tokens (7 days)
 - Atomic nonce consumption for replay prevention
@@ -21,14 +22,14 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 
 ## Assets (What We Protect)
 
-| Asset | Criticality | Impact if Compromised |
-|-------|-------------|----------------------|
-| **JWT signing keys** (active + rotated) | CRITICAL | Attacker can forge arbitrary tokens |
-| **Nonce state** (pending + consumed) | HIGH | Replay attacks possible if lost |
-| **Revocation state** (JTI blacklist) | HIGH | Revoked tokens remain valid |
-| **Time authority offsets** | MEDIUM | Token expiration manipulation |
-| **Refresh tokens** (opaque) | HIGH | Session hijacking |
-| **User wallet addresses** | MEDIUM | Identity correlation |
+| Asset                                   | Criticality | Impact if Compromised               |
+| --------------------------------------- | ----------- | ----------------------------------- |
+| **JWT signing keys** (active + rotated) | CRITICAL    | Attacker can forge arbitrary tokens |
+| **Nonce state** (pending + consumed)    | HIGH        | Replay attacks possible if lost     |
+| **Revocation state** (JTI blacklist)    | HIGH        | Revoked tokens remain valid         |
+| **Time authority offsets**              | MEDIUM      | Token expiration manipulation       |
+| **Refresh tokens** (opaque)             | HIGH        | Session hijacking                   |
+| **User wallet addresses**               | MEDIUM      | Identity correlation                |
 
 ---
 
@@ -45,12 +46,14 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 ```
 
 **Trust assumptions**:
+
 - Redis is on private network
 - Redis AUTH enabled
 - Redis nodes are not actively malicious (crash faults only)
 - Network is not intercepted (no TLS if localhost)
 
 **Violations if**:
+
 - Redis accessible from public internet
 - Attacker controls Redis node
 - Network traffic intercepted (no TLS)
@@ -67,11 +70,13 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 ```
 
 **Trust assumptions**:
+
 - HTTPS connections not intercepted
 - Time sources not colluding
 - DNS resolution not poisoned
 
 **Violations if**:
+
 - Enterprise MITM proxy intercepts TLS
 - All time sources compromised simultaneously
 - DNS poisoning redirects to malicious NTP
@@ -87,12 +92,14 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 ```
 
 **Trust assumptions**:
+
 - CI/CD pipeline not compromised
 - Container images not tampered after build
 - Lockfile integrity maintained
 - npm packages not malicious
 
 **Violations if**:
+
 - Supply chain attack on dependencies
 - Container registry compromised
 - Runtime filesystem modified post-deployment
@@ -104,18 +111,21 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 ### Level 1: Remote Attacker (No Infrastructure Access)
 
 **Capabilities**:
+
 - Intercept network traffic (public networks)
 - Replay captured authentication requests
 - Attempt brute-force attacks
 - Exploit application vulnerabilities
 
 **Protected Against**: ✅ YES
+
 - Replay prevention (nonce consumption)
 - Rate limiting (IP + address-based)
 - Token binding (IP + User-Agent)
 - Signature verification (SIWE)
 
 **Attack scenarios mitigated**:
+
 - Nonce replay from captured traffic
 - Token theft and reuse from different context
 - Brute-force SIWE signature attempts
@@ -124,18 +134,21 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 ### Level 2: Insider (Read-Only Infrastructure Access)
 
 **Capabilities**:
+
 - Monitor Redis traffic
 - Read logs and metrics
 - Observe network patterns
 - Access monitoring dashboards
 
 **Protected Against**: ✅ YES (mostly)
+
 - Refresh tokens stored as SHA-256 hashes
 - JWT signatures use RS256 (private key not in app)
 - Nonces are opaque UUIDs
 - Revocation state is append-only
 
 **Residual risks**:
+
 - Can observe authentication patterns (metadata)
 - Can correlate IP addresses with wallet addresses
 - Cannot forge tokens or bypass auth
@@ -143,24 +156,28 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 ### Level 3: Infrastructure Attacker (Redis/Node Control)
 
 **Capabilities**:
+
 - Control Redis nodes
 - Modify Redis data
 - Intercept application ↔ Redis traffic
 - Restart application containers
 
 **Protected Against**: ⚠️ PARTIALLY
+
 - Crash faults tolerated (replication + WAIT)
 - Byzantine behavior NOT tolerated
 - Can delay but not prevent revocation (with WAIT)
 - Can cause fail-closed (reject all auth)
 
 **Residual risks**:
+
 - **Can replay nonces** if controls Redis primary during failover
 - **Can delay revocation** by controlling replication
 - **Can cause denial of service** by rejecting all auth requests
 - **Cannot forge tokens** (requires signing key)
 
 **Mitigation**:
+
 - Redis AUTH + private network
 - Monitoring for anomalous Redis behavior
 - Fail-closed behavior limits damage
@@ -168,23 +185,27 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 ### Level 4: Supply Chain Attacker
 
 **Capabilities**:
+
 - Compromise npm packages
 - Modify container images
 - Tamper with build pipeline
 - Inject malicious dependencies
 
 **Protected Against**: ⚠️ PARTIALLY
+
 - Runtime hash verification detects tampering
 - Object.freeze prevents prototype poisoning
 - Periodic integrity checks catch post-load compromise
 - **Cannot prevent pre-execution compromise**
 
 **Residual risks**:
+
 - Compromised package runs with full privileges
 - Detection occurs after module loading
 - Native addons bypass JavaScript checks
 
 **Mitigation**:
+
 - Lockfile verification (`pnpm install --frozen-lockfile`)
 - Container image signing (external to app)
 - CI/CD pipeline security (external to app)
@@ -198,6 +219,7 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 **Invariant**: A nonce is valid IFF it does NOT exist in the consumed set.
 
 **Implementation**:
+
 - Append-only consumed set (SADD, no DEL)
 - WAIT replication acknowledgment
 - Atomic Lua script verification
@@ -213,6 +235,7 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 **Invariant**: Revoked tokens are rejected within bounded time (Δ < 100ms) across all instances.
 
 **Implementation**:
+
 - Primary-only reads (no replica reads)
 - WAIT replication on revocation
 - Pub/Sub for performance optimization
@@ -228,6 +251,7 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 **Invariant**: Time is monotonically non-decreasing with bounded drift (±5s) across all nodes.
 
 **Implementation**:
+
 - Cluster-wide monotonic floor persisted to Redis
 - Multi-source HTTP time verification
 - Drift detection fails closed
@@ -243,6 +267,7 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 **Invariant**: Token is valid IFF presented from same client context (IP subnet + User-Agent).
 
 **Implementation**:
+
 - SHA-256 hash of IP + User-Agent stored in JWT
 - /30 subnet tolerance for NAT (IPv4)
 - /64 subnet for IPv6
@@ -258,6 +283,7 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 **Invariant**: All executed code matches verified hashes.
 
 **Implementation**:
+
 - Runtime hash verification of critical dependencies
 - Object.freeze on critical prototypes
 - Periodic integrity checks every 5 minutes
@@ -273,30 +299,36 @@ Talak-web3 provides wallet-based authentication (SIWE) for decentralized applica
 ### Tolerated Faults
 
 ✅ **Crash faults** — nodes stop responding
+
 - Redis crash → fail closed (reject auth)
 - Application crash → state recovered from Redis
 - Network partition → fail closed (reject auth)
 
 ✅ **Replication lag** — delayed data propagation
+
 - WAIT ensures acknowledgment before return
 - Bounds lag to <100ms under healthy cluster
 
 ✅ **Time source unavailability** — one or more sources fail
+
 - Multiple sources provide redundancy
 - Last known offset used if all fail
 
 ### NOT Tolerated
 
 ❌ **Byzantine faults** — nodes behave maliciously
+
 - Redis node returns incorrect data
 - Time source lies about current time
 - Application node modified at runtime
 
 ❌ **Consensus failures** — split-brain scenarios
+
 - Multiple primaries accept conflicting writes
 - Network partition creates divergent state
 
 ❌ **Pre-execution compromise** — tampered code loaded
+
 - Malicious dependency in node_modules
 - Modified container image
 - Compromised build pipeline
@@ -416,15 +448,16 @@ This system **DOES NOT** provide:
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-04-20 | Initial threat model with I2/I4/I6/I10 invariants |
+| Version | Date       | Changes                                           |
+| ------- | ---------- | ------------------------------------------------- |
+| 1.0     | 2026-04-20 | Initial threat model with I2/I4/I6/I10 invariants |
 
 ---
 
 ## Acknowledgments
 
 This threat model explicitly distinguishes between:
+
 - **Implementation flaws** (fixed)
 - **Architectural limits** (documented)
 - **Operational requirements** (specified)

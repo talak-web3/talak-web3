@@ -20,8 +20,8 @@ import type {
   WalletConfig,
   SIWEMessage,
   Session,
-  TransactionRequest
-} from '@talak-web3/types';
+  TransactionRequest,
+} from "@talak-web3/types";
 ```
 
 ## Core Types

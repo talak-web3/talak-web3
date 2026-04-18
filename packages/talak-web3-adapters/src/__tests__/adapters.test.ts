@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from "vitest";
 
-describe('Adapters', () => {
-  it('loads adapter test harness', () => {
+describe("Adapters", () => {
+  it("loads adapter test harness", () => {
     expect(true).toBe(true);
   });
 });

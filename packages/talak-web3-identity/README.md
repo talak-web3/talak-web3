@@ -17,27 +17,27 @@ pnpm add @talak-web3/identity
 ### DID Management
 
 ```typescript
-import { createIdentityManager } from '@talak-web3/identity';
+import { createIdentityManager } from "@talak-web3/identity";
 
 const identity = createIdentityManager({
-  provider: 'ethereum',
+  provider: "ethereum",
 });
 
 const did = await identity.createDID({
-  address: '0x1111111111111111111111111111111111111111',
+  address: "0x1111111111111111111111111111111111111111",
 });
 
-const doc = await identity.resolveDID('did:ethr:0x1111111111111111111111111111111111111111');
+const doc = await identity.resolveDID("did:ethr:0x1111111111111111111111111111111111111111");
 ```
 
 ### Verifiable Credentials
 
 ```typescript
 const credential = await identity.issueCredential({
-  subject: 'did:ethr:0x1111111111111111111111111111111111111111',
+  subject: "did:ethr:0x1111111111111111111111111111111111111111",
   claims: {
-    name: 'Alice',
-    role: 'admin',
+    name: "Alice",
+    role: "admin",
   },
 });
 
@@ -47,12 +47,12 @@ const isValid = await identity.verifyCredential(credential);
 ### Profile Management
 
 ```typescript
-const profile = await identity.getProfile('0x1111111111111111111111111111111111111111');
+const profile = await identity.getProfile("0x1111111111111111111111111111111111111111");
 
 await identity.updateProfile({
-  name: 'Alice',
-  avatar: 'https://example.com/resource',
-  bio: 'Web3 enthusiast',
+  name: "Alice",
+  avatar: "https://example.com/resource",
+  bio: "Web3 enthusiast",
 });
 ```
 

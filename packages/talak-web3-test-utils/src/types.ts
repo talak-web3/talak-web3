@@ -1,5 +1,5 @@
-import type { Address } from 'viem';
-import type { SessionPayload } from '@talak-web3/auth';
+import type { Address } from "viem";
+import type { SessionPayload } from "@talak-web3/auth";
 
 export interface MockWallet {
   address: Address;
@@ -16,7 +16,6 @@ export interface MockSession {
 }
 
 export interface TestContext {
-
   testId: string;
 
   startTime: number;

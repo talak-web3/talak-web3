@@ -1,15 +1,14 @@
-import type { RedisClientType } from 'redis';
-import type { Context } from 'hono';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import { RedisNonceStore, RedisRefreshStore } from './stores.js';
-import type { NonceStore, RefreshStore } from '@talak-web3/auth';
-import { rateLimitRedis } from './rateLimit.js';
-import { randomBytes } from 'node:crypto';
+import type { RedisClientType } from "redis";
+import type { Context } from "hono";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import { RedisNonceStore, RedisRefreshStore } from "./stores.js";
+import type { NonceStore, RefreshStore } from "@talak-web3/auth";
+import { rateLimitRedis } from "./rateLimit.js";
+import { randomBytes } from "node:crypto";
 
 export { RedisNonceStore, RedisRefreshStore };
 
 export interface AuthStorage {
-
   readonly nonceStore: NonceStore;
 
   readonly refreshStore: RefreshStore;
@@ -18,7 +17,7 @@ export interface AuthStorage {
     key: string,
     capacity: number,
     refillsPerSecond: number,
-    cost?: number
+    cost?: number,
   ): Promise<{ allowed: boolean; remaining: number }>;
 
   penalize(key: string, cost: number): Promise<void>;
@@ -30,27 +29,37 @@ export class RedisAuthStorage implements AuthStorage {
 
   constructor(
     private readonly redis: RedisClientType,
-    private readonly strictRateLimit: boolean = true
+    private readonly strictRateLimit: boolean = true,
   ) {
     if (!redis) {
-      throw new Error('CRITICAL: Redis client is required for RedisAuthStorage. In-memory fallback is disabled.');
+      throw new Error(
+        "CRITICAL: Redis client is required for RedisAuthStorage. In-memory fallback is disabled.",
+      );
     }
 
     this.nonceStore = new RedisNonceStore(redis, 5 * 60_000);
     this.refreshStore = new RedisRefreshStore(redis);
   }
 
-  async checkRateLimit(key: string, capacity: number, refillsPerSecond: number, cost = 1): Promise<{ allowed: boolean; remaining: number }> {
+  async checkRateLimit(
+    key: string,
+    capacity: number,
+    refillsPerSecond: number,
+    cost = 1,
+  ): Promise<{ allowed: boolean; remaining: number }> {
     try {
       if (!this.redis.isOpen) {
-        throw new Error('Redis connection not open');
+        throw new Error("Redis connection not open");
       }
-      return await rateLimitRedis(this.redis, key, { capacity, refillPerSecond: refillsPerSecond, cost });
+      return await rateLimitRedis(this.redis, key, {
+        capacity,
+        refillPerSecond: refillsPerSecond,
+        cost,
+      });
     } catch (err) {
       if (this.strictRateLimit) {
-
-        throw new TalakWeb3Error('INFRA_UNAVAILABLE: Storage for rate limiter failed', {
-          code: 'INFRA_UNAVAILABLE',
+        throw new TalakWeb3Error("INFRA_UNAVAILABLE: Storage for rate limiter failed", {
+          code: "INFRA_UNAVAILABLE",
           status: 503,
           cause: err,
         });
@@ -69,12 +78,15 @@ export class RedisAuthStorage implements AuthStorage {
 
       const multi = this.redis.multi();
       for (let i = 0; i < cost; i++) {
-        multi.zAdd(fullKey, { score: now, value: `${now}:penalty:${i}:${randomBytes(4).toString('hex')}` });
+        multi.zAdd(fullKey, {
+          score: now,
+          value: `${now}:penalty:${i}:${randomBytes(4).toString("hex")}`,
+        });
       }
       multi.pExpire(fullKey, windowMs);
       await multi.exec();
     } catch (err) {
-      console.error('[RedisAuthStorage] Failed to apply penalty:', err);
+      console.error("[RedisAuthStorage] Failed to apply penalty:", err);
     }
   }
 }

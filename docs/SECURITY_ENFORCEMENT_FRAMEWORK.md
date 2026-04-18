@@ -14,7 +14,6 @@ This document describes how the authentication system enforces security assumpti
 
 ```typescript
 async function bootstrap(): Promise<void> {
-
   await assertRedisConfiguration(redis);
 
   await assertRedisReplication(redis, { minReplicas: 1, maxLagSeconds: 10 });
@@ -37,24 +36,23 @@ async function bootstrap(): Promise<void> {
 
 ```typescript
 async function authenticate(request: AuthRequest): Promise<Session> {
-
   const consumed = await nonceStore.consume(address, nonce);
   if (!consumed) {
-    throw new Error('Nonce already used');
+    throw new Error("Nonce already used");
   }
 
   const isRevoked = await revocationStore.isRevoked(jti);
   if (isRevoked) {
-    throw new Error('Token revoked');
+    throw new Error("Token revoked");
   }
 
   const now = time.now();
   if (token.exp < now) {
-    throw new Error('Token expired');
+    throw new Error("Token expired");
   }
 
   if (token.contextHash !== computeContextHash(request.ip, request.userAgent)) {
-    throw new Error('Token context mismatch');
+    throw new Error("Token context mismatch");
   }
 
   return createSession(token);
@@ -74,27 +72,24 @@ setInterval(async () => {
   try {
     await time.sync();
   } catch (err) {
-
-    logger.critical('Time sync failed — system will fail closed');
-    metrics.increment('time_sync_failures_total');
+    logger.critical("Time sync failed — system will fail closed");
+    metrics.increment("time_sync_failures_total");
   }
 }, 60_000);
 
 setInterval(() => {
   try {
     verifyDependencyIntegrity({ failClosed: true });
-  } catch (err) {
-
-  }
+  } catch (err) {}
 }, 300_000);
 
 setInterval(async () => {
   const latency = await measureWaitLatency(redis);
-  metrics.record('redis_wait_latency_ms', latency);
+  metrics.record("redis_wait_latency_ms", latency);
 
   if (latency > 500) {
-    logger.critical('Replication lag critical — consider shutdown');
-    metrics.increment('fail_closed_events_total', { invariant: 'I2' });
+    logger.critical("Replication lag critical — consider shutdown");
+    metrics.increment("fail_closed_events_total", { invariant: "I2" });
   }
 }, 10_000);
 ```
@@ -107,24 +102,24 @@ setInterval(async () => {
 
 **When system cannot verify safety, it shuts down:**
 
-| Condition | Trigger | Action | Invariant Protected |
-|-----------|---------|--------|---------------------|
-| Redis unreachable | >5 failures in 30s | `process.exit(1)` | I2, I4, I6 |
-| Time drift excessive | >10,000ms | `process.exit(1)` | I6 |
-| Integrity check fails | Any mismatch | `process.exit(1)` | I10 |
-| Replication lag critical | P99 >500ms for 5min | `process.exit(1)` | I2, I4 |
-| Monotonic violation | Any regression | `process.exit(1)` | I6 |
+| Condition                | Trigger             | Action            | Invariant Protected |
+| ------------------------ | ------------------- | ----------------- | ------------------- |
+| Redis unreachable        | >5 failures in 30s  | `process.exit(1)` | I2, I4, I6          |
+| Time drift excessive     | >10,000ms           | `process.exit(1)` | I6                  |
+| Integrity check fails    | Any mismatch        | `process.exit(1)` | I10                 |
+| Replication lag critical | P99 >500ms for 5min | `process.exit(1)` | I2, I4              |
+| Monotonic violation      | Any regression      | `process.exit(1)` | I6                  |
 
 **Implementation**:
+
 ```typescript
-app.get('/healthz', async (req, res) => {
+app.get("/healthz", async (req, res) => {
   try {
     await redis.ping();
     await time.sync();
-    res.status(200).send('ok');
+    res.status(200).send("ok");
   } catch (err) {
-    res.status(503).send('unhealthy');
-
+    res.status(503).send("unhealthy");
   }
 });
 ```
@@ -140,28 +135,25 @@ app.get('/healthz', async (req, res) => {
 ### Test Suite: `fault-injection.test.ts`
 
 ```typescript
-it('should fail closed when Redis unreachable', async () => {
+it("should fail closed when Redis unreachable", async () => {
   await redis.quit();
-  await expect(nonceStore.consume(address, nonce))
-    .rejects.toThrow('Redis nonce store failure');
+  await expect(nonceStore.consume(address, nonce)).rejects.toThrow("Redis nonce store failure");
 });
 
-it('should fallback to Redis when Pub/Sub broken', async () => {
-
+it("should fallback to Redis when Pub/Sub broken", async () => {
   const isRevoked = await revocationStore.isRevoked(jti);
   expect(isRevoked).toBe(true);
 });
 
-it('should reject when time drift exceeds threshold', async () => {
+it("should reject when time drift exceeds threshold", async () => {
   const mockTimeSource = { getTime: () => Date.now() + 10_000 };
   const time = new AuthoritativeTime({ timeSource: mockTimeSource });
-  await expect(time.sync()).rejects.toThrow('Clock drift exceeds threshold');
+  await expect(time.sync()).rejects.toThrow("Clock drift exceeds threshold");
 });
 
-it('should exit process when dependency hash mismatch', async () => {
-  const mockDeps = [{ packageName: '@talak-web3/errors', expectedHash: 'sha256:invalid' }];
-  expect(() => verifyDependencyIntegrity({ dependencies: mockDeps }))
-    .toThrow('process.exit(1)');
+it("should exit process when dependency hash mismatch", async () => {
+  const mockDeps = [{ packageName: "@talak-web3/errors", expectedHash: "sha256:invalid" }];
+  expect(() => verifyDependencyIntegrity({ dependencies: mockDeps })).toThrow("process.exit(1)");
 });
 ```
 
@@ -204,13 +196,13 @@ redis-cli INFO replication
 
 **System documents when architecture must change:**
 
-| Metric | Threshold | Trigger | Action |
-|--------|-----------|---------|--------|
-| `revocation_propagation_ms` P99 | >50ms | Revocation SLA violation | Migrate to etcd |
-| Deployment regions | ≥2 | Multi-region requirement | Migrate to consensus |
-| `integrity_check_failures_total` | >0 | Supply chain risk | Implement verified boot |
-| Compliance deadline | <12 months | SOC2/ISO27001 required | Full audit + migration |
-| Cross-region latency | >100ms | Regional failover needed | Regional isolation |
+| Metric                           | Threshold  | Trigger                  | Action                  |
+| -------------------------------- | ---------- | ------------------------ | ----------------------- |
+| `revocation_propagation_ms` P99  | >50ms      | Revocation SLA violation | Migrate to etcd         |
+| Deployment regions               | ≥2         | Multi-region requirement | Migrate to consensus    |
+| `integrity_check_failures_total` | >0         | Supply chain risk        | Implement verified boot |
+| Compliance deadline              | <12 months | SOC2/ISO27001 required   | Full audit + migration  |
+| Cross-region latency             | >100ms     | Regional failover needed | Regional isolation      |
 
 **Key Property**: Migration decisions are **data-driven, not subjective**.
 
@@ -310,6 +302,7 @@ to:
 > **"Secure unless infrastructure is actively subverted"**
 
 The remaining gap is **pre-execution trust**, which requires:
+
 - Container image signing
 - Verified boot
 - Hardware security modules

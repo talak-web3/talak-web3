@@ -1,7 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { TalakWeb3Auth, InMemoryNonceStore, InMemoryRefreshStore, InMemoryRevocationStore } from '../../index.js';
+import { describe, it, expect, beforeEach } from "vitest";
+import {
+  TalakWeb3Auth,
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
+} from "../../index.js";
 
-describe('Replay Attack Prevention', () => {
+describe("Replay Attack Prevention", () => {
   let auth: TalakWeb3Auth;
   let nonceStore: InMemoryNonceStore;
   let refreshStore: InMemoryRefreshStore;
@@ -19,9 +24,9 @@ describe('Replay Attack Prevention', () => {
     });
   });
 
-  describe('nonce replay protection', () => {
-    it('should prevent nonce reuse after consumption', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  describe("nonce replay protection", () => {
+    it("should prevent nonce reuse after consumption", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
       const nonce = await auth.createNonce(address);
 
@@ -34,8 +39,8 @@ describe('Replay Attack Prevention', () => {
       }
     });
 
-    it('should track nonce consumption attempts', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should track nonce consumption attempts", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
       const nonce = await nonceStore.create(address);
       const first = await nonceStore.consume(address, nonce);
@@ -45,20 +50,20 @@ describe('Replay Attack Prevention', () => {
       expect(second).toBe(false);
     });
 
-    it('should handle rapid concurrent consumption attempts', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should handle rapid concurrent consumption attempts", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const nonce = await nonceStore.create(address);
 
       const attempts = await Promise.all(
-        Array.from({ length: 100 }, () => nonceStore.consume(address, nonce))
+        Array.from({ length: 100 }, () => nonceStore.consume(address, nonce)),
       );
 
       const successCount = attempts.filter(Boolean).length;
       expect(successCount).toBe(1);
     });
 
-    it('should expire nonces after TTL', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should expire nonces after TTL", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const shortStore = new InMemoryNonceStore({ ttlMs: 50 });
 
       const nonce = await shortStore.create(address);
@@ -67,15 +72,15 @@ describe('Replay Attack Prevention', () => {
 
       const nonce2 = await shortStore.create(address);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(await shortStore.consume(address, nonce2)).toBe(false);
     });
   });
 
-  describe('refresh token replay protection', () => {
-    it('should prevent refresh token reuse after rotation', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  describe("refresh token replay protection", () => {
+    it("should prevent refresh token reuse after rotation", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
       const ttlMs = 7 * 24 * 60 * 60 * 1000;
 
@@ -83,11 +88,11 @@ describe('Replay Attack Prevention', () => {
 
       await auth.refresh(oldToken);
 
-      await expect(auth.refresh(oldToken)).rejects.toThrow('Refresh token already used or revoked');
+      await expect(auth.refresh(oldToken)).rejects.toThrow("Refresh token already used or revoked");
     });
 
-    it('should detect token reuse on subsequent attempts', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should detect token reuse on subsequent attempts", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
       const ttlMs = 7 * 24 * 60 * 60 * 1000;
 
@@ -95,11 +100,11 @@ describe('Replay Attack Prevention', () => {
 
       await auth.refresh(token);
 
-      await expect(auth.refresh(token)).rejects.toThrow('Refresh token already used or revoked');
+      await expect(auth.refresh(token)).rejects.toThrow("Refresh token already used or revoked");
     });
 
-    it('should handle concurrent rotation attempts', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should handle concurrent rotation attempts", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
       const ttlMs = 7 * 24 * 60 * 60 * 1000;
 
@@ -111,18 +116,18 @@ describe('Replay Attack Prevention', () => {
         auth.refresh(token),
       ]);
 
-      const successCount = attempts.filter(a => a.status === 'fulfilled').length;
+      const successCount = attempts.filter((a) => a.status === "fulfilled").length;
       expect(successCount).toBe(1);
 
-      const failures = attempts.filter(a => a.status === 'rejected');
+      const failures = attempts.filter((a) => a.status === "rejected");
       expect(failures.length).toBe(2);
     });
   });
 
-  describe('cross-address replay protection', () => {
-    it('should prevent nonce from one address being used by another', async () => {
-      const address1 = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-      const address2 = '0x8ba1f109551bD432803012645Hac136c82C3e8C9';
+  describe("cross-address replay protection", () => {
+    it("should prevent nonce from one address being used by another", async () => {
+      const address1 = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+      const address2 = "0x8ba1f109551bD432803012645Hac136c82C3e8C9";
 
       const nonce = await nonceStore.create(address1);
 

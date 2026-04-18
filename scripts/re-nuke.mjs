@@ -1,14 +1,23 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 const rootDir = process.cwd();
-const EXCLUDED_DIRS = ['node_modules', '.git', '.next', 'dist', 'build', '.turbo', 'coverage'];
-const JS_LIKE_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.cjs', '.mjs', '.css', '.scss', '.json'];
-const HASH_COMMENT_EXTS = ['.yml', '.yaml', '.sh', '.env', '.gitignore', 'dockerfile', '.conf', '.example'];
-const MD_EXTS = ['.md', '.mdx'];
+const EXCLUDED_DIRS = ["node_modules", ".git", ".next", "dist", "build", ".turbo", "coverage"];
+const JS_LIKE_EXTS = [".ts", ".tsx", ".js", ".jsx", ".cjs", ".mjs", ".css", ".scss", ".json"];
+const HASH_COMMENT_EXTS = [
+  ".yml",
+  ".yaml",
+  ".sh",
+  ".env",
+  ".gitignore",
+  "dockerfile",
+  ".conf",
+  ".example",
+];
+const MD_EXTS = [".md", ".mdx"];
 
 function removeJsComments(content) {
-  let result = '';
+  let result = "";
   let i = 0;
   let inString = null;
   let inRegex = false;
@@ -20,18 +29,18 @@ function removeJsComments(content) {
     const nextChar = content[i + 1];
 
     if (inLineComment) {
-      if (char === '\n') {
+      if (char === "\n") {
         inLineComment = false;
         result += char;
       }
     } else if (inBlockComment) {
-      if (char === '*' && nextChar === '/') {
+      if (char === "*" && nextChar === "/") {
         inBlockComment = false;
         i++;
       }
     } else if (inString) {
       result += char;
-      if (char === '\\') {
+      if (char === "\\") {
         result += nextChar;
         i++;
       } else if (char === inString) {
@@ -39,25 +48,25 @@ function removeJsComments(content) {
       }
     } else if (inRegex) {
       result += char;
-      if (char === '\\') {
+      if (char === "\\") {
         result += nextChar;
         i++;
-      } else if (char === '/') {
+      } else if (char === "/") {
         inRegex = false;
       }
     } else {
-      if (char === '/' && nextChar === '/') {
+      if (char === "/" && nextChar === "/") {
         inLineComment = true;
         i++;
-      } else if (char === '/' && nextChar === '*') {
+      } else if (char === "/" && nextChar === "*") {
         inBlockComment = true;
         i++;
-      } else if (char === "'" || char === '"' || char === '`') {
+      } else if (char === "'" || char === '"' || char === "`") {
         inString = char;
         result += char;
-      } else if (char === '/') {
+      } else if (char === "/") {
         let prev = result.trimEnd().slice(-1);
-        if ('([=: ,?!&|<>{;'.includes(prev) || result.trimEnd().endsWith('return')) {
+        if ("([=: ,?!&|<>{;".includes(prev) || result.trimEnd().endsWith("return")) {
           inRegex = true;
           result += char;
         } else {
@@ -74,13 +83,13 @@ function removeJsComments(content) {
 }
 
 function removeHashComments(content) {
-  let lines = content.split('\n');
-  let newLines = lines.map(line => {
+  let lines = content.split("\n");
+  let newLines = lines.map((line) => {
     let inString = null;
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
       if (inString) {
-        if (char === '\\') {
+        if (char === "\\") {
           i++;
         } else if (char === inString) {
           inString = null;
@@ -88,42 +97,43 @@ function removeHashComments(content) {
       } else {
         if (char === "'" || char === '"') {
           inString = char;
-        } else if (char === '#') {
+        } else if (char === "#") {
           return line.slice(0, i).trimEnd();
         }
       }
     }
     return line;
   });
-  return cleanEmptyLines(newLines.join('\n'));
+  return cleanEmptyLines(newLines.join("\n"));
 }
 
 function removeMdComments(content) {
-  let newContent = content.replace(/<!--[\s\S]*?-->/g, '');
-  newContent = newContent.replace(/^\[\/\/\]: # \(.*?\)$/gm, '');
+  let newContent = content.replace(/<!--[\s\S]*?-->/g, "");
+  newContent = newContent.replace(/^\[\/\/\]: # \(.*?\)$/gm, "");
 
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)\n```/g;
   newContent = newContent.replace(codeBlockRegex, (match, lang, code) => {
     let cleanedCode = code;
-    if (['ts', 'typescript', 'js', 'javascript', 'tsx', 'jsx', 'json'].includes(lang)) {
+    if (["ts", "typescript", "js", "javascript", "tsx", "jsx", "json"].includes(lang)) {
       cleanedCode = removeJsComments(code);
-    } else if (['bash', 'sh', 'yaml', 'yml', 'env'].includes(lang)) {
+    } else if (["bash", "sh", "yaml", "yml", "env"].includes(lang)) {
       cleanedCode = removeHashComments(code);
     }
-    return `\`\`\`${lang || ''}\n${cleanedCode}\n\`\`\``;
+    return `\`\`\`${lang || ""}\n${cleanedCode}\n\`\`\``;
   });
 
   return cleanEmptyLines(newContent);
 }
 
 function cleanEmptyLines(content) {
-  return content.split('\n')
-    .map(line => line.trimEnd())
+  return content
+    .split("\n")
+    .map((line) => line.trimEnd())
     .filter((line, index, arr) => {
-      if (line !== '') return true;
-      return arr[index - 1] !== '' && arr[index - 1] !== undefined;
+      if (line !== "") return true;
+      return arr[index - 1] !== "" && arr[index - 1] !== undefined;
     })
-    .join('\n');
+    .join("\n");
 }
 
 async function processFile(filePath) {
@@ -132,13 +142,15 @@ async function processFile(filePath) {
 
   let content;
   try {
-    content = fs.readFileSync(filePath, 'utf-8');
-  } catch (err) { return; }
+    content = fs.readFileSync(filePath, "utf-8");
+  } catch (err) {
+    return;
+  }
 
   let newContent;
-  if (JS_LIKE_EXTS.includes(ext) || basename === 'tsconfig.json') {
+  if (JS_LIKE_EXTS.includes(ext) || basename === "tsconfig.json") {
     newContent = removeJsComments(content);
-  } else if (HASH_COMMENT_EXTS.includes(ext) || basename === 'dockerfile') {
+  } else if (HASH_COMMENT_EXTS.includes(ext) || basename === "dockerfile") {
     newContent = removeHashComments(content);
   } else if (MD_EXTS.includes(ext)) {
     newContent = removeMdComments(content);
@@ -147,7 +159,7 @@ async function processFile(filePath) {
   }
 
   if (newContent !== content) {
-    fs.writeFileSync(filePath, newContent, 'utf-8');
+    fs.writeFileSync(filePath, newContent, "utf-8");
   }
 }
 
@@ -166,5 +178,5 @@ async function walk(dir) {
 }
 
 walk(rootDir).then(() => {
-  console.log('Finished.');
+  console.log("Finished.");
 });

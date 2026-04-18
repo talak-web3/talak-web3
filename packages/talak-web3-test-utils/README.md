@@ -18,7 +18,7 @@ pnpm add -D @talak-web3/test-utils
 ## Example
 
 ```ts
-import { createMockWallet, setupTestContext } from '@talak-web3/test-utils';
+import { createMockWallet, setupTestContext } from "@talak-web3/test-utils";
 
 const wallet = createMockWallet();
 const ctx = await setupTestContext();
