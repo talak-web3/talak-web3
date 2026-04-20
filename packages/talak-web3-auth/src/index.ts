@@ -1,18 +1,21 @@
-import { SignJWT, jwtVerify, type JWTVerifyOptions, importPKCS8, importSPKI, type KeyLike, decodeProtectedHeader } from 'jose';
-import { verifyMessage } from 'viem';
-import { createHash, randomBytes, type KeyObject } from 'node:crypto';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { TalakWeb3Auth as TalakWeb3AuthInterface } from '@talak-web3/types';
-import type {
-  NonceStore,
-  RefreshSession,
-  RefreshStore,
-  RevocationStore,
-} from './contracts.js';
-import { createKeyProvider, type KeyProviderType, JwtManager } from './key-management.js';
-import type { JwksResponse } from './jwks.js';
+import {
+  SignJWT,
+  jwtVerify,
+  type JWTVerifyOptions,
+  importPKCS8,
+  importSPKI,
+  type KeyLike,
+  decodeProtectedHeader,
+} from "jose";
+import { verifyMessage } from "viem";
+import { createHash, randomBytes, type KeyObject } from "node:crypto";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { TalakWeb3Auth as TalakWeb3AuthInterface } from "@talak-web3/types";
+import type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from "./contracts.js";
+import { createKeyProvider, type KeyProviderType, JwtManager } from "./key-management.js";
+import type { JwksResponse } from "./jwks.js";
 
-export type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from './contracts.js';
+export type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from "./contracts.js";
 
 // ---------------------------------------------------------------------------
 // SIWE message parsing (EIP-4361)
@@ -35,35 +38,39 @@ interface SiweFields {
 
 function parseSiweMessage(message: string): SiweFields {
   // Normalize line endings
-  message = message.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  
-  const lines = message.split('\n');
-  
+  message = message.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  const lines = message.split("\n");
+
   // Line 0: "<domain> wants you to sign in with your Ethereum account:"
-  const firstLine = lines[0]?.trim() ?? '';
+  const firstLine = lines[0]?.trim() ?? "";
   const domainMatch = firstLine.match(/^(.+?) wants you to sign in with your Ethereum account:/);
   const domain = domainMatch?.[1]?.trim();
-  
+
   // Line 1: The wallet address
-  const addressLine = lines[1]?.trim() ?? '';
+  const addressLine = lines[1]?.trim() ?? "";
   const addressMatch = addressLine.match(/^(0x[a-fA-F0-9]{40})$/);
-  
+
   // Line 2 (optional): Statement
   let statement: string | undefined;
   let lineIndex = 2;
-  
+
   // Skip empty lines to find statement
-  while (lineIndex < lines.length && lines[lineIndex]?.trim() === '') {
+  while (lineIndex < lines.length && lines[lineIndex]?.trim() === "") {
     lineIndex++;
   }
-  
+
   // Check if next non-empty line is a statement (not a URI line)
   const potentialStatement = lines[lineIndex]?.trim();
-  if (potentialStatement && !potentialStatement.startsWith('URI: ') && !potentialStatement.startsWith('Version: ')) {
+  if (
+    potentialStatement &&
+    !potentialStatement.startsWith("URI: ") &&
+    !potentialStatement.startsWith("Version: ")
+  ) {
     statement = potentialStatement;
     lineIndex++;
   }
-  
+
   // Parse remaining fields from anywhere in the message
   const uriMatch = message.match(/^URI: (.+)$/m);
   const versionMatch = message.match(/^Version: (.+)$/m);
@@ -73,19 +80,26 @@ function parseSiweMessage(message: string): SiweFields {
   const expirationMatch = message.match(/^Expiration Time: (.+)$/m);
   const notBeforeMatch = message.match(/^Not Before: (.+)$/m);
   const requestIdMatch = message.match(/^Request ID: (.+)$/m);
-  
+
   // Parse resources (can be multiple lines)
   const resourcesMatch = message.match(/^Resources:\n([\s\S]*?)(?:\n\n|$)/m);
-  const resources = resourcesMatch && resourcesMatch[1]
-    ? resourcesMatch[1]
-        .split('\n')
-        .map(r => r.replace(/^- /, '').trim())
-        .filter(r => r.length > 0)
-    : undefined;
+  const resources =
+    resourcesMatch && resourcesMatch[1]
+      ? resourcesMatch[1]
+          .split("\n")
+          .map((r) => r.replace(/^- /, "").trim())
+          .filter((r) => r.length > 0)
+      : undefined;
 
-  if (!domain || !addressMatch?.[1] || !chainIdMatch?.[1] || !nonceMatch?.[1] || !issuedAtMatch?.[1]) {
-    throw new TalakWeb3Error('Invalid SIWE message format', { 
-      code: 'AUTH_SIWE_PARSE_ERROR', 
+  if (
+    !domain ||
+    !addressMatch?.[1] ||
+    !chainIdMatch?.[1] ||
+    !nonceMatch?.[1] ||
+    !issuedAtMatch?.[1]
+  ) {
+    throw new TalakWeb3Error("Invalid SIWE message format", {
+      code: "AUTH_SIWE_PARSE_ERROR",
       status: 400,
       data: {
         hasDomain: !!domain,
@@ -93,7 +107,7 @@ function parseSiweMessage(message: string): SiweFields {
         hasChainId: !!chainIdMatch?.[1],
         hasNonce: !!nonceMatch?.[1],
         hasIssuedAt: !!issuedAtMatch?.[1],
-      }
+      },
     });
   }
 
@@ -101,8 +115,8 @@ function parseSiweMessage(message: string): SiweFields {
     domain,
     address: addressMatch[1] as `0x${string}`,
     statement,
-    uri: uriMatch?.[1] ?? '',
-    version: versionMatch?.[1] ?? '1',
+    uri: uriMatch?.[1] ?? "",
+    version: versionMatch?.[1] ?? "1",
     chainId: parseInt(chainIdMatch[1], 10),
     nonce: nonceMatch[1],
     issuedAt: issuedAtMatch[1],
@@ -125,17 +139,20 @@ export class InMemoryNonceStore implements NonceStore {
   constructor(opts: { ttlMs?: number } = {}) {
     this.ttlMs = Math.min(opts.ttlMs ?? 5 * 60_000, 5 * 60_000); // hard-cap TTL at 5 min
     console.warn(
-      '[talak-web3-auth] InMemoryNonceStore is in use. ' +
-      'This is NOT suitable for production. Use RedisNonceStore from @talak-web3/auth/stores with REDIS_URL.',
+      "[talak-web3-auth] InMemoryNonceStore is in use. " +
+        "This is NOT suitable for production. Use RedisNonceStore from @talak-web3/auth/stores with REDIS_URL.",
     );
   }
 
   async create(address: string, _meta?: { ip?: string; ua?: string }): Promise<string> {
     const addr = address.toLowerCase();
-    const nonce = crypto.randomUUID().replace(/-/g, '');
+    const nonce = crypto.randomUUID().replace(/-/g, "");
     const expiresAt = Date.now() + this.ttlMs;
     let m = this.entries.get(addr);
-    if (!m) { m = new Map(); this.entries.set(addr, m); }
+    if (!m) {
+      m = new Map();
+      this.entries.set(addr, m);
+    }
     m.set(nonce, expiresAt);
     return nonce;
   }
@@ -146,7 +163,10 @@ export class InMemoryNonceStore implements NonceStore {
     if (!m) return false;
     const expiresAt = m.get(nonce);
     if (expiresAt === undefined) return false;
-    if (Date.now() > expiresAt) { m.delete(nonce); return false; }
+    if (Date.now() > expiresAt) {
+      m.delete(nonce);
+      return false;
+    }
     m.delete(nonce);
     if (m.size === 0) this.entries.delete(addr);
     return true;
@@ -159,17 +179,21 @@ export class InMemoryNonceStore implements NonceStore {
 // ---------------------------------------------------------------------------
 
 function sha256Hex(input: string): string {
-  return createHash('sha256').update(input).digest('hex');
+  return createHash("sha256").update(input).digest("hex");
 }
 
 export class InMemoryRefreshStore implements RefreshStore {
   private readonly sessions = new Map<string, RefreshSession>(); // keyed by hash
 
-  async create(address: string, chainId: number, ttlMs: number): Promise<{ token: string; session: RefreshSession }> {
+  async create(
+    address: string,
+    chainId: number,
+    ttlMs: number,
+  ): Promise<{ token: string; session: RefreshSession }> {
     const addr = address.toLowerCase();
-    const token = randomBytes(32).toString('base64url');
+    const token = randomBytes(32).toString("base64url");
     const hash = sha256Hex(token);
-    const id = randomBytes(16).toString('hex');
+    const id = randomBytes(16).toString("hex");
     const session: RefreshSession = {
       id,
       address: addr,
@@ -189,9 +213,21 @@ export class InMemoryRefreshStore implements RefreshStore {
   async rotate(token: string, ttlMs: number): Promise<{ token: string; session: RefreshSession }> {
     const hash = sha256Hex(token);
     const old = this.sessions.get(hash);
-    if (!old) throw new TalakWeb3Error('Refresh session not found', { code: 'AUTH_REFRESH_NOT_FOUND', status: 401 });
-    if (old.revoked) throw new TalakWeb3Error('Refresh token already used or revoked', { code: 'AUTH_REFRESH_REVOKED', status: 401 });
-    if (Date.now() > old.expiresAt) throw new TalakWeb3Error('Refresh token expired', { code: 'AUTH_REFRESH_EXPIRED', status: 401 });
+    if (!old)
+      throw new TalakWeb3Error("Refresh session not found", {
+        code: "AUTH_REFRESH_NOT_FOUND",
+        status: 401,
+      });
+    if (old.revoked)
+      throw new TalakWeb3Error("Refresh token already used or revoked", {
+        code: "AUTH_REFRESH_REVOKED",
+        status: 401,
+      });
+    if (Date.now() > old.expiresAt)
+      throw new TalakWeb3Error("Refresh token expired", {
+        code: "AUTH_REFRESH_EXPIRED",
+        status: 401,
+      });
     // Revoke old SYNCHRONOUSLY to prevent microtask queue interleaving race conditions
     this.sessions.set(hash, { ...old, revoked: true });
     // Issue new
@@ -220,7 +256,10 @@ export class InMemoryRevocationStore implements RevocationStore {
   async isRevoked(jti: string): Promise<boolean> {
     const exp = this.entries.get(jti);
     if (exp === undefined) return false;
-    if (Date.now() > exp) { this.entries.delete(jti); return false; }
+    if (Date.now() > exp) {
+      this.entries.delete(jti);
+      return false;
+    }
     return true;
   }
 
@@ -238,10 +277,10 @@ export class InMemoryRevocationStore implements RevocationStore {
 // ---------------------------------------------------------------------------
 
 const JWT_VERIFY_OPTS: JWTVerifyOptions = {
-  algorithms: ['RS256'],
-  requiredClaims: ['iat', 'exp', 'sub', 'jti', 'iss', 'aud'],
-  issuer: 'talak:auth',
-  audience: 'talak:web3',
+  algorithms: ["RS256"],
+  requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
+  issuer: "talak:auth",
+  audience: "talak:web3",
 };
 
 // ---------------------------------------------------------------------------
@@ -278,22 +317,26 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   }) {
     if (!opts || !opts.nonceStore || !opts.refreshStore || !opts.revocationStore) {
       throw new TalakWeb3Error(
-        'CRITICAL: Mandatory auth stores (nonce, refresh, revocation) are missing from the configuration. This is a fatal error in production.',
-        { code: 'AUTH_STORES_MISSING', status: 500 }
+        "CRITICAL: Mandatory auth stores (nonce, refresh, revocation) are missing from the configuration. This is a fatal error in production.",
+        { code: "AUTH_STORES_MISSING", status: 500 },
       );
     }
-    
+
     this.nonceStore = opts.nonceStore;
     this.refreshStore = opts.refreshStore;
     this.revocations = opts.revocationStore;
     this.accessTtlSeconds = opts.accessTtlSeconds ?? 15 * 60; // 15 min
     this.refreshTtlMs = (opts.refreshTtlSeconds ?? 7 * 24 * 60 * 60) * 1000; // 7 days
-    this.expectedDomain = opts.expectedDomain ?? process.env['SIWE_DOMAIN'] ?? undefined;
-    
+    this.expectedDomain = opts.expectedDomain ?? process.env["SIWE_DOMAIN"] ?? undefined;
+
     // Initialize JWT manager with key provider
-    const keyProviderType = opts.keyProviderType ?? 'environment';
+    const keyProviderType = opts.keyProviderType ?? "environment";
     const keyProviderOptions = opts.keyProviderOptions ?? {};
-    const keyProvider = createKeyProvider(keyProviderType, keyProviderOptions, opts.keyRotationConfig);
+    const keyProvider = createKeyProvider(
+      keyProviderType,
+      keyProviderOptions,
+      opts.keyRotationConfig,
+    );
     this.jwtManager = new JwtManager(keyProvider);
   }
 
@@ -306,20 +349,20 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   async validateJwt(token: string): Promise<boolean> {
     try {
       const payload = await this.jwtManager.verify(token, {
-        issuer: 'talak:auth',
-        audience: 'talak:web3',
-        requiredClaims: ['iat', 'exp', 'sub', 'jti', 'iss', 'aud'],
+        issuer: "talak:auth",
+        audience: "talak:web3",
+        requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
       });
-      
+
       // Check global invalidation
-      const iat = payload['iat'];
-      if (typeof iat === 'number') {
+      const iat = payload["iat"];
+      if (typeof iat === "number") {
         const globalInvalidationAt = await this.revocations.getGlobalInvalidationTime();
         if (iat < globalInvalidationAt) return false;
       }
 
-      const jti = payload['jti'];
-      if (typeof jti === 'string' && await this.revocations.isRevoked(jti)) return false;
+      const jti = payload["jti"];
+      if (typeof jti === "string" && (await this.revocations.isRevoked(jti))) return false;
       return true;
     } catch {
       return false;
@@ -344,20 +387,20 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
    */
   async emergencyKeyRotation(newPrivateKey?: KeyLike, newPublicKey?: KeyLike): Promise<string> {
     // 1. Purge JWKS
-    const kid = await (this.jwtManager as any).emergencyPurge(newPrivateKey, newPublicKey);
-    
+    const kid = await this.jwtManager.emergencyPurge(newPrivateKey, newPublicKey);
+
     // 2. Force global invalidation
     await this.forceGlobalInvalidation();
-    
+
     return kid;
   }
 
   /** Sign a new JWT access token using RS256 and the latest primary key. */
   async signJwt(payload: SessionPayload): Promise<string> {
-    const jti = randomBytes(16).toString('hex');
+    const jti = randomBytes(16).toString("hex");
     return this.jwtManager.sign(payload, {
-      issuer: 'talak:auth',
-      audience: 'talak:web3',
+      issuer: "talak:auth",
+      audience: "talak:web3",
       expiresIn: `${this.accessTtlSeconds}s`,
       subject: payload.address,
       jti,
@@ -370,17 +413,27 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
    *   - accessToken: short-lived JWT (15 min)
    *   - refreshToken: opaque random string (7 days)
    */
-  async loginWithSiwe(message: string, signature: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async loginWithSiwe(
+    message: string,
+    signature: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const fields = parseSiweMessage(message);
 
     if (this.expectedDomain && fields.domain !== this.expectedDomain) {
-      throw new TalakWeb3Error('SIWE domain mismatch', { code: 'AUTH_SIWE_DOMAIN_MISMATCH', status: 401, data: { domain: fields.domain } });
+      throw new TalakWeb3Error("SIWE domain mismatch", {
+        code: "AUTH_SIWE_DOMAIN_MISMATCH",
+        status: 401,
+        data: { domain: fields.domain },
+      });
     }
 
     // Check SIWE message expiration
     if (fields.expirationTime) {
       if (new Date(fields.expirationTime) < new Date()) {
-        throw new TalakWeb3Error('SIWE message has expired', { code: 'AUTH_SIWE_EXPIRED', status: 401 });
+        throw new TalakWeb3Error("SIWE message has expired", {
+          code: "AUTH_SIWE_EXPIRED",
+          status: 401,
+        });
       }
     }
 
@@ -392,17 +445,26 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     });
 
     if (!valid) {
-      throw new TalakWeb3Error('Invalid SIWE signature', { code: 'AUTH_SIWE_INVALID_SIG', status: 401 });
+      throw new TalakWeb3Error("Invalid SIWE signature", {
+        code: "AUTH_SIWE_INVALID_SIG",
+        status: 401,
+      });
     }
 
     // Atomic nonce consume — must succeed to prevent replay
     const consumed = await this.nonceStore.consume(fields.address.toLowerCase(), fields.nonce);
     if (!consumed) {
-      throw new TalakWeb3Error('SIWE nonce invalid or already used', { code: 'AUTH_SIWE_NONCE_REPLAY', status: 401 });
+      throw new TalakWeb3Error("SIWE nonce invalid or already used", {
+        code: "AUTH_SIWE_NONCE_REPLAY",
+        status: 401,
+      });
     }
 
     if (!valid) {
-      throw new TalakWeb3Error('Invalid SIWE signature', { code: 'AUTH_SIWE_INVALID_SIG', status: 401 });
+      throw new TalakWeb3Error("Invalid SIWE signature", {
+        code: "AUTH_SIWE_INVALID_SIG",
+        status: 401,
+      });
     }
 
     return this._issueTokenPair(fields.address, fields.chainId);
@@ -418,8 +480,8 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     const normalized = address.toLowerCase();
     const sub = normalized;
     return this.jwtManager.sign({ address: normalized, chainId } satisfies SessionPayload, {
-      issuer: 'talak:auth',
-      audience: 'talak:web3',
+      issuer: "talak:auth",
+      audience: "talak:web3",
       expiresIn: `${this.accessTtlSeconds}s`,
       subject: sub,
       jti: crypto.randomUUID(),
@@ -427,7 +489,10 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   }
 
   /** Internal: issue both an access JWT and an opaque refresh token. */
-  private async _issueTokenPair(address: string, chainId: number): Promise<{ accessToken: string; refreshToken: string }> {
+  private async _issueTokenPair(
+    address: string,
+    chainId: number,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const [accessToken, { token: refreshToken }] = await Promise.all([
       this._issueAccessToken(address, chainId),
       this.refreshStore.create(address, chainId, this.refreshTtlMs),
@@ -445,28 +510,41 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     let payload;
     try {
       payload = await this.jwtManager.verify(token, {
-        issuer: 'talak:auth',
-        audience: 'talak:web3',
-        requiredClaims: ['iat', 'exp', 'sub', 'jti', 'iss', 'aud'],
+        issuer: "talak:auth",
+        audience: "talak:web3",
+        requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
       });
     } catch (err) {
-      throw new TalakWeb3Error('Invalid or expired session token', { code: 'AUTH_TOKEN_INVALID', status: 401, cause: err });
+      throw new TalakWeb3Error("Invalid or expired session token", {
+        code: "AUTH_TOKEN_INVALID",
+        status: 401,
+        cause: err,
+      });
     }
 
-    const jti = payload['jti'];
-    if (typeof jti === 'string' && await this.revocations.isRevoked(jti)) {
-      throw new TalakWeb3Error('Session has been revoked', { code: 'AUTH_TOKEN_REVOKED', status: 401 });
+    const jti = payload["jti"];
+    if (typeof jti === "string" && (await this.revocations.isRevoked(jti))) {
+      throw new TalakWeb3Error("Session has been revoked", {
+        code: "AUTH_TOKEN_REVOKED",
+        status: 401,
+      });
     }
 
-    const sub = payload['sub'];
-    if (typeof sub !== 'string' || sub.length === 0) {
-      throw new TalakWeb3Error('Invalid session token subject', { code: 'AUTH_TOKEN_INVALID_SUB', status: 401 });
+    const sub = payload["sub"];
+    if (typeof sub !== "string" || sub.length === 0) {
+      throw new TalakWeb3Error("Invalid session token subject", {
+        code: "AUTH_TOKEN_INVALID_SUB",
+        status: 401,
+      });
     }
 
-    const address = payload['address'];
-    const chainId = payload['chainId'];
-    if (typeof address !== 'string' || typeof chainId !== 'number') {
-      throw new TalakWeb3Error('Malformed session token payload', { code: 'AUTH_TOKEN_MALFORMED', status: 401 });
+    const address = payload["address"];
+    const chainId = payload["chainId"];
+    if (typeof address !== "string" || typeof chainId !== "number") {
+      throw new TalakWeb3Error("Malformed session token payload", {
+        code: "AUTH_TOKEN_MALFORMED",
+        status: 401,
+      });
     }
 
     return { address, chainId };
@@ -477,14 +555,14 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     // Revoke access token JTI
     try {
       const payload = await this.jwtManager.verify(accessToken, {
-        issuer: 'talak:auth',
-        audience: 'talak:web3',
-        requiredClaims: ['iat', 'exp', 'sub', 'jti', 'iss', 'aud'],
+        issuer: "talak:auth",
+        audience: "talak:web3",
+        requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
       });
-      
-      const jti = payload['jti'];
-      const exp = payload['exp'];
-      if (typeof jti === 'string' && typeof exp === 'number') {
+
+      const jti = payload["jti"];
+      const exp = payload["exp"];
+      if (typeof jti === "string" && typeof exp === "number") {
         await this.revocations.revoke(jti, exp * 1000);
       }
     } catch {
@@ -499,8 +577,8 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   /** Generate a cryptographically random nonce for SIWE messages. */
   generateNonce(): string {
     return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
   }
 
   /** Create a nonce via the nonce store (server-authoritative). */
@@ -514,7 +592,10 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
    */
   async refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     // Atomically rotate the refresh session — throws if revoked/expired/missing
-    const { session, token: newRefreshToken } = await this.refreshStore.rotate(refreshToken, this.refreshTtlMs);
+    const { session, token: newRefreshToken } = await this.refreshStore.rotate(
+      refreshToken,
+      this.refreshTtlMs,
+    );
 
     // Issue new access token using address + chainId from the session
     const accessToken = await this._issueAccessToken(session.address, session.chainId);

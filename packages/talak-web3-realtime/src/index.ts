@@ -1,4 +1,4 @@
-import { TalakWeb3Error } from '@talak-web3/errors';
+import { TalakWeb3Error } from "@talak-web3/errors";
 
 export interface Message {
   id: string;
@@ -27,18 +27,18 @@ export interface MessagingClient {
 // ---------------------------------------------------------------------------
 
 type WsEnvelope =
-  | { type: 'ping' }
-  | { type: 'pong' }
-  | { type: 'conversations'; items: Conversation[] }
-  | { type: 'history'; conversationId: string; messages: Message[] }
-  | { type: 'message'; conversationId: string; message: Message }
-  | { type: 'sent'; id: string }
-  | { type: 'error'; code: string; message: string };
+  | { type: "ping" }
+  | { type: "pong" }
+  | { type: "conversations"; items: Conversation[] }
+  | { type: "history"; conversationId: string; messages: Message[] }
+  | { type: "message"; conversationId: string; message: Message }
+  | { type: "sent"; id: string }
+  | { type: "error"; code: string; message: string };
 
 type OutboundEnvelope =
-  | { type: 'list_conversations' }
-  | { type: 'get_history'; conversationId: string }
-  | { type: 'send'; conversationId: string; body: string; from: string };
+  | { type: "list_conversations" }
+  | { type: "get_history"; conversationId: string }
+  | { type: "send"; conversationId: string; body: string; from: string };
 
 export interface WebSocketMessagingOptions {
   serverUrl: string;
@@ -70,24 +70,24 @@ export class WebSocketMessagingClient implements MessagingClient {
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(this.opts.serverUrl);
 
-      this.ws.addEventListener('open', () => {
+      this.ws.addEventListener("open", () => {
         this.connected = true;
         this.backoffMs = 500;
         this.startHeartbeat();
         resolve();
       });
 
-      this.ws.addEventListener('error', (evt) => {
+      this.ws.addEventListener("error", (evt) => {
         if (!this.connected) reject(new Error(`WebSocket connection failed: ${String(evt)}`));
       });
 
-      this.ws.addEventListener('close', () => {
+      this.ws.addEventListener("close", () => {
         this.connected = false;
         this.stopHeartbeat();
         if (!this.destroyed) this.scheduleReconnect();
       });
 
-      this.ws.addEventListener('message', (evt) => {
+      this.ws.addEventListener("message", (evt) => {
         try {
           const envelope = JSON.parse(evt.data as string) as WsEnvelope;
           this.handleEnvelope(envelope);
@@ -112,16 +112,22 @@ export class WebSocketMessagingClient implements MessagingClient {
     return new Promise((resolve, reject) => {
       const id = crypto.randomUUID();
       this.pendingConversations.set(id, resolve);
-      setTimeout(() => { this.pendingConversations.delete(id); reject(new Error('listConversations timeout')); }, 10_000);
-      this.send({ type: 'list_conversations' });
+      setTimeout(() => {
+        this.pendingConversations.delete(id);
+        reject(new Error("listConversations timeout"));
+      }, 10_000);
+      this.send({ type: "list_conversations" });
     });
   }
 
   async listMessages(conversationId: string): Promise<Message[]> {
     return new Promise((resolve, reject) => {
       this.pendingHistory.set(conversationId, resolve);
-      setTimeout(() => { this.pendingHistory.delete(conversationId); reject(new Error('listMessages timeout')); }, 10_000);
-      this.send({ type: 'get_history', conversationId });
+      setTimeout(() => {
+        this.pendingHistory.delete(conversationId);
+        reject(new Error("listMessages timeout"));
+      }, 10_000);
+      this.send({ type: "get_history", conversationId });
     });
   }
 
@@ -129,8 +135,11 @@ export class WebSocketMessagingClient implements MessagingClient {
     return new Promise((resolve, reject) => {
       const msgId = crypto.randomUUID();
       this.pendingSend.set(msgId, resolve);
-      setTimeout(() => { this.pendingSend.delete(msgId); reject(new Error('sendMessage timeout')); }, 10_000);
-      this.send({ type: 'send', conversationId, body, from: this.opts.from });
+      setTimeout(() => {
+        this.pendingSend.delete(msgId);
+        reject(new Error("sendMessage timeout"));
+      }, 10_000);
+      this.send({ type: "send", conversationId, body, from: this.opts.from });
     });
   }
 
@@ -141,19 +150,23 @@ export class WebSocketMessagingClient implements MessagingClient {
 
   private send(envelope: OutboundEnvelope): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      throw new TalakWeb3Error('WebSocket not connected', { code: 'REALTIME_NOT_CONNECTED', status: 503 });
+      throw new TalakWeb3Error("WebSocket not connected", {
+        code: "REALTIME_NOT_CONNECTED",
+        status: 503,
+      });
     }
     this.ws.send(JSON.stringify(envelope));
   }
 
   private handleEnvelope(envelope: WsEnvelope): void {
     switch (envelope.type) {
-      case 'ping':
+      case "ping":
         // Respond to server ping
-        this.ws?.send(JSON.stringify({ type: 'pong' }));
+        this.ws?.send(JSON.stringify({ type: "pong" }));
         break;
-      case 'pong': break;
-      case 'conversations': {
+      case "pong":
+        break;
+      case "conversations": {
         for (const [id, resolve] of this.pendingConversations) {
           resolve(envelope.items);
           this.pendingConversations.delete(id);
@@ -161,19 +174,19 @@ export class WebSocketMessagingClient implements MessagingClient {
         }
         break;
       }
-      case 'history': {
+      case "history": {
         const cb = this.pendingHistory.get(envelope.conversationId);
         cb?.(envelope.messages);
         this.pendingHistory.delete(envelope.conversationId);
         break;
       }
-      case 'message': {
+      case "message": {
         for (const h of this.messageHandlers) {
           h({ ...envelope.message, conversationId: envelope.conversationId });
         }
         break;
       }
-      case 'sent': {
+      case "sent": {
         const cb = this.pendingSend.get(envelope.id);
         cb?.({ id: envelope.id });
         this.pendingSend.delete(envelope.id);
@@ -191,13 +204,13 @@ export class WebSocketMessagingClient implements MessagingClient {
       }
     }, delay);
   }
-  
+
   private startHeartbeat(): void {
     // Send ping every 30 seconds to detect dead connections
     this.heartbeatTimer = setInterval(() => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         try {
-          this.ws.send(JSON.stringify({ type: 'ping' }));
+          this.ws.send(JSON.stringify({ type: "ping" }));
         } catch {
           // Connection may be dead - will trigger reconnect on close
         }
@@ -205,7 +218,7 @@ export class WebSocketMessagingClient implements MessagingClient {
     }, 30_000);
     this.heartbeatTimer.unref?.();
   }
-  
+
   private stopHeartbeat(): void {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);

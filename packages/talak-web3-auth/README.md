@@ -23,7 +23,7 @@ pnpm add @talak-web3/auth
 ## Quick Start
 
 ```typescript
-import { TalakWeb3Auth, InMemoryNonceStore, InMemoryRefreshStore } from '@talak-web3/auth';
+import { TalakWeb3Auth, InMemoryNonceStore, InMemoryRefreshStore } from "@talak-web3/auth";
 
 // Initialize auth with in-memory stores (development only)
 const auth = new TalakWeb3Auth({
@@ -34,7 +34,7 @@ const auth = new TalakWeb3Auth({
 });
 
 // Generate nonce for SIWE
-const nonce = await auth.createNonce('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266');
+const nonce = await auth.createNonce("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
 
 // After user signs SIWE message, verify and create session
 const { accessToken, refreshToken } = await auth.loginWithSiwe(message, signature);
@@ -44,7 +44,7 @@ const session = await auth.verifySession(accessToken);
 // => { address: '0x742d35cc...', chainId: 1 }
 
 // Refresh session
-const { accessToken: newAccessToken, refreshToken: newRefreshToken } = 
+const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
   await auth.refresh(refreshToken);
 ```
 
@@ -53,9 +53,9 @@ const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
 For production, use Redis-backed stores:
 
 ```typescript
-import Redis from 'ioredis';
-import { TalakWeb3Auth } from '@talak-web3/auth';
-import { RedisNonceStore, RedisRefreshStore, RedisRevocationStore } from '@talak-web3/auth/stores';
+import Redis from "ioredis";
+import { TalakWeb3Auth } from "@talak-web3/auth";
+import { RedisNonceStore, RedisRefreshStore, RedisRevocationStore } from "@talak-web3/auth/stores";
 
 const redis = new Redis(process.env.REDIS_URL!);
 
@@ -63,7 +63,7 @@ const auth = new TalakWeb3Auth({
   nonceStore: new RedisNonceStore({ redis }),
   refreshStore: new RedisRefreshStore({ redis }),
   revocationStore: new RedisRevocationStore({ redis }),
-  expectedDomain: 'yourdomain.com',
+  expectedDomain: "yourdomain.com",
   accessTtlSeconds: 900, // 15 minutes
   refreshTtlSeconds: 604800, // 7 days
 });
@@ -79,14 +79,14 @@ Main authentication class.
 
 #### Constructor Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `nonceStore` | `NonceStore` | `InMemoryNonceStore` | Store for SIWE nonces |
-| `refreshStore` | `RefreshStore` | `InMemoryRefreshStore` | Store for refresh tokens |
-| `revocationStore` | `RevocationStore` | `InMemoryRevocationStore` | Store for revoked JWTs |
-| `accessTtlSeconds` | `number` | `900` | Access token TTL in seconds |
-| `refreshTtlSeconds` | `number` | `604800` | Refresh token TTL in seconds |
-| `expectedDomain` | `string` | - | Expected SIWE domain |
+| Option              | Type              | Default                   | Description                  |
+| ------------------- | ----------------- | ------------------------- | ---------------------------- |
+| `nonceStore`        | `NonceStore`      | `InMemoryNonceStore`      | Store for SIWE nonces        |
+| `refreshStore`      | `RefreshStore`    | `InMemoryRefreshStore`    | Store for refresh tokens     |
+| `revocationStore`   | `RevocationStore` | `InMemoryRevocationStore` | Store for revoked JWTs       |
+| `accessTtlSeconds`  | `number`          | `900`                     | Access token TTL in seconds  |
+| `refreshTtlSeconds` | `number`          | `604800`                  | Refresh token TTL in seconds |
+| `expectedDomain`    | `string`          | -                         | Expected SIWE domain         |
 
 #### Methods
 

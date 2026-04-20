@@ -1,12 +1,21 @@
 {
   "name": "@talak-web3/core",
   "version": "1.0.10",
-  "type": "module",
-  "author": "Dagim Abebe",
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
+  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/talak-web3-core#readme",
+  "bugs": {
+    "url": "https://github.com/dagimabebe/talak-web3/issues"
   },
+  "license": "MIT",
+  "author": "Dagim Abebe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dagimabebe/talak-web3.git",
+    "directory": "packages/talak-web3-core"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,9 +26,16 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/middleware.ts src/security.ts --format esm,cjs --clean --dts --outDir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
   "dependencies": {
     "@talak-web3/auth": "workspace:*",
     "@talak-web3/config": "workspace:*",
@@ -28,23 +44,5 @@
     "@talak-web3/middleware": "workspace:*",
     "@talak-web3/rpc": "workspace:*",
     "@talak-web3/types": "workspace:*"
-  },
-  "scripts": {
-    "build": "tsup src/index.ts src/middleware.ts src/security.ts --format esm,cjs --clean --dts --outDir dist",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "node -e \"process.exit(0)\"",
-    "lint:fix": "node -e \"process.exit(0)\"",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dagimabebe/talak-web3.git",
-    "directory": "packages/talak-web3-core"
-  },
-  "bugs": {
-    "url": "https://github.com/dagimabebe/talak-web3/issues"
-  },
-  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/talak-web3-core#readme"
+  }
 }

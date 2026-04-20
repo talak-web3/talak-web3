@@ -2,84 +2,84 @@
  * Unit tests for talak-web3-core
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { talakWeb3, __resetTalakWeb3 } from '../../index.js';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { talakWeb3, __resetTalakWeb3 } from "../../index.js";
 
-describe('talakWeb3', () => {
+describe("talakWeb3", () => {
   afterEach(() => {
     __resetTalakWeb3();
   });
 
-  describe('singleton behavior', () => {
-    it('should return the same instance on multiple calls', () => {
+  describe("singleton behavior", () => {
+    it("should return the same instance on multiple calls", () => {
       const instance1 = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
-      
+
       const instance2 = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
       expect(instance1).toBe(instance2);
     });
 
-    it('should create new instance after reset', () => {
+    it("should create new instance after reset", () => {
       const instance1 = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
       __resetTalakWeb3();
 
       const instance2 = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
       expect(instance1).not.toBe(instance2);
     });
   });
 
-  describe('instance structure', () => {
-    it('should have required properties', () => {
+  describe("instance structure", () => {
+    it("should have required properties", () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
-      expect(instance).toHaveProperty('config');
-      expect(instance).toHaveProperty('hooks');
-      expect(instance).toHaveProperty('context');
-      expect(instance).toHaveProperty('init');
-      expect(instance).toHaveProperty('destroy');
+      expect(instance).toHaveProperty("config");
+      expect(instance).toHaveProperty("hooks");
+      expect(instance).toHaveProperty("context");
+      expect(instance).toHaveProperty("init");
+      expect(instance).toHaveProperty("destroy");
     });
 
-    it('should have init method', () => {
+    it("should have init method", () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
-      expect(typeof instance.init).toBe('function');
+      expect(typeof instance.init).toBe("function");
     });
 
-    it('should have destroy method', () => {
+    it("should have destroy method", () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
-      expect(typeof instance.destroy).toBe('function');
+      expect(typeof instance.destroy).toBe("function");
     });
   });
 
-  describe('initialization', () => {
-    it('should initialize without plugins', async () => {
+  describe("initialization", () => {
+    it("should initialize without plugins", async () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
       await expect(instance.init()).resolves.not.toThrow();
     });
 
-    it('should initialize with empty plugins array', async () => {
+    it("should initialize with empty plugins array", async () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
         plugins: [],
       });
 
@@ -87,19 +87,19 @@ describe('talakWeb3', () => {
     });
   });
 
-  describe('destroy', () => {
-    it('should destroy cleanly', async () => {
+  describe("destroy", () => {
+    it("should destroy cleanly", async () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
       await instance.init();
       await expect(instance.destroy()).resolves.not.toThrow();
     });
 
-    it('should reset singleton on destroy', async () => {
+    it("should reset singleton on destroy", async () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
       await instance.init();
@@ -107,41 +107,41 @@ describe('talakWeb3', () => {
 
       // After destroy, should be able to create new instance
       const newInstance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
       expect(newInstance).not.toBe(instance);
     });
   });
 
-  describe('context', () => {
-    it('should have context with required properties', () => {
+  describe("context", () => {
+    it("should have context with required properties", () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
-      expect(instance.context).toHaveProperty('config');
-      expect(instance.context).toHaveProperty('hooks');
-      expect(instance.context).toHaveProperty('plugins');
-      expect(instance.context).toHaveProperty('auth');
-      expect(instance.context).toHaveProperty('cache');
-      expect(instance.context).toHaveProperty('logger');
-      expect(instance.context).toHaveProperty('requestChain');
-      expect(instance.context).toHaveProperty('responseChain');
-      expect(instance.context).toHaveProperty('rpc');
+      expect(instance.context).toHaveProperty("config");
+      expect(instance.context).toHaveProperty("hooks");
+      expect(instance.context).toHaveProperty("plugins");
+      expect(instance.context).toHaveProperty("auth");
+      expect(instance.context).toHaveProperty("cache");
+      expect(instance.context).toHaveProperty("logger");
+      expect(instance.context).toHaveProperty("requestChain");
+      expect(instance.context).toHaveProperty("responseChain");
+      expect(instance.context).toHaveProperty("rpc");
     });
   });
 
-  describe('hooks', () => {
-    it('should have event emitter methods', () => {
+  describe("hooks", () => {
+    it("should have event emitter methods", () => {
       const instance = talakWeb3({
-        chains: [{ id: 1, rpcUrls: ['https://ethereum.rpc'] }],
+        chains: [{ id: 1, rpcUrls: ["https://ethereum.rpc"] }],
       });
 
-      expect(typeof instance.hooks.on).toBe('function');
-      expect(typeof instance.hooks.emit).toBe('function');
-      expect(typeof instance.hooks.off).toBe('function');
-      expect(typeof instance.hooks.clear).toBe('function');
+      expect(typeof instance.hooks.on).toBe("function");
+      expect(typeof instance.hooks.emit).toBe("function");
+      expect(typeof instance.hooks.off).toBe("function");
+      expect(typeof instance.hooks.clear).toBe("function");
     });
   });
 });

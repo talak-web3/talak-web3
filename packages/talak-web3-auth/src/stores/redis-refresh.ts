@@ -1,7 +1,7 @@
-import type Redis from 'ioredis';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { RefreshSession, RefreshStore } from '../contracts.js';
-import { randomId, randomToken, sha256Hex } from './crypto.js';
+import type Redis from "ioredis";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { RefreshSession, RefreshStore } from "../contracts.js";
+import { randomId, randomToken, sha256Hex } from "./crypto.js";
 
 export interface RedisRefreshStoreOptions {
   redis: Redis;
@@ -21,7 +21,7 @@ export class RedisRefreshStore implements RefreshStore {
 
   constructor(opts: RedisRefreshStoreOptions) {
     this.redis = opts.redis;
-    this.prefix = opts.keyPrefix ?? 'talak:rt:';
+    this.prefix = opts.keyPrefix ?? "talak:rt:";
     this.maxRotateAttempts = opts.maxRotateAttempts ?? 8;
   }
 
@@ -46,7 +46,7 @@ export class RedisRefreshStore implements RefreshStore {
       expiresAt: Date.now() + ttlMs,
       revoked: false,
     };
-    await this.redis.set(this.keyFromHash(hash), JSON.stringify(session), 'PX', ttlMs);
+    await this.redis.set(this.keyFromHash(hash), JSON.stringify(session), "PX", ttlMs);
     return { token, session };
   }
 
@@ -70,22 +70,34 @@ export class RedisRefreshStore implements RefreshStore {
       const raw = await this.redis.get(oldKey);
       if (!raw) {
         await this.redis.unwatch();
-        throw new TalakWeb3Error('Refresh session not found', { code: 'AUTH_REFRESH_NOT_FOUND', status: 401 });
+        throw new TalakWeb3Error("Refresh session not found", {
+          code: "AUTH_REFRESH_NOT_FOUND",
+          status: 401,
+        });
       }
       let old: RefreshSession;
       try {
         old = JSON.parse(raw) as RefreshSession;
       } catch {
         await this.redis.unwatch();
-        throw new TalakWeb3Error('Refresh session not found', { code: 'AUTH_REFRESH_NOT_FOUND', status: 401 });
+        throw new TalakWeb3Error("Refresh session not found", {
+          code: "AUTH_REFRESH_NOT_FOUND",
+          status: 401,
+        });
       }
       if (old.revoked) {
         await this.redis.unwatch();
-        throw new TalakWeb3Error('Refresh token already used or revoked', { code: 'AUTH_REFRESH_REVOKED', status: 401 });
+        throw new TalakWeb3Error("Refresh token already used or revoked", {
+          code: "AUTH_REFRESH_REVOKED",
+          status: 401,
+        });
       }
       if (Date.now() > old.expiresAt) {
         await this.redis.unwatch();
-        throw new TalakWeb3Error('Refresh token expired', { code: 'AUTH_REFRESH_EXPIRED', status: 401 });
+        throw new TalakWeb3Error("Refresh token expired", {
+          code: "AUTH_REFRESH_EXPIRED",
+          status: 401,
+        });
       }
 
       const newToken = randomToken();
@@ -103,15 +115,23 @@ export class RedisRefreshStore implements RefreshStore {
 
       const remainingOld = Math.max(1, old.expiresAt - Date.now());
       const multi = this.redis.multi();
-      multi.set(oldKey, JSON.stringify({ ...old, revoked: true }), 'PX', Math.min(remainingOld, 60_000));
-      multi.set(newKey, JSON.stringify(newSession), 'PX', ttlMs);
+      multi.set(
+        oldKey,
+        JSON.stringify({ ...old, revoked: true }),
+        "PX",
+        Math.min(remainingOld, 60_000),
+      );
+      multi.set(newKey, JSON.stringify(newSession), "PX", ttlMs);
       const res = await multi.exec();
       if (res !== null) {
         return { token: newToken, session: newSession };
       }
     }
 
-    throw new TalakWeb3Error('Refresh rotation conflict — retry', { code: 'AUTH_REFRESH_CONFLICT', status: 409 });
+    throw new TalakWeb3Error("Refresh rotation conflict — retry", {
+      code: "AUTH_REFRESH_CONFLICT",
+      status: 409,
+    });
   }
 
   async revoke(token: string): Promise<void> {
@@ -122,7 +142,7 @@ export class RedisRefreshStore implements RefreshStore {
     try {
       const session = JSON.parse(raw) as RefreshSession;
       const remaining = Math.max(1, session.expiresAt - Date.now());
-      await this.redis.set(key, JSON.stringify({ ...session, revoked: true }), 'PX', remaining);
+      await this.redis.set(key, JSON.stringify({ ...session, revoked: true }), "PX", remaining);
     } catch {
       /* ignore */
     }

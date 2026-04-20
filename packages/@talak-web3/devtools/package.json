@@ -1,12 +1,21 @@
 {
   "name": "@talak-web3/devtools",
   "version": "1.0.9",
-  "type": "module",
-  "author": "Dagim Abebe",
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
+  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/@talak-web3/devtools#readme",
+  "bugs": {
+    "url": "https://github.com/dagimabebe/talak-web3/issues"
   },
+  "license": "MIT",
+  "author": "Dagim Abebe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dagimabebe/talak-web3.git",
+    "directory": "packages/@talak-web3/devtools"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,26 +25,15 @@
       "default": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "dependencies": {
-    "@talak-web3/types": "workspace:*"
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "lint": "node -e \"process.exit(0)\"",
-    "clean": "node -e \"process.exit(0)\""
+    "test": "vitest run --passWithNoTests"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dagimabebe/talak-web3.git",
-    "directory": "packages/@talak-web3/devtools"
-  },
-  "bugs": {
-    "url": "https://github.com/dagimabebe/talak-web3/issues"
-  },
-  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/@talak-web3/devtools#readme"
+  "dependencies": {
+    "@talak-web3/types": "workspace:*"
+  }
 }

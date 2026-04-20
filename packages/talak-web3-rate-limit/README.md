@@ -17,15 +17,15 @@ pnpm add @talak-web3/rate-limit
 ### In-Memory (Development/Testing)
 
 ```typescript
-import { createRateLimiter } from '@talak-web3/rate-limit';
+import { createRateLimiter } from "@talak-web3/rate-limit";
 
 const limiter = createRateLimiter({
-  type: 'memory',
-  capacity: 10,           // Max 10 requests
-  refillPerSecond: 1,     // Refill 1 token per second
+  type: "memory",
+  capacity: 10, // Max 10 requests
+  refillPerSecond: 1, // Refill 1 token per second
 });
 
-const result = await limiter.check('user:123');
+const result = await limiter.check("user:123");
 if (result.allowed) {
   console.log(`Allowed! ${result.remaining} requests remaining`);
 } else {
@@ -36,19 +36,19 @@ if (result.allowed) {
 ### Redis (Production)
 
 ```typescript
-import Redis from 'ioredis';
-import { createRateLimiter } from '@talak-web3/rate-limit';
+import Redis from "ioredis";
+import { createRateLimiter } from "@talak-web3/rate-limit";
 
 const redis = new Redis(process.env.REDIS_URL);
 
 const limiter = createRateLimiter({
-  type: 'redis',
+  type: "redis",
   redis,
-  capacity: 100,          // Max 100 requests
-  refillPerSecond: 10,    // Refill 10 tokens per second
+  capacity: 100, // Max 100 requests
+  refillPerSecond: 10, // Refill 10 tokens per second
 });
 
-const result = await limiter.check('ip:192.168.1.1');
+const result = await limiter.check("ip:192.168.1.1");
 ```
 
 ## API
@@ -75,7 +75,7 @@ interface RateLimiter {
 interface RateLimitResult {
   allowed: boolean;
   remaining: number;
-  resetAt?: number;  // Timestamp when limit resets
+  resetAt?: number; // Timestamp when limit resets
 }
 ```
 

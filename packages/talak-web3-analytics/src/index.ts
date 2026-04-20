@@ -4,8 +4,4 @@
  * This package will be removed in the next major version.
  */
 
-export {
-  type AnalyticsEvent,
-  type AnalyticsSink,
-} from '@talak-web3/types';
-
+export { type AnalyticsEvent, type AnalyticsSink } from "@talak-web3/types";

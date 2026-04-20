@@ -1,6 +1,6 @@
-import type { TalakWeb3Context } from '@talak-web3/types';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { CeramicAdapter } from './index.js';
+import type { TalakWeb3Context } from "@talak-web3/types";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { CeramicAdapter } from "./index.js";
 
 // Type-only imports — actual modules loaded lazily to avoid require failures
 // when Ceramic SDK is not installed. This makes the package tree-shakable.
@@ -21,8 +21,8 @@ export class CeramicPlugin implements CeramicAdapter {
 
     const ceramicConfig = this.ctx.config.ceramic;
     if (!ceramicConfig) {
-      throw new TalakWeb3Error('Ceramic configuration missing', {
-        code: 'CERAMIC_CONFIG_MISSING',
+      throw new TalakWeb3Error("Ceramic configuration missing", {
+        code: "CERAMIC_CONFIG_MISSING",
         status: 500,
       });
     }
@@ -35,7 +35,9 @@ export class CeramicPlugin implements CeramicAdapter {
     //   import('key-did-provider-ed25519'),
     //   import('key-did-resolver'),
     // ]);
-    throw new Error('Ceramic adapter requires optional dependencies: @ceramicnetwork/http-client, dids, key-did-provider-ed25519, key-did-resolver');
+    throw new Error(
+      "Ceramic adapter requires optional dependencies: @ceramicnetwork/http-client, dids, key-did-provider-ed25519, key-did-resolver",
+    );
 
     // const rawSeed = ceramicConfig.seed ?? process.env['CERAMIC_SEED'];
     // if (!rawSeed) {
@@ -66,10 +68,10 @@ export class CeramicPlugin implements CeramicAdapter {
   async createProfile(input: { did: string }): Promise<{ id: string }> {
     const ceramic = await this.ensureInit();
 
-    this.ctx.hooks.emit('identity:profile-create', input);
+    this.ctx.hooks.emit("identity:profile-create", input);
 
     // const { TileDocument } = await import('@ceramicnetwork/stream-tile');
-    throw new Error('Ceramic adapter requires optional dependency: @ceramicnetwork/stream-tile');
+    throw new Error("Ceramic adapter requires optional dependency: @ceramicnetwork/stream-tile");
 
     // const doc = await TileDocument.create(
     //   ceramic as any,

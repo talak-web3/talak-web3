@@ -1,46 +1,46 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 interface AddOptions {
   project?: string;
 }
 
 const integrations = [
-  'walletconnect',
-  'privy',
-  'dynamic',
-  'rainbowkit',
-  'mfa',
-  'oauth-google',
-  'oauth-github',
-  'oauth-twitter',
+  "walletconnect",
+  "privy",
+  "dynamic",
+  "rainbowkit",
+  "mfa",
+  "oauth-google",
+  "oauth-github",
+  "oauth-twitter",
 ];
 
 export async function addCommand(integration: string | undefined, options: AddOptions = {}) {
-  const projectPath = options.project || '.';
-  
+  const projectPath = options.project || ".";
+
   if (!integration) {
-    console.log('📦 Available integrations:');
-    integrations.forEach(i => console.log(`  - ${i}`));
-    console.log('\nUsage: talak add <integration>');
+    console.log("📦 Available integrations:");
+    integrations.forEach((i) => console.log(`  - ${i}`));
+    console.log("\nUsage: talak add <integration>");
     return;
   }
 
   if (!integrations.includes(integration)) {
     console.error(`❌ Unknown integration: ${integration}`);
-    console.log(`Available: ${integrations.join(', ')}`);
+    console.log(`Available: ${integrations.join(", ")}`);
     process.exit(1);
   }
 
   console.log(`🔧 Adding ${integration} integration...`);
 
-  const packageJsonPath = path.join(projectPath, 'package.json');
+  const packageJsonPath = path.join(projectPath, "package.json");
   if (!fs.existsSync(packageJsonPath)) {
     console.error(`❌ No package.json found in ${projectPath}`);
     process.exit(1);
   }
 
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
 
   // Add integration-specific dependencies
   const deps = getIntegrationDependencies(integration);
@@ -55,27 +55,27 @@ export async function addCommand(integration: string | undefined, options: AddOp
 
   console.log(`✅ Added ${integration} integration!`);
   console.log(`📄 Generated: talak-${integration}.config.ts`);
-  console.log('\nNext steps:');
-  console.log('  npm install');
+  console.log("\nNext steps:");
+  console.log("  npm install");
   console.log(`  Import the config in your talak.config.ts`);
 }
 
 function getIntegrationDependencies(integration: string): Record<string, string> {
   switch (integration) {
-    case 'walletconnect':
-      return { '@walletconnect/ethereum-provider': '^2.0.0' };
-    case 'privy':
-      return { '@privy-io/react-auth': '^1.0.0' };
-    case 'dynamic':
-      return { '@dynamic-labs/sdk-react': '^1.0.0' };
-    case 'rainbowkit':
-      return { '@rainbow-me/rainbowkit': '^2.0.0', wagmi: '^2.0.0' };
-    case 'mfa':
-      return { 'otplib': '^12.0.0', '@simplewebauthn/browser': '^9.0.0' };
-    case 'oauth-google':
-    case 'oauth-github':
-    case 'oauth-twitter':
-      return { 'arctic': '^1.0.0' };
+    case "walletconnect":
+      return { "@walletconnect/ethereum-provider": "^2.0.0" };
+    case "privy":
+      return { "@privy-io/react-auth": "^1.0.0" };
+    case "dynamic":
+      return { "@dynamic-labs/sdk-react": "^1.0.0" };
+    case "rainbowkit":
+      return { "@rainbow-me/rainbowkit": "^2.0.0", wagmi: "^2.0.0" };
+    case "mfa":
+      return { otplib: "^12.0.0", "@simplewebauthn/browser": "^9.0.0" };
+    case "oauth-google":
+    case "oauth-github":
+    case "oauth-twitter":
+      return { arctic: "^1.0.0" };
     default:
       return {};
   }
@@ -83,7 +83,7 @@ function getIntegrationDependencies(integration: string): Record<string, string>
 
 function generateIntegrationConfig(integration: string): string {
   switch (integration) {
-    case 'walletconnect':
+    case "walletconnect":
       return `import { WalletConnectPlugin } from 'talak-web3/plugins';
 
 export const walletConnectConfig = {
@@ -93,7 +93,7 @@ export const walletConnectConfig = {
 
 export const walletConnectPlugin = WalletConnectPlugin(walletConnectConfig);
 `;
-    case 'mfa':
+    case "mfa":
       return `import { MfaPlugin } from 'talak-web3/plugins';
 
 export const mfaConfig = {

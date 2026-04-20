@@ -1,6 +1,5 @@
 # talak-web3
-  
-  
+
 [![npm version](https://img.shields.io/npm/v/talak-web3?logo=npm&label=npm%20package)](https://www.npmjs.com/package/talak-web3)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -52,14 +51,14 @@ Consult [`docs/MINIMAL_SETUP.md`](./docs/MINIMAL_SETUP.md) and the [`@talak-web3
 
 Highlights below; **every publishable package** (SDK + **26** scoped `@talak-web3/*` libraries) is listed with **live npm version badges** in [`docs/NPM_REGISTRY.md`](./docs/NPM_REGISTRY.md). Workspace paths: [`packages.md`](./packages.md) and [`docs/PACKAGE_ECOSYSTEM.md`](./docs/PACKAGE_ECOSYSTEM.md).
 
-| Package | Version (live from npm) | Description |
-|---------|-------------------------|-------------|
-| `talak-web3` | [![npm](https://img.shields.io/npm/v/talak-web3?logo=npm)](https://www.npmjs.com/package/talak-web3) | Unified SDK entrypoint |
-| `@talak-web3/auth` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fauth?logo=npm)](https://www.npmjs.com/package/@talak-web3/auth) | SIWE and session lifecycle |
-| `@talak-web3/rpc` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Frpc?logo=npm)](https://www.npmjs.com/package/@talak-web3/rpc) | Provider routing and failover |
-| `@talak-web3/tx` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Ftx?logo=npm)](https://www.npmjs.com/package/@talak-web3/tx) | Account abstraction helpers |
-| `@talak-web3/hooks` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fhooks?logo=npm)](https://www.npmjs.com/package/@talak-web3/hooks) | React hooks and providers |
-| `@talak-web3/cli` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fcli?logo=npm)](https://www.npmjs.com/package/@talak-web3/cli) | CLI (`talak-web3`, `talak`, `create-talak-web3`) |
+| Package             | Version (live from npm)                                                                                                | Description                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `talak-web3`        | [![npm](https://img.shields.io/npm/v/talak-web3?logo=npm)](https://www.npmjs.com/package/talak-web3)                   | Unified SDK entrypoint                           |
+| `@talak-web3/auth`  | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fauth?logo=npm)](https://www.npmjs.com/package/@talak-web3/auth)   | SIWE and session lifecycle                       |
+| `@talak-web3/rpc`   | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Frpc?logo=npm)](https://www.npmjs.com/package/@talak-web3/rpc)     | Provider routing and failover                    |
+| `@talak-web3/tx`    | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Ftx?logo=npm)](https://www.npmjs.com/package/@talak-web3/tx)       | Account abstraction helpers                      |
+| `@talak-web3/hooks` | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fhooks?logo=npm)](https://www.npmjs.com/package/@talak-web3/hooks) | React hooks and providers                        |
+| `@talak-web3/cli`   | [![npm](https://img.shields.io/npm/v/%40talak-web3%2Fcli?logo=npm)](https://www.npmjs.com/package/@talak-web3/cli)     | CLI (`talak-web3`, `talak`, `create-talak-web3`) |
 
 **Full matrix:** [`docs/NPM_REGISTRY.md`](./docs/NPM_REGISTRY.md)
 
@@ -88,7 +87,6 @@ pnpm lint
 # Type check
 pnpm typecheck
 ```
-
 
 ## Documentation
 

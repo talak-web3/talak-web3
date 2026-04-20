@@ -13,7 +13,10 @@ export type MiddlewareResponse = {
 
 export type MiddlewareNext = () => Promise<MiddlewareResponse>;
 
-export type Middleware = (req: MiddlewareRequest, next: MiddlewareNext) => Promise<MiddlewareResponse>;
+export type Middleware = (
+  req: MiddlewareRequest,
+  next: MiddlewareNext,
+) => Promise<MiddlewareResponse>;
 
 export function chain(middlewares: Middleware[]): Middleware {
   return async function chained(req, next) {
@@ -28,4 +31,3 @@ export function chain(middlewares: Middleware[]): Middleware {
     return dispatch(0);
   };
 }
-

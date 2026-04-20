@@ -28,4 +28,3 @@ packages:
   - "packages/@talak-web3/analytics"
   - "apps/hono-backend"
   - "apps/docs"
-  - "apps/docs"

@@ -1,4 +1,4 @@
 #!/usr/bin/env node
-import { cli } from './index.js';
+import { cli } from "./index.js";
 
 cli.parse();

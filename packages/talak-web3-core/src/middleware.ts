@@ -1,5 +1,5 @@
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { TalakWeb3Context, IMiddlewareChain, MiddlewareHandler } from '@talak-web3/types';
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { TalakWeb3Context, IMiddlewareChain, MiddlewareHandler } from "@talak-web3/types";
 
 /**
  * Production-grade Error Handler Middleware.
@@ -10,7 +10,7 @@ export const errorHandlingMiddleware: MiddlewareHandler = async (req, next, ctx)
     return await next();
   } catch (err: any) {
     const isPublicError = err instanceof TalakWeb3Error;
-    const requestId = (ctx as any).requestId ?? 'unknown';
+    const requestId = (ctx as any).requestId ?? "unknown";
 
     // Internal logging: Detailed error for forensics
     ctx.logger.error(`[Request ${requestId}] Unhandled error:`, {
@@ -27,8 +27,8 @@ export const errorHandlingMiddleware: MiddlewareHandler = async (req, next, ctx)
     }
 
     // Wrap unknown errors in a generic public error
-    throw new TalakWeb3Error('An internal server error occurred. Please contact support.', {
-      code: 'INTERNAL_SERVER_ERROR',
+    throw new TalakWeb3Error("An internal server error occurred. Please contact support.", {
+      code: "INTERNAL_SERVER_ERROR",
       status: 500,
     });
   }
@@ -45,7 +45,7 @@ export class MiddlewareChain<T = unknown, R = unknown> implements IMiddlewareCha
     let index = -1;
 
     const dispatch = async (i: number): Promise<R> => {
-      if (i <= index) throw new Error('next() called multiple times');
+      if (i <= index) throw new Error("next() called multiple times");
       index = i;
       if (i === this.middlewares.length) {
         return finalHandler();

@@ -19,15 +19,15 @@ pnpm add @talak-web3/ai
 Query blockchain data using natural language.
 
 ```typescript
-import { createAIClient } from '@talak-web3/ai';
+import { createAIClient } from "@talak-web3/ai";
 
 const ai = createAIClient({
   openaiApiKey: process.env.OPENAI_API_KEY,
 });
 
 const result = await ai.query({
-  prompt: 'What is the balance of vitalik.eth?',
-  chain: 'ethereum',
+  prompt: "What is the balance of vitalik.eth?",
+  chain: "ethereum",
 });
 ```
 
@@ -37,7 +37,7 @@ Analyze smart contracts for vulnerabilities and patterns.
 
 ```typescript
 const analysis = await ai.analyzeContract({
-  address: '0x1111111111111111111111111111111111111111',
+  address: "0x1111111111111111111111111111111111111111",
   chainId: 1,
 });
 
@@ -51,7 +51,7 @@ Explain complex transactions in plain English.
 
 ```typescript
 const explanation = await ai.explainTransaction({
-  hash: '0x1111111111111111111111111111111111111111',
+  hash: "0x1111111111111111111111111111111111111111",
   chainId: 1,
 });
 

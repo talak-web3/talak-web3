@@ -1,6 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -9,19 +9,19 @@ interface InitOptions {
   force?: boolean;
 }
 
-const templates = ['nextjs', 'react', 'hono', 'express', 'nestjs', 'sveltekit'];
+const templates = ["nextjs", "react", "hono", "express", "nestjs", "sveltekit"];
 
-export async function initCommand(name: string = '.', options: InitOptions = {}) {
-  const template = options.template || 'nextjs';
-  
+export async function initCommand(name: string = ".", options: InitOptions = {}) {
+  const template = options.template || "nextjs";
+
   if (!templates.includes(template)) {
     console.error(`❌ Unknown template: ${template}`);
-    console.log(`Available templates: ${templates.join(', ')}`);
+    console.log(`Available templates: ${templates.join(", ")}`);
     process.exit(1);
   }
 
   const targetDir = path.resolve(process.cwd(), name);
-  
+
   // Check if directory exists
   if (fs.existsSync(targetDir)) {
     const files = fs.readdirSync(targetDir);
@@ -39,85 +39,79 @@ export async function initCommand(name: string = '.', options: InitOptions = {})
   // Generate package.json
   const packageJson = {
     name: path.basename(targetDir),
-    version: '0.1.0',
+    version: "0.1.0",
     private: true,
-    type: 'module',
+    type: "module",
     scripts: getScripts(template),
     dependencies: {
-      'talak-web3': '^1.0.0',
+      "talak-web3": "^1.0.0",
       ...getTemplateDependencies(template),
     },
     devDependencies: {
-      '@types/node': '^20.0.0',
-      typescript: '^5.0.0',
+      "@types/node": "^20.0.0",
+      typescript: "^5.0.0",
       ...getTemplateDevDependencies(template),
     },
   };
 
-  fs.writeFileSync(
-    path.join(targetDir, 'package.json'),
-    JSON.stringify(packageJson, null, 2)
-  );
+  fs.writeFileSync(path.join(targetDir, "package.json"), JSON.stringify(packageJson, null, 2));
 
   // Generate config file
   const configContent = generateConfig(template);
-  fs.writeFileSync(path.join(targetDir, 'talak.config.ts'), configContent);
+  fs.writeFileSync(path.join(targetDir, "talak.config.ts"), configContent);
 
   // Generate .env
   const envContent = generateEnv();
-  fs.writeFileSync(path.join(targetDir, '.env'), envContent);
-  fs.writeFileSync(path.join(targetDir, '.env.example'), envContent);
+  fs.writeFileSync(path.join(targetDir, ".env"), envContent);
+  fs.writeFileSync(path.join(targetDir, ".env.example"), envContent);
 
   // Generate README
   const readmeContent = generateReadme(template, path.basename(targetDir));
-  fs.writeFileSync(path.join(targetDir, 'README.md'), readmeContent);
+  fs.writeFileSync(path.join(targetDir, "README.md"), readmeContent);
 
   // Generate TypeScript config
   const tsConfig = {
     compilerOptions: {
-      target: 'ES2022',
-      module: 'NodeNext',
-      moduleResolution: 'NodeNext',
+      target: "ES2022",
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
       esModuleInterop: true,
       strict: true,
       skipLibCheck: true,
-      outDir: './dist',
-      rootDir: './src',
+      outDir: "./dist",
+      rootDir: "./src",
     },
-    include: ['src/**/*'],
+    include: ["src/**/*"],
   };
-  fs.writeFileSync(
-    path.join(targetDir, 'tsconfig.json'),
-    JSON.stringify(tsConfig, null, 2)
-  );
+  fs.writeFileSync(path.join(targetDir, "tsconfig.json"), JSON.stringify(tsConfig, null, 2));
 
-  console.log('✅ Project initialized successfully!\n');
-  console.log('Next steps:');
+  console.log("✅ Project initialized successfully!\n");
+  console.log("Next steps:");
   console.log(`  cd ${name}`);
-  console.log('  npm install');
-  console.log('  npm run dev');
+  console.log("  npm install");
+  console.log("  npm run dev");
 }
 
 function getScripts(template: string): Record<string, string> {
   const base = {
-    build: 'tsc',
-    typecheck: 'tsc --noEmit',
-    lint: 'eslint src/',
+    build: "tsc",
+    typecheck: "tsc --noEmit",
+    lint: "eslint src/",
   };
 
   switch (template) {
-    case 'nextjs':
-      return { ...base, dev: 'next dev', start: 'next start' };
-    case 'react':
-      return { ...base, dev: 'vite', build: 'tsc && vite build', preview: 'vite preview' };
-    case 'hono':
-      return { ...base, dev: 'tsx watch src/index.ts', start: 'node dist/index.js' };
-    case 'express':
-      return { ...base, dev: 'tsx watch src/index.ts', start: 'node dist/index.js' };
-    case 'nestjs':
-      return { ...base, dev: 'nest start --watch', start: 'node dist/main.js' };
-    case 'sveltekit':
-      return { ...base, dev: 'vite dev', build: 'vite build', preview: 'vite preview' };
+    case "nextjs":
+      return { ...base, dev: "next dev", start: "next start" };
+    case "react":
+      return { ...base, dev: "vite", build: "tsc && vite build", preview: "vite preview" };
+    case "hono":
+      return { ...base, dev: "tsx watch src/index.ts", start: "node dist/index.js" };
+    case "express":
+      return { ...base, dev: "tsx watch src/index.ts", start: "node dist/index.js" };
+    case "nestjs":
+      return { ...base, dev: "nest start --watch", start: "node dist/main.js" };
+    case "sveltekit":
+      return { ...base, dev: "vite dev", build: "vite build", preview: "vite preview" };
     default:
       return base;
   }
@@ -125,21 +119,21 @@ function getScripts(template: string): Record<string, string> {
 
 function getTemplateDependencies(template: string): Record<string, string> {
   switch (template) {
-    case 'nextjs':
-      return { next: '^14.0.0', react: '^18.0.0', 'react-dom': '^18.0.0' };
-    case 'react':
-      return { react: '^18.0.0', 'react-dom': '^18.0.0' };
-    case 'hono':
-      return { hono: '^4.0.0' };
-    case 'express':
-      return { express: '^4.18.0' };
-    case 'nestjs':
+    case "nextjs":
+      return { next: "^14.0.0", react: "^18.0.0", "react-dom": "^18.0.0" };
+    case "react":
+      return { react: "^18.0.0", "react-dom": "^18.0.0" };
+    case "hono":
+      return { hono: "^4.0.0" };
+    case "express":
+      return { express: "^4.18.0" };
+    case "nestjs":
       return {
-        '@nestjs/common': '^10.0.0',
-        '@nestjs/core': '^10.0.0',
-        '@nestjs/platform-express': '^10.0.0',
+        "@nestjs/common": "^10.0.0",
+        "@nestjs/core": "^10.0.0",
+        "@nestjs/platform-express": "^10.0.0",
       };
-    case 'sveltekit':
+    case "sveltekit":
       return {};
     default:
       return {};
@@ -148,18 +142,18 @@ function getTemplateDependencies(template: string): Record<string, string> {
 
 function getTemplateDevDependencies(template: string): Record<string, string> {
   switch (template) {
-    case 'nextjs':
-      return { '@types/react': '^18.0.0', '@types/react-dom': '^18.0.0' };
-    case 'react':
-      return { '@types/react': '^18.0.0', '@types/react-dom': '^18.0.0', vite: '^5.0.0' };
-    case 'hono':
-      return { tsx: '^4.0.0' };
-    case 'express':
-      return { '@types/express': '^4.17.0', tsx: '^4.0.0' };
-    case 'nestjs':
-      return { '@nestjs/cli': '^10.0.0', tsx: '^4.0.0' };
-    case 'sveltekit':
-      return { vite: '^5.0.0' };
+    case "nextjs":
+      return { "@types/react": "^18.0.0", "@types/react-dom": "^18.0.0" };
+    case "react":
+      return { "@types/react": "^18.0.0", "@types/react-dom": "^18.0.0", vite: "^5.0.0" };
+    case "hono":
+      return { tsx: "^4.0.0" };
+    case "express":
+      return { "@types/express": "^4.17.0", tsx: "^4.0.0" };
+    case "nestjs":
+      return { "@nestjs/cli": "^10.0.0", tsx: "^4.0.0" };
+    case "sveltekit":
+      return { vite: "^5.0.0" };
     default:
       return {};
   }
@@ -213,8 +207,8 @@ NODE_ENV=development
 
 function generateSecret(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function generateReadme(template: string, name: string): string {

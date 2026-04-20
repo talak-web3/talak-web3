@@ -18,6 +18,7 @@ Development bounds explicitly forbid deploying `MemoryAuthStorage` instances in 
 
 If you identify a vulnerability in `talak-web3`, please DO NOT open a public issue.
 Instead, responsibly disclose the issue to our security team. We will acknowledge receipt immediately and work transparently toward a CVE disclosure or fix.
+
 ## <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> User Safety Boundaries
 
 - **Production Integrity**: Deploying `MemoryAuthStorage` in production is a critical security violation. The system will attempt to detect and block this, but users must not attempt to force-enable it.

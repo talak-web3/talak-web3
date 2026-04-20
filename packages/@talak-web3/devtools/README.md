@@ -15,7 +15,7 @@ pnpm add @talak-web3/devtools
 Returns a new unique id (via `crypto.randomUUID()`), suitable for correlating logs and traces per request.
 
 ```ts
-import { createRequestId } from '@talak-web3/devtools';
+import { createRequestId } from "@talak-web3/devtools";
 
 const id = createRequestId();
 ```

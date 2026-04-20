@@ -2,14 +2,14 @@
  * Test context helpers
  */
 
-import type { TestContext } from '../types.js';
+import type { TestContext } from "../types.js";
 
 /**
  * Create a test context with cleanup support
  */
 export function createTestContext(): TestContext {
   const cleanupFns: (() => Promise<void> | void)[] = [];
-  
+
   return {
     testId: generateTestId(),
     startTime: Date.now(),
@@ -24,7 +24,7 @@ export function createTestContext(): TestContext {
           const fn = cleanupFns[i];
           if (fn) await fn();
         } catch (error) {
-          console.error('Cleanup error:', error);
+          console.error("Cleanup error:", error);
         }
       }
       cleanupFns.length = 0;
@@ -38,24 +38,24 @@ export function createTestContext(): TestContext {
  */
 export function setupTestContext(): TestContext {
   const context = createTestContext();
-  
+
   // Register cleanup on process exit (for Node.js)
-  if (typeof process !== 'undefined') {
+  if (typeof process !== "undefined") {
     const cleanupHandler = async () => {
       await context.runCleanup();
     };
-    
-    process.on('beforeExit', cleanupHandler);
-    process.on('SIGINT', async () => {
+
+    process.on("beforeExit", cleanupHandler);
+    process.on("SIGINT", async () => {
       await cleanupHandler();
       process.exit(0);
     });
-    
+
     context.addCleanup(() => {
-      process.off('beforeExit', cleanupHandler);
+      process.off("beforeExit", cleanupHandler);
     });
   }
-  
+
   return context;
 }
 
@@ -75,10 +75,10 @@ export async function createIsolatedTestEnvironment(): Promise<{
   redisDb: number;
 }> {
   const context = createTestContext();
-  
+
   // Use a random Redis DB number (0-15)
   const redisDb = Math.floor(Math.random() * 16);
-  
+
   return {
     context,
     redisDb,

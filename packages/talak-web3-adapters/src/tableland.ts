@@ -1,6 +1,6 @@
-import type { TalakWeb3Context } from '@talak-web3/types';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { TablelandAdapter } from './index.js';
+import type { TalakWeb3Context } from "@talak-web3/types";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { TablelandAdapter } from "./index.js";
 
 export class TablelandPlugin implements TablelandAdapter {
   private db: unknown;
@@ -8,17 +8,27 @@ export class TablelandPlugin implements TablelandAdapter {
 
   constructor(private readonly ctx: TalakWeb3Context) {}
 
-  private async ensureInit(): Promise<{ prepare(sql: string): { bind(...params: unknown[]): { all(): Promise<{ results: unknown[] }> } } }> {
-    if (this.initialized && this.db) return this.db as ReturnType<TablelandPlugin['ensureInit']> extends Promise<infer T> ? T : never;
+  private async ensureInit(): Promise<{
+    prepare(sql: string): {
+      bind(...params: unknown[]): { all(): Promise<{ results: unknown[] }> };
+    };
+  }> {
+    if (this.initialized && this.db)
+      return this.db as ReturnType<TablelandPlugin["ensureInit"]> extends Promise<infer T>
+        ? T
+        : never;
 
     const tablelandConfig = this.ctx.config.tableland;
-    const privateKey = tablelandConfig?.privateKey ?? process.env['TABLELAND_PRIVATE_KEY'];
+    const privateKey = tablelandConfig?.privateKey ?? process.env["TABLELAND_PRIVATE_KEY"];
 
     if (!privateKey) {
-      throw new TalakWeb3Error('TABLELAND_PRIVATE_KEY env var or config.tableland.privateKey is required', {
-        code: 'TABLELAND_KEY_MISSING',
-        status: 500,
-      });
+      throw new TalakWeb3Error(
+        "TABLELAND_PRIVATE_KEY env var or config.tableland.privateKey is required",
+        {
+          code: "TABLELAND_KEY_MISSING",
+          status: 500,
+        },
+      );
     }
 
     // Optional dependencies are required for runtime integration.
@@ -26,7 +36,7 @@ export class TablelandPlugin implements TablelandAdapter {
     //   import('@tableland/sdk'),
     //   import('ethers'),
     // ]);
-    throw new Error('Tableland adapter requires optional dependencies: @tableland/sdk, ethers');
+    throw new Error("Tableland adapter requires optional dependencies: @tableland/sdk, ethers");
 
     // const network = tablelandConfig?.network ?? 'maticmum'; // default to polygon mumbai testnet
     // const provider = new JsonRpcProvider(`https://rpc-mumbai.maticvigil.com`);
@@ -38,7 +48,7 @@ export class TablelandPlugin implements TablelandAdapter {
   }
 
   async query(sql: string, params: unknown[] = []): Promise<unknown[]> {
-    this.ctx.hooks.emit('storage:query-start', { sql, params });
+    this.ctx.hooks.emit("storage:query-start", { sql, params });
 
     const db = await this.ensureInit();
 
@@ -47,11 +57,11 @@ export class TablelandPlugin implements TablelandAdapter {
       const bound = stmt.bind(...params);
       const { results } = await bound.all();
       const rows = results ?? [];
-      this.ctx.hooks.emit('storage:query-end', { sql, results: rows });
+      this.ctx.hooks.emit("storage:query-end", { sql, results: rows });
       return rows;
     } catch (error) {
       throw new TalakWeb3Error(`Tableland query failed: ${String(error)}`, {
-        code: 'TABLELAND_QUERY_ERROR',
+        code: "TABLELAND_QUERY_ERROR",
         status: 500,
         cause: error,
       });

@@ -9,8 +9,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '20.12.0'
-  PNPM_VERSION: '9.0.0'
+  NODE_VERSION: "20.12.0"
+  PNPM_VERSION: "9.0.0"
 
 jobs:
   # Release job
@@ -59,8 +59,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -87,7 +87,7 @@ jobs:
             exit 1
           fi
           echo "✓ Bundled artifacts verified (index.js: $INDEX_SIZE bytes)"
-          
+
           # Verify type declarations don't contain 'any'
           if grep -q "export type.*= any;" packages/talak-web3/dist/index.d.ts; then
             echo "ERROR: Type declarations contain 'any' types"
@@ -132,9 +132,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@dagimabebe'
+          cache: "pnpm"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@dagimabebe"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

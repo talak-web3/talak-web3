@@ -1,6 +1,6 @@
-import type Redis from 'ioredis';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { RevocationStore } from '../contracts.js';
+import type Redis from "ioredis";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { RevocationStore } from "../contracts.js";
 
 export interface RedisRevocationStoreOptions {
   redis: Redis;
@@ -18,7 +18,7 @@ export class RedisRevocationStore implements RevocationStore {
 
   constructor(opts: RedisRevocationStoreOptions) {
     this.redis = opts.redis;
-    this.prefix = opts.keyPrefix ?? 'talak:jti:';
+    this.prefix = opts.keyPrefix ?? "talak:jti:";
   }
 
   private key(jti: string): string {
@@ -32,10 +32,10 @@ export class RedisRevocationStore implements RevocationStore {
   async revoke(jti: string, expiresAtMs: number): Promise<void> {
     const ttl = Math.max(1, expiresAtMs - Date.now());
     try {
-      await this.redis.set(this.key(jti), '1', 'PX', ttl);
+      await this.redis.set(this.key(jti), "1", "PX", ttl);
     } catch (err) {
-      throw new TalakWeb3Error('Redis revocation store failure', {
-        code: 'AUTH_REDIS_REVOCATION_ERROR',
+      throw new TalakWeb3Error("Redis revocation store failure", {
+        code: "AUTH_REDIS_REVOCATION_ERROR",
         status: 503,
         cause: err,
       });
@@ -47,8 +47,8 @@ export class RedisRevocationStore implements RevocationStore {
       const v = await this.redis.get(this.key(jti));
       return v !== null;
     } catch (err) {
-      throw new TalakWeb3Error('Redis revocation store failure', {
-        code: 'AUTH_REDIS_REVOCATION_ERROR',
+      throw new TalakWeb3Error("Redis revocation store failure", {
+        code: "AUTH_REDIS_REVOCATION_ERROR",
         status: 503,
         cause: err,
       });
@@ -59,8 +59,8 @@ export class RedisRevocationStore implements RevocationStore {
     try {
       await this.redis.set(this.globalKey(), timestampSeconds.toString());
     } catch (err) {
-      throw new TalakWeb3Error('Redis revocation store failure', {
-        code: 'AUTH_REDIS_REVOCATION_ERROR',
+      throw new TalakWeb3Error("Redis revocation store failure", {
+        code: "AUTH_REDIS_REVOCATION_ERROR",
         status: 503,
         cause: err,
       });
@@ -72,8 +72,8 @@ export class RedisRevocationStore implements RevocationStore {
       const v = await this.redis.get(this.globalKey());
       return v ? parseInt(v, 10) : 0;
     } catch (err) {
-      throw new TalakWeb3Error('Redis revocation store failure', {
-        code: 'AUTH_REDIS_REVOCATION_ERROR',
+      throw new TalakWeb3Error("Redis revocation store failure", {
+        code: "AUTH_REDIS_REVOCATION_ERROR",
         status: 503,
         cause: err,
       });

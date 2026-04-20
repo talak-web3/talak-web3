@@ -6,9 +6,6 @@
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "references": [
-    { "path": "../talak-web3-middleware" },
-    { "path": "../talak-web3-types" }
-  ],
+  "references": [{ "path": "../talak-web3-middleware" }, { "path": "../talak-web3-types" }],
   "include": ["src/**/*.ts"]
 }

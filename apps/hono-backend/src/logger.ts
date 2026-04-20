@@ -1,9 +1,9 @@
-import pino from 'pino';
-import type { Context, MiddlewareHandler } from 'hono';
+import pino from "pino";
+import type { Context, MiddlewareHandler } from "hono";
 
 // Base logger instance
 const baseLogger = pino({
-  level: process.env['LOG_LEVEL'] ?? 'info',
+  level: process.env["LOG_LEVEL"] ?? "info",
 });
 
 /**
@@ -32,25 +32,28 @@ export const logger: Logger = baseLogger;
  */
 export function requestLogger(): MiddlewareHandler {
   return async (c: Context, next) => {
-    const reqId = c.req.header('x-request-id') ?? crypto.randomUUID();
-    c.set('requestId', reqId);
-    c.header('x-request-id', reqId);
+    const reqId = c.req.header("x-request-id") ?? crypto.randomUUID();
+    c.set("requestId", reqId);
+    c.header("x-request-id", reqId);
 
     // Bind child logger to context
     const childLogger = baseLogger.child({ reqId });
-    c.set('logger', childLogger);
+    c.set("logger", childLogger);
 
     const start = Date.now();
     try {
       await next();
     } finally {
       // Intentionally omitting full req body to prevent PII leaks
-      childLogger.info({
-        method: c.req.method,
-        path: c.req.path,
-        status: c.res.status,
-        ms: Date.now() - start,
-      }, 'request');
+      childLogger.info(
+        {
+          method: c.req.method,
+          path: c.req.path,
+          status: c.res.status,
+          ms: Date.now() - start,
+        },
+        "request",
+      );
     }
   };
 }
@@ -61,7 +64,7 @@ export function requestLogger(): MiddlewareHandler {
  */
 export function getLogger(c?: Context): Logger {
   if (c) {
-    const ctxLogger = c.get('logger');
+    const ctxLogger = c.get("logger");
     if (ctxLogger) return ctxLogger as Logger;
   }
   return logger;

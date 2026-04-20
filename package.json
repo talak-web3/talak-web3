@@ -1,23 +1,19 @@
 {
   "name": "talak-web3-monorepo",
   "private": true,
-  "author": "Dagim Abebe",
+  "homepage": "https://github.com/dagimabebe/talak-web3#readme",
+  "bugs": {
+    "url": "https://github.com/dagimabebe/talak-web3/issues"
+  },
   "license": "MIT",
+  "author": "Dagim Abebe",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dagimabebe/talak-web3.git"
   },
-  "bugs": {
-    "url": "https://github.com/dagimabebe/talak-web3/issues"
-  },
-  "homepage": "https://github.com/dagimabebe/talak-web3#readme",
   "funding": {
     "type": "github",
     "url": "https://github.com/dagimabebe"
-  },
-  "packageManager": "pnpm@9.0.0",
-  "engines": {
-    "node": ">=20.12.0"
   },
   "scripts": {
     "prepare": "husky",
@@ -26,8 +22,9 @@
     "build:fast": "turbo run build",
     "typecheck": "turbo run typecheck",
     "typecheck:fast": "turbo run typecheck",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint -- --fix",
+    "lint": "oxlint --report-unused-disable-directives",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
     "test": "turbo run test",
     "test:fast": "turbo run test",
     "test:unit": "vitest run --exclude '**/integration/**' --exclude '**/e2e/**'",
@@ -50,25 +47,28 @@
     "docs:lint": "turbo run lint --filter=@talak-web3/docs",
     "docs:test": "turbo run test --filter=@talak-web3/docs"
   },
-  "devDependencies": {
-    "@commitlint/cli": "^19.0.0",
-    "@commitlint/config-conventional": "^19.0.0",
-    "@types/node": "^22.13.1",
-    "@vitest/coverage-v8": "^2.1.9",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.20.1",
-    "husky": "^9.0.0",
-    "prettier": "^3.5.1",
-    "tsup": "^8.3.6",
-    "tsx": "^4.21.0",
-    "turbo": "^2.4.2",
-    "typescript": "^5.7.3",
-    "vitest": "^2.1.9"
-  },
   "dependencies": {
     "@types/react": "^18.0.0",
     "react": "^18.0.0",
     "talak-web3": "workspace:*",
     "zod": "^4.3.6"
-  }
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@types/node": "^22.13.1",
+    "esbuild": "^0.28.0",
+    "husky": "^9.0.0",
+    "oxfmt": "^0.45.0",
+    "oxlint": "^1.60.0",
+    "tsup": "^8.3.6",
+    "tsx": "^4.21.0",
+    "turbo": "^2.4.2",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.4"
+  },
+  "engines": {
+    "node": ">=20.12.0"
+  },
+  "packageManager": "pnpm@9.0.0"
 }

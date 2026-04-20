@@ -1,15 +1,15 @@
-import { exportSPKI, type KeyLike } from 'jose';
-import { createHash } from 'node:crypto';
-import { TalakWeb3Error } from '@talak-web3/errors';
+import { exportSPKI, type KeyLike } from "jose";
+import { createHash } from "node:crypto";
+import { TalakWeb3Error } from "@talak-web3/errors";
 
 // ---------------------------------------------------------------------------
 // JWKS (JSON Web Key Set) Management for Key Rotation
 // ---------------------------------------------------------------------------
 
 export interface JsonWebKey {
-  kty: 'RSA';
-  use: 'sig';
-  alg: 'RS256';
+  kty: "RSA";
+  use: "sig";
+  alg: "RS256";
   kid: string;
   n: string;
   e: string;
@@ -31,8 +31,9 @@ export interface KeyRotationConfig {
 }
 
 export class JwksManager {
-  private keys: Map<string, { publicKey: KeyLike; privateKey?: KeyLike; createdAt: number }> = new Map();
-  private primaryKid: string = '';
+  private keys: Map<string, { publicKey: KeyLike; privateKey?: KeyLike; createdAt: number }> =
+    new Map();
+  private primaryKid: string = "";
   private config: KeyRotationConfig;
 
   constructor(config: Partial<KeyRotationConfig> = {}) {
@@ -54,7 +55,7 @@ export class JwksManager {
     if (isPrimary) {
       this.primaryKid = kid;
     }
-    
+
     const record: { publicKey: KeyLike; privateKey?: KeyLike; createdAt: number } = {
       publicKey,
       createdAt: Date.now(),
@@ -95,21 +96,22 @@ export class JwksManager {
 
     for (const [kid, keyData] of this.keys.entries()) {
       const spki = await exportSPKI(keyData.publicKey);
-      const publicKeyPem = spki.replace(/-----BEGIN PUBLIC KEY-----/, '')
-        .replace(/-----END PUBLIC KEY-----/, '')
-        .replace(/\n/g, '');
+      const publicKeyPem = spki
+        .replace(/-----BEGIN PUBLIC KEY-----/, "")
+        .replace(/-----END PUBLIC KEY-----/, "")
+        .replace(/\n/g, "");
 
       // Parse the SPKI to extract modulus and exponent
-      const keyBuffer = Buffer.from(publicKeyPem, 'base64');
+      const keyBuffer = Buffer.from(publicKeyPem, "base64");
       const jwk: JsonWebKey = {
-        kty: 'RSA',
-        use: 'sig',
-        alg: 'RS256',
+        kty: "RSA",
+        use: "sig",
+        alg: "RS256",
         kid,
         // These would be extracted from the actual key in a real implementation
         // For now, we'll use placeholder values that would be populated by the key parsing
-        n: 'placeholder_modulus',
-        e: 'AQAB', // Standard exponent for RSA keys (65537)
+        n: "placeholder_modulus",
+        e: "AQAB", // Standard exponent for RSA keys (65537)
         x5t: this.computeX5t(spki),
         x5c: [publicKeyPem],
       };
@@ -125,10 +127,10 @@ export class JwksManager {
    */
   async rotateKeys(newPrivateKey: KeyLike, newPublicKey: KeyLike): Promise<string> {
     const newKid = this.generateKid();
-    
+
     // Add new key as primary
     this.addKey(newKid, newPublicKey, newPrivateKey, true);
-    
+
     return newKid;
   }
 
@@ -138,13 +140,13 @@ export class JwksManager {
    */
   async emergencyPurge(newPrivateKey?: KeyLike, newPublicKey?: KeyLike): Promise<string> {
     this.keys.clear();
-    this.primaryKid = '';
-    
+    this.primaryKid = "";
+
     if (newPrivateKey && newPublicKey) {
       return this.rotateKeys(newPrivateKey, newPublicKey);
     }
-    
-    return '';
+
+    return "";
   }
 
   /**
@@ -152,8 +154,8 @@ export class JwksManager {
    */
   revokeKey(kid: string): void {
     if (kid === this.primaryKid) {
-      throw new TalakWeb3Error('Cannot revoke primary key without rotation', {
-        code: 'AUTH_REVOKE_PRIMARY_FORBIDDEN',
+      throw new TalakWeb3Error("Cannot revoke primary key without rotation", {
+        code: "AUTH_REVOKE_PRIMARY_FORBIDDEN",
         status: 403,
       });
     }
@@ -166,7 +168,7 @@ export class JwksManager {
   shouldRotate(): boolean {
     const primary = this.keys.get(this.primaryKid);
     if (!primary) return true;
-    
+
     const age = Date.now() - primary.createdAt;
     return age >= this.config.rotationIntervalMs;
   }
@@ -177,10 +179,10 @@ export class JwksManager {
   private cleanupOldKeys(): void {
     const now = Date.now();
     const cutoff = now - this.config.gracePeriodMs;
-    
+
     // Don't remove the primary key
     const keysToRemove: string[] = [];
-    
+
     for (const [kid, keyData] of this.keys.entries()) {
       if (kid === this.primaryKid) continue;
       if (keyData.createdAt < cutoff) {
@@ -202,7 +204,7 @@ export class JwksManager {
       }
     }
 
-    keysToRemove.forEach(kid => this.keys.delete(kid));
+    keysToRemove.forEach((kid) => this.keys.delete(kid));
   }
 
   /**
@@ -218,11 +220,14 @@ export class JwksManager {
    * Compute X.509 certificate thumbprint (SHA-1)
    */
   private computeX5t(spki: string): string {
-    const hash = createHash('sha1');
-    hash.update(spki.replace(/-----BEGIN PUBLIC KEY-----\n/, '')
-      .replace(/\n-----END PUBLIC KEY-----/, '')
-      .replace(/\n/g, ''));
-    return hash.digest('base64url');
+    const hash = createHash("sha1");
+    hash.update(
+      spki
+        .replace(/-----BEGIN PUBLIC KEY-----\n/, "")
+        .replace(/\n-----END PUBLIC KEY-----/, "")
+        .replace(/\n/g, ""),
+    );
+    return hash.digest("base64url");
   }
 
   /**
@@ -234,9 +239,9 @@ export class JwksManager {
     // Check primary key exists and has private key
     const primary = this.keys.get(this.primaryKid);
     if (!primary) {
-      errors.push('Primary key not found');
+      errors.push("Primary key not found");
     } else if (!primary.privateKey) {
-      errors.push('Primary key missing private key');
+      errors.push("Primary key missing private key");
     }
 
     // Check we don't exceed max keys
@@ -259,7 +264,7 @@ export class JwksManager {
   } {
     const primary = this.keys.get(this.primaryKid);
     const now = Date.now();
-    
+
     let oldestKeyAge = 0;
     for (const keyData of this.keys.values()) {
       const age = now - keyData.createdAt;
@@ -267,7 +272,7 @@ export class JwksManager {
     }
 
     const shouldRotate = this.shouldRotate();
-    const nextRotationIn = primary 
+    const nextRotationIn = primary
       ? Math.max(0, this.config.rotationIntervalMs - (now - primary.createdAt))
       : 0;
 

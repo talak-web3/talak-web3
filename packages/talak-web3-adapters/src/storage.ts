@@ -1,6 +1,6 @@
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { TalakWeb3Context } from '@talak-web3/types';
-import type { StorageAdapter } from './index.js';
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { TalakWeb3Context } from "@talak-web3/types";
+import type { StorageAdapter } from "./index.js";
 
 export interface PinataStorageOptions {
   /** Pinata JWT (preferred). Falls back to `PINATA_JWT` env var. */
@@ -19,25 +19,31 @@ export class PinataStorageAdapter implements StorageAdapter {
   private readonly jwt: string;
   private readonly gatewayBaseUrl: string;
 
-  constructor(private readonly ctx: TalakWeb3Context, opts: PinataStorageOptions = {}) {
-    this.jwt = opts.jwt ?? process.env['PINATA_JWT'] ?? '';
+  constructor(
+    private readonly ctx: TalakWeb3Context,
+    opts: PinataStorageOptions = {},
+  ) {
+    this.jwt = opts.jwt ?? process.env["PINATA_JWT"] ?? "";
     if (!this.jwt) {
-      throw new TalakWeb3Error('Missing Pinata JWT (set PINATA_JWT or pass opts.jwt)', {
-        code: 'STORAGE_PINATA_JWT_MISSING',
+      throw new TalakWeb3Error("Missing Pinata JWT (set PINATA_JWT or pass opts.jwt)", {
+        code: "STORAGE_PINATA_JWT_MISSING",
         status: 500,
       });
     }
-    this.gatewayBaseUrl = (opts.gatewayBaseUrl ?? 'https://gateway.pinata.cloud/ipfs').replace(/\/+$/, '');
+    this.gatewayBaseUrl = (opts.gatewayBaseUrl ?? "https://gateway.pinata.cloud/ipfs").replace(
+      /\/+$/,
+      "",
+    );
   }
 
   async put(path: string, data: Uint8Array): Promise<{ uri: string }> {
     const form = new FormData();
-    const name = path.replace(/^\/+/, '') || 'file.bin';
+    const name = path.replace(/^\/+/, "") || "file.bin";
     const blobPart: any = data;
-    form.append('file', new Blob([blobPart], { type: 'application/octet-stream' }), name);
+    form.append("file", new Blob([blobPart], { type: "application/octet-stream" }), name);
 
-    const res = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-      method: 'POST',
+    const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${this.jwt}`,
       },
@@ -45,17 +51,17 @@ export class PinataStorageAdapter implements StorageAdapter {
     });
 
     if (!res.ok) {
-      const txt = await res.text().catch(() => '');
+      const txt = await res.text().catch(() => "");
       throw new TalakWeb3Error(`Pinata upload failed: HTTP ${res.status} ${txt}`.trim(), {
-        code: 'STORAGE_PUT_FAILED',
+        code: "STORAGE_PUT_FAILED",
         status: 502,
       });
     }
 
-    const json = await res.json() as { IpfsHash?: string };
+    const json = (await res.json()) as { IpfsHash?: string };
     if (!json.IpfsHash) {
-      throw new TalakWeb3Error('Pinata response missing IpfsHash', {
-        code: 'STORAGE_PUT_BAD_RESPONSE',
+      throw new TalakWeb3Error("Pinata response missing IpfsHash", {
+        code: "STORAGE_PUT_BAD_RESPONSE",
         status: 502,
       });
     }
@@ -65,20 +71,21 @@ export class PinataStorageAdapter implements StorageAdapter {
   }
 
   async get(uri: string): Promise<Uint8Array> {
-    const url = uri.startsWith('ipfs://')
-      ? this.ipfsToGatewayUrl(uri)
-      : uri;
+    const url = uri.startsWith("ipfs://") ? this.ipfsToGatewayUrl(uri) : uri;
 
     const res = await fetch(url);
     if (!res.ok) {
-      throw new TalakWeb3Error(`IPFS fetch failed: HTTP ${res.status}`, { code: 'STORAGE_GET_FAILED', status: 502 });
+      throw new TalakWeb3Error(`IPFS fetch failed: HTTP ${res.status}`, {
+        code: "STORAGE_GET_FAILED",
+        status: 502,
+      });
     }
     const buf = new Uint8Array(await res.arrayBuffer());
     return buf;
   }
 
   private ipfsToGatewayUrl(ipfsUri: string): string {
-    const stripped = ipfsUri.replace(/^ipfs:\/\//, '');
+    const stripped = ipfsUri.replace(/^ipfs:\/\//, "");
     return `${this.gatewayBaseUrl}/${stripped}`;
   }
 
@@ -88,4 +95,3 @@ export class PinataStorageAdapter implements StorageAdapter {
     return adapter;
   }
 }
-

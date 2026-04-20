@@ -15,25 +15,25 @@ pnpm add @talak-web3/config
 ## Usage
 
 ```typescript
-import { createConfig, defineConfig } from '@talak-web3/config';
+import { createConfig, defineConfig } from "@talak-web3/config";
 
 // Define your configuration
 export default defineConfig({
-  chains: ['ethereum', 'polygon', 'arbitrum'],
+  chains: ["ethereum", "polygon", "arbitrum"],
   rpc: {
     ethereum: {
-      http: ['https://eth-mainnet.g.alchemy.com/v2/demo_api_key'],
+      http: ["https://eth-mainnet.g.alchemy.com/v2/demo_api_key"],
     },
   },
   auth: {
-    domain: 'myapp.com',
+    domain: "myapp.com",
     sessionDuration: 86400, // 24 hours
   },
 });
 
 // Load configuration
 const config = createConfig({
-  configFile: './talak.config.ts',
+  configFile: "./talak.config.ts",
 });
 ```
 

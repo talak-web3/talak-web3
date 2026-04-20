@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { TalakWeb3Instance, IHookRegistry } from '@talak-web3/types';
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { TalakWeb3Instance, IHookRegistry } from "@talak-web3/types";
 
 // ---------------------------------------------------------------------------
 // HookRegistry — typed pub/sub event bus; used by TalakWeb3Context.hooks
@@ -55,32 +55,28 @@ export interface TalakWeb3ProviderProps {
 
 export function TalakWeb3Provider({ instance, children }: TalakWeb3ProviderProps) {
   return (
-    <TalakWeb3ReactContext.Provider value={instance}>
-      {children}
-    </TalakWeb3ReactContext.Provider>
+    <TalakWeb3ReactContext.Provider value={instance}>{children}</TalakWeb3ReactContext.Provider>
   );
 }
 
 export function useTalakWeb3(): TalakWeb3Instance {
   const ctx = useContext(TalakWeb3ReactContext);
-  if (!ctx) throw new Error('useTalakWeb3 must be used within a TalakWeb3Provider');
+  if (!ctx) throw new Error("useTalakWeb3 must be used within a TalakWeb3Provider");
   return ctx;
 }
 
 export function useChain() {
   const instance = useTalakWeb3();
-  const [chainId, setChainId] = useState<number>(
-    instance.config.chains[0]?.id ?? 1,
-  );
+  const [chainId, setChainId] = useState<number>(instance.config.chains[0]?.id ?? 1);
 
   useEffect(() => {
-    return instance.context.hooks.on('chain-changed', setChainId);
+    return instance.context.hooks.on("chain-changed", setChainId);
   }, [instance]);
 
   return {
     chainId,
     chains: instance.config.chains,
-    switchChain: (id: number) => instance.context.hooks.emit('chain-switch', id),
+    switchChain: (id: number) => instance.context.hooks.emit("chain-switch", id),
   };
 }
 
@@ -89,21 +85,21 @@ export function useAccount() {
   const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
-    return instance.context.hooks.on('account-changed', setAddress);
+    return instance.context.hooks.on("account-changed", setAddress);
   }, [instance]);
 
   return {
     address,
     isConnected: address !== null,
-    connect: (addr: string) => instance.context.hooks.emit('account-changed', addr),
-    disconnect: () => instance.context.hooks.emit('account-changed', null),
+    connect: (addr: string) => instance.context.hooks.emit("account-changed", addr),
+    disconnect: () => instance.context.hooks.emit("account-changed", null),
   };
 }
 
 export function useRpc() {
   const instance = useTalakWeb3();
   return {
-    request: <T = unknown>(method: string, params: unknown[] = []) =>
+    request: <T = unknown,>(method: string, params: unknown[] = []) =>
       instance.context.rpc.request<T>(method, params),
   };
 }
@@ -118,10 +114,10 @@ export function useGasless() {
     setLoading(true);
     setError(null);
     try {
-      const aa = (instance.context as unknown as Record<string, unknown>)['aa'] as
+      const aa = (instance.context as unknown as Record<string, unknown>)["aa"] as
         | { sendGasless(to: string, data: string): Promise<string> }
         | undefined;
-      if (!aa) throw new Error('AccountAbstraction plugin not loaded');
+      if (!aa) throw new Error("AccountAbstraction plugin not loaded");
       const hash = await aa.sendGasless(to, callData);
       setLastHash(hash);
       return hash;
@@ -139,13 +135,15 @@ export function useGasless() {
 
 export function useIdentity() {
   const instance = useTalakWeb3();
-  const [profile, setProfile] = useState<{ did?: string; ens?: string; address?: string } | null>(null);
+  const [profile, setProfile] = useState<{ did?: string; ens?: string; address?: string } | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
 
   const resolve = async (addressOrDid: string) => {
     setLoading(true);
     try {
-      const identity = (instance.context as unknown as Record<string, unknown>)['identity'] as
+      const identity = (instance.context as unknown as Record<string, unknown>)["identity"] as
         | { resolve(input: string): Promise<{ did?: string; ens?: string; address?: string }> }
         | undefined;
       if (!identity) {

@@ -1,4 +1,4 @@
-import { TalakWeb3Error } from '@talak-web3/errors';
+import { TalakWeb3Error } from "@talak-web3/errors";
 
 // ---------------------------------------------------------------------------
 // Adversarial Load Testing Suite
@@ -60,8 +60,8 @@ export interface LoadTestResult {
 // ---------------------------------------------------------------------------
 
 export const highConcurrencyLoginTest: LoadTestScenario = {
-  name: 'high-concurrency-login',
-  description: 'Test system under high concurrent login attempts',
+  name: "high-concurrency-login",
+  description: "Test system under high concurrent login attempts",
   config: {
     concurrentRequests: 100,
     duration: 60,
@@ -71,30 +71,30 @@ export const highConcurrencyLoginTest: LoadTestScenario = {
   },
   async execute(target: LoadTestTarget): Promise<LoadTestResult> {
     const startTime = Date.now();
-    const endTime = startTime + (this.config.duration * 1000);
-    
+    const endTime = startTime + this.config.duration * 1000;
+
     const requests: Array<Promise<void>> = [];
     const results: Array<{ success: boolean; responseTime: number; error?: string }> = [];
-    
+
     // Generate test wallets
-    const wallets = Array.from({ length: this.config.concurrentRequests }, (_, i) => 
-      generateTestWallet(i)
+    const wallets = Array.from({ length: this.config.concurrentRequests }, (_, i) =>
+      generateTestWallet(i),
     );
 
     for (let i = 0; i < this.config.concurrentRequests; i++) {
       const request = executeLoginAttempt(target, wallets[i], startTime, endTime, results);
       requests.push(request);
-      
+
       // Ramp up delay
       if (this.config.rampUpTime) {
         const delay = (this.config.rampUpTime * 1000) / this.config.concurrentRequests;
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
     await Promise.all(requests);
-    
-    return calculateResults('high-concurrency-login', startTime, results);
+
+    return calculateResults("high-concurrency-login", startTime, results);
   },
 };
 
@@ -103,8 +103,8 @@ export const highConcurrencyLoginTest: LoadTestScenario = {
 // ---------------------------------------------------------------------------
 
 export const replayAttackTest: LoadTestScenario = {
-  name: 'replay-attack-flood',
-  description: 'Test system resilience against replay attack floods',
+  name: "replay-attack-flood",
+  description: "Test system resilience against replay attack floods",
   config: {
     concurrentRequests: 200,
     duration: 30,
@@ -113,24 +113,31 @@ export const replayAttackTest: LoadTestScenario = {
   },
   async execute(target: LoadTestTarget): Promise<LoadTestResult> {
     const startTime = Date.now();
-    const endTime = startTime + (this.config.duration * 1000);
-    
+    const endTime = startTime + this.config.duration * 1000;
+
     const requests: Array<Promise<void>> = [];
     const results: Array<{ success: boolean; responseTime: number; error?: string }> = [];
-    
+
     // Create a single valid SIWE message and replay it
     const wallet = generateTestWallet(0);
     const siweMessage = generateSiweMessage(wallet.address);
     const signature = await signMessage(wallet, siweMessage);
 
     for (let i = 0; i < this.config.concurrentRequests; i++) {
-      const request = executeReplayAttack(target, siweMessage, signature, startTime, endTime, results);
+      const request = executeReplayAttack(
+        target,
+        siweMessage,
+        signature,
+        startTime,
+        endTime,
+        results,
+      );
       requests.push(request);
     }
 
     await Promise.all(requests);
-    
-    return calculateResults('replay-attack-flood', startTime, results);
+
+    return calculateResults("replay-attack-flood", startTime, results);
   },
 };
 
@@ -139,8 +146,8 @@ export const replayAttackTest: LoadTestScenario = {
 // ---------------------------------------------------------------------------
 
 export const malformedRpcTest: LoadTestScenario = {
-  name: 'malformed-rpc-storm',
-  description: 'Test system with malformed RPC requests',
+  name: "malformed-rpc-storm",
+  description: "Test system with malformed RPC requests",
   config: {
     concurrentRequests: 500,
     duration: 45,
@@ -149,21 +156,21 @@ export const malformedRpcTest: LoadTestScenario = {
   },
   async execute(target: LoadTestTarget): Promise<LoadTestResult> {
     const startTime = Date.now();
-    const endTime = startTime + (this.config.duration * 1000);
-    
+    const endTime = startTime + this.config.duration * 1000;
+
     const requests: Array<Promise<void>> = [];
     const results: Array<{ success: boolean; responseTime: number; error?: string }> = [];
-    
+
     const malformedRequests = [
-      { jsonrpc: '2.0', id: 1, method: '', params: [] },
-      { jsonrpc: '1.0', id: 1, method: 'eth_getBalance', params: [] },
-      { jsonrpc: '2.0', method: 'eth_getBalance' }, // Missing id
-      { jsonrpc: '2.0', id: 'invalid', method: 'eth_getBalance', params: [] },
-      { jsonrpc: '2.0', id: 1, method: 'invalid_method', params: [] },
-      { jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: 'invalid' },
-      '', // Empty request
-      'invalid json', // Invalid JSON
-      { method: 'eth_getBalance' }, // Missing jsonrpc and id
+      { jsonrpc: "2.0", id: 1, method: "", params: [] },
+      { jsonrpc: "1.0", id: 1, method: "eth_getBalance", params: [] },
+      { jsonrpc: "2.0", method: "eth_getBalance" }, // Missing id
+      { jsonrpc: "2.0", id: "invalid", method: "eth_getBalance", params: [] },
+      { jsonrpc: "2.0", id: 1, method: "invalid_method", params: [] },
+      { jsonrpc: "2.0", id: 1, method: "eth_getBalance", params: "invalid" },
+      "", // Empty request
+      "invalid json", // Invalid JSON
+      { method: "eth_getBalance" }, // Missing jsonrpc and id
     ];
 
     for (let i = 0; i < this.config.concurrentRequests; i++) {
@@ -173,8 +180,8 @@ export const malformedRpcTest: LoadTestScenario = {
     }
 
     await Promise.all(requests);
-    
-    return calculateResults('malformed-rpc-storm', startTime, results);
+
+    return calculateResults("malformed-rpc-storm", startTime, results);
   },
 };
 
@@ -183,8 +190,8 @@ export const malformedRpcTest: LoadTestScenario = {
 // ---------------------------------------------------------------------------
 
 export const redisFailureTest: LoadTestScenario = {
-  name: 'redis-failure-under-load',
-  description: 'Test system behavior when Redis fails under load',
+  name: "redis-failure-under-load",
+  description: "Test system behavior when Redis fails under load",
   config: {
     concurrentRequests: 150,
     duration: 40,
@@ -193,16 +200,16 @@ export const redisFailureTest: LoadTestScenario = {
   },
   async execute(target: LoadTestTarget): Promise<LoadTestResult> {
     const startTime = Date.now();
-    const endTime = startTime + (this.config.duration * 1000);
-    
+    const endTime = startTime + this.config.duration * 1000;
+
     const requests: Array<Promise<void>> = [];
     const results: Array<{ success: boolean; responseTime: number; error?: string }> = [];
-    
+
     // Mix of different operations that stress Redis
     for (let i = 0; i < this.config.concurrentRequests; i++) {
       const operation = i % 3;
       let request: Promise<void>;
-      
+
       switch (operation) {
         case 0:
           request = executeNonceRequest(target, startTime, endTime, results);
@@ -216,13 +223,13 @@ export const redisFailureTest: LoadTestScenario = {
         default:
           request = executeNonceRequest(target, startTime, endTime, results);
       }
-      
+
       requests.push(request);
     }
 
     await Promise.all(requests);
-    
-    return calculateResults('redis-failure-under-load', startTime, results);
+
+    return calculateResults("redis-failure-under-load", startTime, results);
   },
 };
 
@@ -233,8 +240,8 @@ export const redisFailureTest: LoadTestScenario = {
 function generateTestWallet(index: number) {
   // Use index to generate a deterministic test wallet
   return {
-    address: `0x${index.toString(16).padStart(40, '0')}`,
-    privateKey: `0x${index.toString(16).padStart(64, '0')}`,
+    address: `0x${index.toString(16).padStart(40, "0")}`,
+    privateKey: `0x${index.toString(16).padStart(64, "0")}`,
   };
 }
 
@@ -244,81 +251,121 @@ function generateSiweMessage(address: string) {
 
 async function signMessage(wallet: any, message: string) {
   // Mock signing for test
-  return '0x' + 'a'.repeat(130);
+  return "0x" + "a".repeat(130);
 }
 
-async function executeLoginAttempt(target: LoadTestTarget, wallet: any, startTime: number, endTime: number, results: any[]) {
+async function executeLoginAttempt(
+  target: LoadTestTarget,
+  wallet: any,
+  startTime: number,
+  endTime: number,
+  results: any[],
+) {
   while (Date.now() < endTime) {
     const start = Date.now();
     try {
       const siweMessage = generateSiweMessage(wallet.address);
       const signature = await signMessage(wallet, siweMessage);
-      
+
       const response = await fetch(`${target.baseUrl}${target.endpoints.login}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...target.headers },
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...target.headers },
         body: JSON.stringify({ message: siweMessage, signature }),
       });
-      
+
       results.push({ success: response.ok, responseTime: Date.now() - start });
     } catch (err) {
-      results.push({ success: false, responseTime: Date.now() - start, error: (err as any).message });
+      results.push({
+        success: false,
+        responseTime: Date.now() - start,
+        error: (err as any).message,
+      });
     }
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }
 
-async function executeReplayAttack(target: LoadTestTarget, siweMessage: string, signature: string, startTime: number, endTime: number, results: any[]) {
+async function executeReplayAttack(
+  target: LoadTestTarget,
+  siweMessage: string,
+  signature: string,
+  startTime: number,
+  endTime: number,
+  results: any[],
+) {
   while (Date.now() < endTime) {
     const start = Date.now();
     try {
       const response = await fetch(`${target.baseUrl}${target.endpoints.login}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...target.headers },
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...target.headers },
         body: JSON.stringify({ message: siweMessage, signature }),
       });
-      
+
       results.push({ success: response.ok, responseTime: Date.now() - start });
     } catch (err) {
-      results.push({ success: false, responseTime: Date.now() - start, error: (err as any).message });
+      results.push({
+        success: false,
+        responseTime: Date.now() - start,
+        error: (err as any).message,
+      });
     }
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 }
 
-async function executeMalformedRpc(target: LoadTestTarget, malformedRequest: any, startTime: number, endTime: number, results: any[]) {
+async function executeMalformedRpc(
+  target: LoadTestTarget,
+  malformedRequest: any,
+  startTime: number,
+  endTime: number,
+  results: any[],
+) {
   while (Date.now() < endTime) {
     const start = Date.now();
     try {
-      const response = await fetch(`${target.baseUrl}${target.endpoints.rpc.replace(':chainId', '1')}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...target.headers },
-        body: typeof malformedRequest === 'string' ? malformedRequest : JSON.stringify(malformedRequest),
-      });
-      
+      const response = await fetch(
+        `${target.baseUrl}${target.endpoints.rpc.replace(":chainId", "1")}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...target.headers },
+          body:
+            typeof malformedRequest === "string"
+              ? malformedRequest
+              : JSON.stringify(malformedRequest),
+        },
+      );
+
       results.push({ success: response.ok, responseTime: Date.now() - start });
     } catch (err) {
-      results.push({ success: false, responseTime: Date.now() - start, error: (err as any).message });
+      results.push({
+        success: false,
+        responseTime: Date.now() - start,
+        error: (err as any).message,
+      });
     }
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
 }
 
 function calculateResults(scenario: string, startTime: number, results: any[]): LoadTestResult {
   const endTime = Date.now();
-  const successfulRequests = results.filter(r => r.success).length;
+  const successfulRequests = results.filter((r) => r.success).length;
   const failedRequests = results.length - successfulRequests;
-  const responseTimes = results.map(r => r.responseTime).sort((a, b) => a - b);
-  const averageResponseTime = responseTimes.length > 0 ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length : 0;
-  
+  const responseTimes = results.map((r) => r.responseTime).toSorted((a, b) => a - b);
+  const averageResponseTime =
+    responseTimes.length > 0 ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length : 0;
+
   const errorsMap = new Map<string, { count: number; samples: string[] }>();
-  results.filter(r => r.error).forEach(r => {
-    const err = r.error!;
-    const entry = errorsMap.get(err) || { count: 0, samples: [] };
-    entry.count++;
-    if (entry.samples.length < 3) entry.samples.push(err);
-    errorsMap.set(err, entry);
-  });
+  results
+    .filter((r) => r.error)
+    .forEach((r) => {
+      const err = r.error!;
+      const entry = errorsMap.get(err) || { count: 0, samples: [] };
+      entry.count++;
+      if (entry.samples.length < 3) entry.samples.push(err);
+      errorsMap.set(err, entry);
+    });
 
   return {
     scenario,
@@ -333,7 +380,7 @@ function calculateResults(scenario: string, startTime: number, results: any[]): 
     p95ResponseTime: responseTimes[Math.floor(responseTimes.length * 0.95)] ?? 0,
     p99ResponseTime: responseTimes[Math.floor(responseTimes.length * 0.99)] ?? 0,
     requestsPerSecond: results.length / ((endTime - startTime) / 1000),
-    errors: Array.from(errorsMap.entries()).map(([error, data]) => ({ error, ...data })),
+    errors: Array.from(errorsMap.entries()).map(([error, data]) => Object.assign({ error }, data)),
     securityMetrics: {
       rateLimitHits: 0, // Should be populated from system metrics
       authFailures: 0,
@@ -375,12 +422,12 @@ export class LoadTestEngine {
     options: {
       onProgress?: (progress: number, result: LoadTestResult) => void;
       verbose?: boolean;
-    } = {}
+    } = {},
   ): Promise<LoadTestResult> {
     const scenario = this.scenarios.get(scenarioName);
     if (!scenario) {
       throw new TalakWeb3Error(`Load test scenario "${scenarioName}" not found`, {
-        code: 'LOAD_TEST_SCENARIO_NOT_FOUND',
+        code: "LOAD_TEST_SCENARIO_NOT_FOUND",
         status: 404,
       });
     }
@@ -406,10 +453,10 @@ export class LoadTestEngine {
     options: {
       onProgress?: (scenario: string, result: LoadTestResult) => void;
       verbose?: boolean;
-    } = {}
+    } = {},
   ): Promise<LoadTestResult[]> {
     const results: LoadTestResult[] = [];
-    
+
     for (const scenario of this.scenarios.values()) {
       try {
         const result = await this.runScenario(scenario.name, target, {
@@ -439,7 +486,9 @@ Generated: ${new Date().toISOString()}
 
 ## Scenario Results
 
-${results.map(result => `
+${results
+  .map(
+    (result) => `
 ### ${result.scenario}
 - **Duration:** ${((result.endTime - result.startTime) / 1000).toFixed(2)}s
 - **Total Requests:** ${result.totalRequests}
@@ -453,8 +502,10 @@ ${results.map(result => `
 - **Suspicious Activity:** ${result.securityMetrics.suspiciousActivityDetections}
 
 **Errors:**
-${result.errors.map(err => `- ${err.error}: ${err.count} occurrences`).join('\n')}
-`).join('\n')}
+${result.errors.map((err) => `- ${err.error}: ${err.count} occurrences`).join("\n")}
+`,
+  )
+  .join("\n")}
 
 ## Recommendations
 ${generateRecommendations(results)}
@@ -473,24 +524,28 @@ async function executeLoginAttempt(
   wallet: TestWallet,
   startTime: number,
   endTime: number,
-  results: Array<{ success: boolean; responseTime: number; error?: string }>
+  results: Array<{ success: boolean; responseTime: number; error?: string }>,
 ): Promise<void> {
   while (Date.now() < endTime) {
     const requestStart = Date.now();
-    
+
     try {
       // First get nonce
       const nonceResponse = await fetch(`${target.baseUrl}${target.endpoints.nonce}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...target.headers,
         },
         body: JSON.stringify({ address: wallet.address }),
       });
 
       if (!nonceResponse.ok) {
-        results.push({ success: false, responseTime: Date.now() - requestStart, error: 'nonce_failed' });
+        results.push({
+          success: false,
+          responseTime: Date.now() - requestStart,
+          error: "nonce_failed",
+        });
         continue;
       }
 
@@ -502,31 +557,30 @@ async function executeLoginAttempt(
 
       // Attempt login
       const loginResponse = await fetch(`${target.baseUrl}${target.endpoints.login}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...target.headers,
         },
         body: JSON.stringify({ message: siweMessage, signature }),
       });
 
       const responseTime = Date.now() - requestStart;
-      results.push({ 
-        success: loginResponse.ok, 
-        responseTime, 
-        error: loginResponse.ok ? undefined : 'login_failed' 
+      results.push({
+        success: loginResponse.ok,
+        responseTime,
+        error: loginResponse.ok ? undefined : "login_failed",
       });
-
     } catch (err) {
-      results.push({ 
-        success: false, 
-        responseTime: Date.now() - requestStart, 
-        error: err instanceof Error ? err.message : 'unknown_error' 
+      results.push({
+        success: false,
+        responseTime: Date.now() - requestStart,
+        error: err instanceof Error ? err.message : "unknown_error",
       });
     }
 
     // Think time
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }
 
@@ -536,37 +590,36 @@ async function executeReplayAttack(
   signature: string,
   startTime: number,
   endTime: number,
-  results: Array<{ success: boolean; responseTime: number; error?: string }>
+  results: Array<{ success: boolean; responseTime: number; error?: string }>,
 ): Promise<void> {
   while (Date.now() < endTime) {
     const requestStart = Date.now();
-    
+
     try {
       const response = await fetch(`${target.baseUrl}${target.endpoints.login}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...target.headers,
         },
         body: JSON.stringify({ message: siweMessage, signature }),
       });
 
       const responseTime = Date.now() - requestStart;
-      results.push({ 
-        success: response.ok, 
-        responseTime, 
-        error: response.ok ? undefined : 'replay_rejected' 
+      results.push({
+        success: response.ok,
+        responseTime,
+        error: response.ok ? undefined : "replay_rejected",
       });
-
     } catch (err) {
-      results.push({ 
-        success: false, 
-        responseTime: Date.now() - requestStart, 
-        error: err instanceof Error ? err.message : 'unknown_error' 
+      results.push({
+        success: false,
+        responseTime: Date.now() - requestStart,
+        error: err instanceof Error ? err.message : "unknown_error",
       });
     }
 
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 }
 
@@ -575,37 +628,39 @@ async function executeMalformedRpc(
   malformedRequest: any,
   startTime: number,
   endTime: number,
-  results: Array<{ success: boolean; responseTime: number; error?: string }>
+  results: Array<{ success: boolean; responseTime: number; error?: string }>,
 ): Promise<void> {
   while (Date.now() < endTime) {
     const requestStart = Date.now();
-    
+
     try {
       const response = await fetch(`${target.baseUrl}${target.endpoints.rpc}/1`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...target.headers,
         },
-        body: typeof malformedRequest === 'string' ? malformedRequest : JSON.stringify(malformedRequest),
+        body:
+          typeof malformedRequest === "string"
+            ? malformedRequest
+            : JSON.stringify(malformedRequest),
       });
 
       const responseTime = Date.now() - requestStart;
-      results.push({ 
-        success: response.ok, 
-        responseTime, 
-        error: response.ok ? undefined : 'malformed_rejected' 
+      results.push({
+        success: response.ok,
+        responseTime,
+        error: response.ok ? undefined : "malformed_rejected",
       });
-
     } catch (err) {
-      results.push({ 
-        success: false, 
-        responseTime: Date.now() - requestStart, 
-        error: err instanceof Error ? err.message : 'unknown_error' 
+      results.push({
+        success: false,
+        responseTime: Date.now() - requestStart,
+        error: err instanceof Error ? err.message : "unknown_error",
       });
     }
 
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
 }
 
@@ -613,39 +668,38 @@ async function executeNonceRequest(
   target: LoadTestTarget,
   startTime: number,
   endTime: number,
-  results: Array<{ success: boolean; responseTime: number; error?: string }>
+  results: Array<{ success: boolean; responseTime: number; error?: string }>,
 ): Promise<void> {
   const wallet = generateTestWallet(Math.floor(Math.random() * 10000));
-  
+
   while (Date.now() < endTime) {
     const requestStart = Date.now();
-    
+
     try {
       const response = await fetch(`${target.baseUrl}${target.endpoints.nonce}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...target.headers,
         },
         body: JSON.stringify({ address: wallet.address }),
       });
 
       const responseTime = Date.now() - requestStart;
-      results.push({ 
-        success: response.ok, 
-        responseTime, 
-        error: response.ok ? undefined : 'nonce_failed' 
+      results.push({
+        success: response.ok,
+        responseTime,
+        error: response.ok ? undefined : "nonce_failed",
       });
-
     } catch (err) {
-      results.push({ 
-        success: false, 
-        responseTime: Date.now() - requestStart, 
-        error: err instanceof Error ? err.message : 'unknown_error' 
+      results.push({
+        success: false,
+        responseTime: Date.now() - requestStart,
+        error: err instanceof Error ? err.message : "unknown_error",
       });
     }
 
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
   }
 }
 
@@ -653,70 +707,73 @@ async function executeRpcRequest(
   target: LoadTestTarget,
   startTime: number,
   endTime: number,
-  results: Array<{ success: boolean; responseTime: number; error?: string }>
+  results: Array<{ success: boolean; responseTime: number; error?: string }>,
 ): Promise<void> {
   while (Date.now() < endTime) {
     const requestStart = Date.now();
-    
+
     try {
       const response = await fetch(`${target.baseUrl}${target.endpoints.rpc}/1`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...target.headers,
         },
         body: JSON.stringify({
-          jsonrpc: '2.0',
+          jsonrpc: "2.0",
           id: 1,
-          method: 'eth_getBalance',
-          params: ['0x0000000000000000000000000000000000000000', 'latest'],
+          method: "eth_getBalance",
+          params: ["0x0000000000000000000000000000000000000000", "latest"],
         }),
       });
 
       const responseTime = Date.now() - requestStart;
-      results.push({ 
-        success: response.ok, 
-        responseTime, 
-        error: response.ok ? undefined : 'rpc_failed' 
+      results.push({
+        success: response.ok,
+        responseTime,
+        error: response.ok ? undefined : "rpc_failed",
       });
-
     } catch (err) {
-      results.push({ 
-        success: false, 
-        responseTime: Date.now() - requestStart, 
-        error: err instanceof Error ? err.message : 'unknown_error' 
+      results.push({
+        success: false,
+        responseTime: Date.now() - requestStart,
+        error: err instanceof Error ? err.message : "unknown_error",
       });
     }
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }
 
 function calculateResults(
   scenario: string,
   startTime: number,
-  results: Array<{ success: boolean; responseTime: number; error?: string }>
+  results: Array<{ success: boolean; responseTime: number; error?: string }>,
 ): LoadTestResult {
   const endTime = Date.now();
-  const successfulResults = results.filter(r => r.success);
-  const failedResults = results.filter(r => !r.success);
-  
-  const responseTimes = results.map(r => r.responseTime).sort((a, b) => a - b);
-  const averageResponseTime = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
-  
+  const successfulResults = results.filter((r) => r.success);
+  const failedResults = results.filter((r) => !r.success);
+
+  const responseTimes = results.map((r) => r.responseTime).toSorted((a, b) => a - b);
+  const averageResponseTime =
+    responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
+
   const p95Index = Math.floor(responseTimes.length * 0.95);
   const p99Index = Math.floor(responseTimes.length * 0.99);
-  
+
   const errorCounts = new Map<string, number>();
-  failedResults.forEach(result => {
-    const error = result.error || 'unknown';
+  failedResults.forEach((result) => {
+    const error = result.error || "unknown";
     errorCounts.set(error, (errorCounts.get(error) || 0) + 1);
   });
 
   const errors = Array.from(errorCounts.entries()).map(([error, count]) => ({
     error,
     count,
-    samples: failedResults.filter(r => r.error === error).slice(0, 3).map(r => String(r.responseTime)),
+    samples: failedResults
+      .filter((r) => r.error === error)
+      .slice(0, 3)
+      .map((r) => String(r.responseTime)),
   }));
 
   return {
@@ -734,35 +791,41 @@ function calculateResults(
     requestsPerSecond: results.length / ((endTime - startTime) / 1000),
     errors,
     securityMetrics: {
-      rateLimitHits: errorCounts.get('rate_limit') || 0,
-      authFailures: errorCounts.get('auth_failed') || 0,
-      suspiciousActivityDetections: errorCounts.get('suspicious_activity') || 0,
+      rateLimitHits: errorCounts.get("rate_limit") || 0,
+      authFailures: errorCounts.get("auth_failed") || 0,
+      suspiciousActivityDetections: errorCounts.get("suspicious_activity") || 0,
     },
   };
 }
 
 function generateRecommendations(results: LoadTestResult[]): string {
   const recommendations: string[] = [];
-  
+
   // Check for high failure rates
-  const highFailureScenarios = results.filter(r => (r.failedRequests / r.totalRequests) > 0.1);
+  const highFailureScenarios = results.filter((r) => r.failedRequests / r.totalRequests > 0.1);
   if (highFailureScenarios.length > 0) {
-    recommendations.push('- Consider increasing rate limits or improving error handling for scenarios with high failure rates');
+    recommendations.push(
+      "- Consider increasing rate limits or improving error handling for scenarios with high failure rates",
+    );
   }
-  
+
   // Check for slow response times
-  const slowScenarios = results.filter(r => r.p95ResponseTime > 5000);
+  const slowScenarios = results.filter((r) => r.p95ResponseTime > 5000);
   if (slowScenarios.length > 0) {
-    recommendations.push('- Optimize performance for scenarios with P95 response times > 5s');
+    recommendations.push("- Optimize performance for scenarios with P95 response times > 5s");
   }
-  
+
   // Check for security issues
-  const securityIssues = results.some(r => r.securityMetrics.rateLimitHits > r.totalRequests * 0.5);
+  const securityIssues = results.some(
+    (r) => r.securityMetrics.rateLimitHits > r.totalRequests * 0.5,
+  );
   if (securityIssues) {
-    recommendations.push('- Review rate limiting configuration - high rate of limit hits detected');
+    recommendations.push("- Review rate limiting configuration - high rate of limit hits detected");
   }
-  
-  return recommendations.length > 0 ? recommendations.join('\n') : '- System performed well within acceptable limits';
+
+  return recommendations.length > 0
+    ? recommendations.join("\n")
+    : "- System performed well within acceptable limits";
 }
 
 // Test utilities (simplified implementations)
@@ -773,15 +836,15 @@ interface TestWallet {
 
 function generateTestWallet(index: number): TestWallet {
   return {
-    address: `0x${index.toString(16).padStart(40, '0')}`,
-    privateKey: `0x${index.toString(16).padStart(64, '0')}`,
+    address: `0x${index.toString(16).padStart(40, "0")}`,
+    privateKey: `0x${index.toString(16).padStart(64, "0")}`,
   };
 }
 
 function generateSiweMessage(address: string, nonce?: string): string {
   const timestamp = new Date().toISOString();
   const actualNonce = nonce ?? Math.random().toString(36).substring(2, 15);
-  
+
   return `talak-web3.example.com wants you to sign in with your Ethereum account:
 ${address}
 
@@ -796,7 +859,7 @@ Issued At: ${timestamp}`;
 
 async function signMessage(wallet: TestWallet, message: string): Promise<string> {
   // Simplified signing - in real implementation would use actual cryptographic signing
-  return `0x${Buffer.from(message + wallet.privateKey).toString('hex')}`;
+  return `0x${Buffer.from(message + wallet.privateKey).toString("hex")}`;
 }
 
 export const loadTestEngine = new LoadTestEngine();

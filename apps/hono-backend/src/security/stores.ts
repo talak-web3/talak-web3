@@ -1,7 +1,7 @@
-import type { RedisClientType } from 'redis';
-import { createHash, randomBytes } from 'node:crypto';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { NonceStore, RefreshStore, RefreshSession } from '@talak-web3/auth';
+import type { RedisClientType } from "redis";
+import { createHash, randomBytes } from "node:crypto";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { NonceStore, RefreshStore, RefreshSession } from "@talak-web3/auth";
 
 export type { NonceStore, RefreshStore, RefreshSession };
 
@@ -15,7 +15,7 @@ export interface NonceRecord {
 }
 
 export function sha256Hex(input: string): string {
-  return createHash('sha256').update(input).digest('hex');
+  return createHash("sha256").update(input).digest("hex");
 }
 
 // ---------------------------------------------------------------------------
@@ -28,34 +28,37 @@ export class RedisNonceStore implements NonceStore {
     private readonly ttlMs: number,
   ) {
     if (ttlMs > 5 * 60_000) {
-      console.warn('[RedisNonceStore] ttlMs exceeds 5 minutes — clamping to 5 minutes for security.');
+      console.warn(
+        "[RedisNonceStore] ttlMs exceeds 5 minutes — clamping to 5 minutes for security.",
+      );
       this.ttlMs = 5 * 60_000;
     }
   }
 
   async create(address: string, meta?: { ip?: string; ua?: string }): Promise<string> {
     try {
-      if (!this.redis.isOpen) throw new Error('Redis not open');
-      const nonce = randomBytes(16).toString('hex');
+      if (!this.redis.isOpen) throw new Error("Redis not open");
+      const nonce = randomBytes(16).toString("hex");
       const now = Date.now();
       const expiresAt = now + this.ttlMs;
       const key = `nonce:${address.toLowerCase()}:${nonce}`;
 
-      await this.redis.multi()
+      await this.redis
+        .multi()
         .hSet(key, {
           address: address.toLowerCase(),
           nonce,
           expiresAt: String(expiresAt),
-          consumed: '0',
-          ip: meta?.ip ?? '',
-          ua: meta?.ua ?? '',
+          consumed: "0",
+          ip: meta?.ip ?? "",
+          ua: meta?.ua ?? "",
         })
         .pExpire(key, this.ttlMs)
         .exec();
       return nonce;
     } catch (err) {
-      throw new TalakWeb3Error('INFRA_UNAVAILABLE: Failed to create nonce', {
-        code: 'INFRA_UNAVAILABLE',
+      throw new TalakWeb3Error("INFRA_UNAVAILABLE: Failed to create nonce", {
+        code: "INFRA_UNAVAILABLE",
         status: 503,
         cause: err,
       });
@@ -64,7 +67,7 @@ export class RedisNonceStore implements NonceStore {
 
   async consume(address: string, nonce: string): Promise<boolean> {
     try {
-      if (!this.redis.isOpen) throw new Error('Redis not open');
+      if (!this.redis.isOpen) throw new Error("Redis not open");
       const key = `nonce:${address.toLowerCase()}:${nonce}`;
 
       // USES REDIS SERVER TIME to prevent clock drift
@@ -88,11 +91,11 @@ export class RedisNonceStore implements NonceStore {
         return 1
       `;
 
-      const res = await this.redis.eval(lua, { keys: [key] }) as unknown;
+      const res = (await this.redis.eval(lua, { keys: [key] })) as unknown;
       return Number(res) === 1;
     } catch (err) {
-      throw new TalakWeb3Error('INFRA_UNAVAILABLE: Failed to consume nonce', {
-        code: 'INFRA_UNAVAILABLE',
+      throw new TalakWeb3Error("INFRA_UNAVAILABLE: Failed to consume nonce", {
+        code: "INFRA_UNAVAILABLE",
         status: 503,
         cause: err,
       });
@@ -108,15 +111,19 @@ export class RedisRefreshStore implements RefreshStore {
   constructor(private readonly redis: RedisClientType) {}
 
   private makeToken(): string {
-    return randomBytes(32).toString('base64url');
+    return randomBytes(32).toString("base64url");
   }
 
-  async create(address: string, chainId: number, ttlMs: number): Promise<{ token: string; session: RefreshSession }> {
+  async create(
+    address: string,
+    chainId: number,
+    ttlMs: number,
+  ): Promise<{ token: string; session: RefreshSession }> {
     try {
-      if (!this.redis.isOpen) throw new Error('Redis not open');
+      if (!this.redis.isOpen) throw new Error("Redis not open");
       const token = this.makeToken();
       const hash = sha256Hex(token);
-      const id = randomBytes(16).toString('hex');
+      const id = randomBytes(16).toString("hex");
       const expiresAt = Date.now() + ttlMs;
       const key = `refresh:${hash}`;
 
@@ -129,21 +136,22 @@ export class RedisRefreshStore implements RefreshStore {
         revoked: false,
       };
 
-      await this.redis.multi()
+      await this.redis
+        .multi()
         .hSet(key, {
           id,
           address: session.address,
           chainId: String(chainId),
           hash,
           expiresAt: String(expiresAt),
-          revoked: '0',
+          revoked: "0",
         })
         .pExpire(key, ttlMs)
         .exec();
       return { token, session };
     } catch (err) {
-      throw new TalakWeb3Error('INFRA_UNAVAILABLE: Failed to create refresh token', {
-        code: 'INFRA_UNAVAILABLE',
+      throw new TalakWeb3Error("INFRA_UNAVAILABLE: Failed to create refresh token", {
+        code: "INFRA_UNAVAILABLE",
         status: 503,
         cause: err,
       });
@@ -152,23 +160,23 @@ export class RedisRefreshStore implements RefreshStore {
 
   async lookup(token: string): Promise<RefreshSession | null> {
     try {
-      if (!this.redis.isOpen) throw new Error('Redis not open');
+      if (!this.redis.isOpen) throw new Error("Redis not open");
       const hash = sha256Hex(token);
       const key = `refresh:${hash}`;
       const data = await this.redis.hGetAll(key);
       if (!data || Object.keys(data).length === 0) return null;
 
       return {
-        id: data['id'] ?? '',
-        address: (data['address'] ?? '').toLowerCase(),
-        chainId: Number(data['chainId'] ?? '1'),
-        hash: data['hash'] ?? hash,
-        expiresAt: Number(data['expiresAt'] ?? '0'),
-        revoked: (data['revoked'] ?? '0') === '1',
+        id: data["id"] ?? "",
+        address: (data["address"] ?? "").toLowerCase(),
+        chainId: Number(data["chainId"] ?? "1"),
+        hash: data["hash"] ?? hash,
+        expiresAt: Number(data["expiresAt"] ?? "0"),
+        revoked: (data["revoked"] ?? "0") === "1",
       };
     } catch (err) {
-      throw new TalakWeb3Error('INFRA_UNAVAILABLE: Failed to lookup refresh token', {
-        code: 'INFRA_UNAVAILABLE',
+      throw new TalakWeb3Error("INFRA_UNAVAILABLE: Failed to lookup refresh token", {
+        code: "INFRA_UNAVAILABLE",
         status: 503,
         cause: err,
       });
@@ -177,15 +185,15 @@ export class RedisRefreshStore implements RefreshStore {
 
   async rotate(token: string, ttlMs: number): Promise<{ token: string; session: RefreshSession }> {
     try {
-      if (!this.redis.isOpen) throw new Error('Redis not open');
+      if (!this.redis.isOpen) throw new Error("Redis not open");
       const oldHash = sha256Hex(token);
       const oldKey = `refresh:${oldHash}`;
-      
+
       // Generate new token details BEFORE rotation
       const newToken = this.makeToken();
       const newHash = sha256Hex(newToken);
       const newKey = `refresh:${newHash}`;
-      const newId = randomBytes(16).toString('hex');
+      const newId = randomBytes(16).toString("hex");
 
       const monolithicLua = `
         local time = redis.call('TIME')
@@ -223,13 +231,13 @@ export class RedisRefreshStore implements RefreshStore {
         return {tostring(newExpiresAt), address, chainId}
       `;
 
-      const res = await this.redis.eval(monolithicLua, {
+      const res = (await this.redis.eval(monolithicLua, {
         keys: [oldKey, newKey],
-        arguments: [String(ttlMs), newId, newHash]
-      }) as unknown;
+        arguments: [String(ttlMs), newId, newHash],
+      })) as unknown;
 
       if (!res || res === 0) {
-        throw new Error('refresh token already used, revoked, or expired');
+        throw new Error("refresh token already used, revoked, or expired");
       }
 
       const [newExpiresAt, address, chainId] = res as [string, string, string];
@@ -246,8 +254,8 @@ export class RedisRefreshStore implements RefreshStore {
       return { token: newToken, session };
     } catch (err) {
       if (err instanceof TalakWeb3Error && err.status === 401) throw err;
-      throw new TalakWeb3Error('INFRA_UNAVAILABLE: Failed to rotate refresh token', {
-        code: 'INFRA_UNAVAILABLE',
+      throw new TalakWeb3Error("INFRA_UNAVAILABLE: Failed to rotate refresh token", {
+        code: "INFRA_UNAVAILABLE",
         status: 503,
         cause: err,
       });
@@ -256,13 +264,13 @@ export class RedisRefreshStore implements RefreshStore {
 
   async revoke(token: string): Promise<void> {
     try {
-      if (!this.redis.isOpen) throw new Error('Redis not open');
+      if (!this.redis.isOpen) throw new Error("Redis not open");
       const hash = sha256Hex(token);
       const key = `refresh:${hash}`;
-      await this.redis.hSet(key, { revoked: '1' });
+      await this.redis.hSet(key, { revoked: "1" });
     } catch (err) {
-      throw new TalakWeb3Error('INFRA_UNAVAILABLE: Failed to revoke refresh token', {
-        code: 'INFRA_UNAVAILABLE',
+      throw new TalakWeb3Error("INFRA_UNAVAILABLE: Failed to revoke refresh token", {
+        code: "INFRA_UNAVAILABLE",
         status: 503,
         cause: err,
       });

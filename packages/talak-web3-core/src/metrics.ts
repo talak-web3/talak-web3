@@ -21,8 +21,8 @@ export class SecurityMetrics {
    * Generates OpenMetrics / Prometheus exposition format.
    */
   static expose(): string {
-    let output = '';
-    
+    let output = "";
+
     for (const [key, val] of this.counters.entries()) {
       output += `${key} ${val}\n`;
     }
@@ -41,24 +41,24 @@ export class SecurityMetrics {
   private static serialize(name: string, labels: Record<string, string>): string {
     const labelStr = Object.entries(labels)
       .map(([k, v]) => `${k}="${v}"`)
-      .join(',');
+      .join(",");
     return labelStr ? `${name}{${labelStr}}` : name;
   }
 
   // Pre-defined security metrics
   static trackAuthFailure(reason: string): void {
-    this.increment('talak_auth_failures_total', { reason });
+    this.increment("talak_auth_failures_total", { reason });
   }
 
   static trackRateLimitHit(route: string): void {
-    this.increment('talak_rate_limit_hits_total', { route });
+    this.increment("talak_rate_limit_hits_total", { route });
   }
 
   static trackRpcError(method: string, code: string): void {
-    this.increment('talak_rpc_errors_total', { method, code });
+    this.increment("talak_rpc_errors_total", { method, code });
   }
 
   static trackRpcLatency(method: string, ms: number): void {
-    this.observe('talak_rpc_latency_ms', ms, { method });
+    this.observe("talak_rpc_latency_ms", ms, { method });
   }
 }

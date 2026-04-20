@@ -20,6 +20,7 @@ This guide provides comprehensive instructions for deploying Talak Web3 with 10/
 Configure the following environment variables based on your deployment environment:
 
 #### Core Configuration
+
 ```bash
 # Environment
 NODE_ENV=production
@@ -47,6 +48,7 @@ REDIS_DB_AUDIT=3
 ```
 
 #### Security Configuration
+
 ```bash
 # TLS Configuration
 REDIS_TLS_CERT_PATH=/path/to/redis.crt
@@ -64,6 +66,7 @@ SECURITY_ENABLE_ZERO_TRUST=true
 ```
 
 #### Monitoring Configuration
+
 ```bash
 # Metrics
 PROMETHEUS_ENABLED=true
@@ -79,6 +82,7 @@ ELASTICSEARCH_PASSWORD=security_password
 ```
 
 #### Alert Configuration
+
 ```bash
 # Alert Channels
 ALERT_EMAIL_ENABLED=true
@@ -100,13 +104,13 @@ ALERT_PAGERDUTY_API_KEY=your-pagerduty-api-key
 For development and staging environments, use environment-based key management:
 
 ```typescript
-import { TalakWeb3Auth } from '@talak-web3/auth';
+import { TalakWeb3Auth } from "@talak-web3/auth";
 
 const auth = new TalakWeb3Auth({
   nonceStore,
   refreshStore,
   revocationStore,
-  keyProviderType: 'environment',
+  keyProviderType: "environment",
   keyRotationConfig: {
     maxKeys: 5,
     gracePeriodMs: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -120,16 +124,16 @@ const auth = new TalakWeb3Auth({
 For production, use AWS KMS for enhanced security:
 
 ```typescript
-import { TalakWeb3Auth } from '@talak-web3/auth';
+import { TalakWeb3Auth } from "@talak-web3/auth";
 
 const auth = new TalakWeb3Auth({
   nonceStore,
   refreshStore,
   revocationStore,
-  keyProviderType: 'aws-kms',
+  keyProviderType: "aws-kms",
   keyProviderOptions: {
-    keyId: 'arn:aws:kms:us-east-1:123456789012:key/your-key-id',
-    region: 'us-east-1',
+    keyId: "arn:aws:kms:us-east-1:123456789012:key/your-key-id",
+    region: "us-east-1",
   },
   keyRotationConfig: {
     maxKeys: 10,
@@ -142,6 +146,7 @@ const auth = new TalakWeb3Auth({
 ### Key Rotation Setup
 
 1. **Create Initial Keys**
+
 ```bash
 # Generate RSA key pair
 openssl genrsa -out private.pem 4096
@@ -153,16 +158,18 @@ export JWT_PUBLIC_KEY="$(cat public.pem)"
 ```
 
 2. **Configure Rotation**
+
 ```typescript
 // Key rotation will be handled automatically by the JWKS manager
 // Set up monitoring for key rotation events
 ```
 
 3. **JWKS Endpoint**
-```typescript
-import { createJwksEndpoint } from './security/jwks-endpoint.js';
 
-app.get('/.well-known/jwks.json', createJwksEndpoint(auth));
+```typescript
+import { createJwksEndpoint } from "./security/jwks-endpoint.js";
+
+app.get("/.well-known/jwks.json", createJwksEndpoint(auth));
 ```
 
 ## Redis Hardening
@@ -211,13 +218,13 @@ rename-command SCRIPT ""
 The system automatically performs security audits on startup:
 
 ```typescript
-import { RedisSecurityAuditor } from './security/redis-hardening.js';
+import { RedisSecurityAuditor } from "./security/redis-hardening.js";
 
 const auditor = new RedisSecurityAuditor(redis);
 const audit = await auditor.auditSecurity();
 
-if (audit.status === 'critical') {
-  console.error('Redis security issues detected:', audit.issues);
+if (audit.status === "critical") {
+  console.error("Redis security issues detected:", audit.issues);
   process.exit(1);
 }
 ```
@@ -227,13 +234,13 @@ if (audit.status === 'critical') {
 Configure separate Redis databases for different data types:
 
 ```typescript
-import { RedisDatabaseSelector } from './security/redis-hardening.js';
+import { RedisDatabaseSelector } from "./security/redis-hardening.js";
 
 const dbSelector = new RedisDatabaseSelector(redis, {
-  nonceDb: 0,    // Nonce storage
-  sessionDb: 1,  // Session storage
+  nonceDb: 0, // Nonce storage
+  sessionDb: 1, // Session storage
   rateLimitDb: 2, // Rate limiting
-  auditDb: 3,    // Audit logs
+  auditDb: 3, // Audit logs
 });
 ```
 
@@ -242,6 +249,7 @@ const dbSelector = new RedisDatabaseSelector(redis, {
 ### Elasticsearch Configuration
 
 1. **Setup Elasticsearch Index Template**
+
 ```json
 {
   "index_patterns": ["security-events-*"],
@@ -272,16 +280,17 @@ const dbSelector = new RedisDatabaseSelector(redis, {
 ```
 
 2. **Configure Security Events**
+
 ```typescript
-import { createSecurityEventManager, createElasticsearchSink } from './security/security-events.js';
+import { createSecurityEventManager, createElasticsearchSink } from "./security/security-events.js";
 
 const eventManager = createSecurityEventManager([
   createElasticsearchSink({
-    type: 'elasticsearch',
-    url: process.env['ELASTICSEARCH_URL'],
-    index: 'security-events',
-    username: process.env['ELASTICSEARCH_USERNAME'],
-    password: process.env['ELASTICSEARCH_PASSWORD'],
+    type: "elasticsearch",
+    url: process.env["ELASTICSEARCH_URL"],
+    index: "security-events",
+    username: process.env["ELASTICSEARCH_USERNAME"],
+    password: process.env["ELASTICSEARCH_PASSWORD"],
   }),
 ]);
 ```
@@ -301,20 +310,22 @@ The system automatically tracks these security events:
 ### Prometheus Metrics
 
 1. **Install Prometheus**
+
 ```yaml
 # prometheus.yml
 global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'talak-web3'
+  - job_name: "talak-web3"
     static_configs:
-      - targets: ['localhost:8787']
-    metrics_path: '/metrics'
+      - targets: ["localhost:8787"]
+    metrics_path: "/metrics"
     scrape_interval: 5s
 ```
 
 2. **Key Metrics to Monitor**
+
 ```typescript
 // Authentication metrics
 talak_auth_success_total{environment="production"}
@@ -390,27 +401,31 @@ groups:
 ### Running Load Tests
 
 1. **Setup Test Environment**
+
 ```typescript
-import { loadTestEngine } from './security/load-testing.js';
+import { loadTestEngine } from "./security/load-testing.js";
 
 const target = {
-  baseUrl: 'https://staging.talak-web3.com',
+  baseUrl: "https://staging.talak-web3.com",
   endpoints: {
-    nonce: '/auth/nonce',
-    login: '/auth/login',
-    rpc: '/rpc',
-    refresh: '/auth/refresh',
+    nonce: "/auth/nonce",
+    login: "/auth/login",
+    rpc: "/rpc",
+    refresh: "/auth/refresh",
   },
 };
 ```
 
 2. **Execute Test Scenarios**
+
 ```typescript
 // Run all scenarios
 const results = await loadTestEngine.runAllScenarios(target, {
   verbose: true,
   onProgress: (scenario, result) => {
-    console.log(`Completed ${scenario}: ${result.successfulRequests}/${result.totalRequests} successful`);
+    console.log(
+      `Completed ${scenario}: ${result.successfulRequests}/${result.totalRequests} successful`,
+    );
   },
 });
 
@@ -420,6 +435,7 @@ console.log(report);
 ```
 
 3. **Test Scenarios**
+
 - **High Concurrency Login**: 100 concurrent login attempts
 - **Replay Attack Flood**: 200 replay attacks with same nonce
 - **Malformed RPC Storm**: 500 malformed RPC requests
@@ -428,6 +444,7 @@ console.log(report);
 ### Performance Benchmarks
 
 Target performance characteristics:
+
 - **Authentication**: < 200ms P95, > 1000 RPS
 - **RPC Requests**: < 500ms P95, > 500 RPS
 - **Rate Limiting**: < 10ms P95, > 10000 RPS
@@ -460,25 +477,26 @@ Target performance characteristics:
 ### Emergency Procedures
 
 1. **Key Compromise**
+
 ```typescript
-import { incidentResponseManager } from './security/incident-response.js';
+import { incidentResponseManager } from "./security/incident-response.js";
 
 // Create incident
 const incident = await incidentResponseManager.createIncident({
-  type: 'key_compromise',
-  severity: 'critical',
-  description: 'Private key exposure detected',
-  affectedSystems: ['authentication', 'jwt-signing'],
-  containmentActions: ['immediate_key_rotation', 'revoke_active_tokens'],
-  recoveryActions: ['generate_new_keys', 'update_systems'],
+  type: "key_compromise",
+  severity: "critical",
+  description: "Private key exposure detected",
+  affectedSystems: ["authentication", "jwt-signing"],
+  containmentActions: ["immediate_key_rotation", "revoke_active_tokens"],
+  recoveryActions: ["generate_new_keys", "update_systems"],
   postMortemRequired: true,
 });
 
 // Execute emergency revocation
-await incidentResponseManager.executeRevocation('global_jwt_revocation', {
+await incidentResponseManager.executeRevocation("global_jwt_revocation", {
   incidentId: incident.id,
-  reason: 'Key compromise emergency revocation',
-  scope: 'global',
+  reason: "Key compromise emergency revocation",
+  scope: "global",
   targets: [],
   immediate: true,
   notifyUsers: true,
@@ -486,15 +504,16 @@ await incidentResponseManager.executeRevocation('global_jwt_revocation', {
 ```
 
 2. **System Breach**
+
 ```typescript
 // Create breach incident
 const incident = await incidentResponseManager.createIncident({
-  type: 'data_breach',
-  severity: 'critical',
-  description: 'Unauthorized access detected',
-  affectedSystems: ['user-data', 'authentication'],
-  containmentActions: ['immediate_system_lockdown', 'revoke_all_sessions'],
-  recoveryActions: ['force_password_reset', 'security_audit'],
+  type: "data_breach",
+  severity: "critical",
+  description: "Unauthorized access detected",
+  affectedSystems: ["user-data", "authentication"],
+  containmentActions: ["immediate_system_lockdown", "revoke_all_sessions"],
+  recoveryActions: ["force_password_reset", "security_audit"],
   postMortemRequired: true,
 });
 ```
@@ -548,18 +567,21 @@ const incident = await incidentResponseManager.createIncident({
 ## Security Best Practices
 
 ### Key Management
+
 - Use hardware security modules (HSM) or KMS in production
 - Implement automatic key rotation
 - Maintain key usage logs
 - Separate signing and verification keys
 
 ### Network Security
+
 - Enable TLS for all communications
 - Implement network segmentation
 - Use VPN or private networks for internal services
 - Configure firewalls and security groups
 
 ### Application Security
+
 - Validate all inputs
 - Implement rate limiting
 - Use secure headers
@@ -567,6 +589,7 @@ const incident = await incidentResponseManager.createIncident({
 - Monitor for anomalies
 
 ### Operational Security
+
 - Principle of least privilege
 - Regular security training
 - Incident response preparedness

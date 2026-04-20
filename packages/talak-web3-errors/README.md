@@ -15,16 +15,11 @@ pnpm add @talak-web3/errors
 ## Usage
 
 ```typescript
-import { 
-  TalakError, 
-  AuthError,
-  RpcError,
-  ValidationError 
-} from '@talak-web3/errors';
+import { TalakError, AuthError, RpcError, ValidationError } from "@talak-web3/errors";
 
 // Throw standardized errors
-throw new AuthError('Invalid signature', {
-  code: 'AUTH_INVALID_SIGNATURE',
+throw new AuthError("Invalid signature", {
+  code: "AUTH_INVALID_SIGNATURE",
   statusCode: 401,
 });
 

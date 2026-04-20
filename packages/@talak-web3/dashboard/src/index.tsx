@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTalakWeb3, useChain, useAccount } from '@talak-web3/hooks';
+import React from "react";
+import { useTalakWeb3, useChain, useAccount } from "@talak-web3/hooks";
 
 export function AdminDashboard() {
   const instance = useTalakWeb3();
@@ -30,7 +30,7 @@ export function AdminDashboard() {
         <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
           <h2 className="text-sm font-medium text-gray-400 mb-1">Account</h2>
           <span className="text-xl font-semibold truncate">
-            {isConnected ? address : 'Not Connected'}
+            {isConnected ? address : "Not Connected"}
           </span>
         </div>
       </div>
@@ -41,8 +41,12 @@ export function AdminDashboard() {
           <table className="w-full text-left">
             <thead className="bg-gray-700">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">Plugin Name</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">Version</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">
+                  Plugin Name
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">
+                  Version
+                </th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">Status</th>
               </tr>
             </thead>

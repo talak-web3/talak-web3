@@ -11,9 +11,6 @@
       "@talak-web3/errors": ["../talak-web3-errors/src/index.ts"]
     }
   },
-  "references": [
-    { "path": "../talak-web3-types" },
-    { "path": "../talak-web3-errors" }
-  ],
+  "references": [{ "path": "../talak-web3-types" }, { "path": "../talak-web3-errors" }],
   "include": ["src/**/*.ts"]
 }

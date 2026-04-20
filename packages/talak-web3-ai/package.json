@@ -1,13 +1,22 @@
 {
   "name": "@talak-web3/ai",
   "version": "1.0.10",
-  "deprecated": "This package is deprecated. Import types directly from @talak-web3/types instead. This package will be removed in the next major version.",
-  "type": "module",
-  "author": "Dagim Abebe",
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
+  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/talak-web3-ai#readme",
+  "bugs": {
+    "url": "https://github.com/dagimabebe/talak-web3/issues"
   },
+  "license": "MIT",
+  "author": "Dagim Abebe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dagimabebe/talak-web3.git",
+    "directory": "packages/talak-web3-ai"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,31 +26,20 @@
       "default": "./dist/index.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "dependencies": {
-    "@talak-web3/types": "workspace:*",
-    "openai": "5.23.2"
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "lint": "node -e \"process.exit(0)\"",
-    "clean": "node -e \"process.exit(0)\""
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@talak-web3/types": "workspace:*",
+    "openai": "5.23.2"
   },
   "devDependencies": {
     "vitest": "2.1.9"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dagimabebe/talak-web3.git",
-    "directory": "packages/talak-web3-ai"
-  },
-  "bugs": {
-    "url": "https://github.com/dagimabebe/talak-web3/issues"
-  },
-  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/talak-web3-ai#readme"
+  "deprecated": "This package is deprecated. Import types directly from @talak-web3/types instead. This package will be removed in the next major version."
 }

@@ -1,39 +1,42 @@
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { createAuthApp } from '@talak-web3/handlers/hono';
-import { app as talakApp } from './talak.config.js';
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { createAuthApp } from "@talak-web3/handlers/hono";
+import { app as talakApp } from "./talak.config.js";
 
 const app = new Hono();
 
 // CORS middleware
-app.use('*', cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-  credentials: true,
-}));
+app.use(
+  "*",
+  cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
+    credentials: true,
+  }),
+);
 
 // Health check
-app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 // Auth routes
-app.route('/auth', createAuthApp(talakApp));
+app.route("/auth", createAuthApp(talakApp));
 
 // Protected route example
-app.get('/api/protected', async (c) => {
-  const authHeader = c.req.header('authorization');
+app.get("/api/protected", async (c) => {
+  const authHeader = c.req.header("authorization");
   if (!authHeader) {
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ error: "Unauthorized" }, 401);
   }
 
-  const token = authHeader.replace('Bearer ', '');
+  const token = authHeader.replace("Bearer ", "");
   const session = await talakApp.context.auth.verifySession(token);
 
   return c.json({
-    message: 'Protected data',
+    message: "Protected data",
     address: session.address,
   });
 });
 
-const port = parseInt(process.env.PORT || '3000');
+const port = parseInt(process.env.PORT || "3000");
 console.log(`🚀 Server running at http://localhost:${port}`);
 
 export default {

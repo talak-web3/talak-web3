@@ -1,6 +1,6 @@
 /**
  * Rate limiting utilities for talak-web3
- * 
+ *
  * Provides both in-memory and Redis-backed rate limiting implementations.
  */
 
@@ -64,11 +64,8 @@ export class RedisRateLimiter implements RateLimiter {
   private readonly capacity: number;
   private readonly windowMs: number;
 
-  constructor(
-    redis: any,
-    opts: { capacity: number; windowMs: number },
-  ) {
-    if (!redis) throw new Error('Redis client required for distributed rate limiting');
+  constructor(redis: any, opts: { capacity: number; windowMs: number }) {
+    if (!redis) throw new Error("Redis client required for distributed rate limiting");
     this.redis = redis;
     this.capacity = opts.capacity;
     this.windowMs = opts.windowMs;
@@ -83,15 +80,15 @@ export class RedisRateLimiter implements RateLimiter {
     const fullKey = `rate_limit:${key}`;
     const now = Date.now();
 
-    const res = await this.redis.eval(
-      adaptiveSlidingWindowLua, 
-      1, 
-      fullKey, 
-      String(this.windowMs), 
-      String(this.capacity), 
+    const res = (await this.redis.eval(
+      adaptiveSlidingWindowLua,
+      1,
+      fullKey,
+      String(this.windowMs),
+      String(this.capacity),
       String(now),
-      String(cost)
-    ) as unknown;
+      String(cost),
+    )) as unknown;
 
     if (!Array.isArray(res) || res.length < 3) {
       return { allowed: false, remaining: 0 };
@@ -111,7 +108,7 @@ export class RedisRateLimiter implements RateLimiter {
   async penalize(key: string, cost: number): Promise<void> {
     const fullKey = `rate_limit:${key}`;
     const now = Date.now();
-    
+
     // Just add tokens to the set to reduce remaining capacity
     for (let i = 0; i < cost; i++) {
       await this.redis.zadd(fullKey, now, `${now}:penalty:${i}:${Math.random()}`);

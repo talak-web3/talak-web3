@@ -20,31 +20,33 @@ apps/
 
 ### Production Apps
 
-| App | Status | Description |
-|-----|--------|-------------|
-| `docs` | Working | Docusaurus documentation site |
+| App            | Status           | Description                                       |
+| -------------- | ---------------- | ------------------------------------------------- |
+| `docs`         | Working          | Docusaurus documentation site                     |
 | `hono-backend` | Has syntax error | API server with auth, RPC proxying, rate limiting |
 
 ### Example Apps (Source Preserved in APP_LOGIC.md)
 
-| App | Status | Framework | Description |
-|-----|--------|-----------|-------------|
-| `example-next-dapp` | Broken (React 19 TS) | Next.js App Router with wallet, chain, RPC, gasless |
-| `minimal-auth-app` | Stub | Vanilla JS SIWE authentication |
-| `rpc-dashboard-app` | Stub | Simple RPC method tester |
-| `gasless-tx-app` | Stub | ERC-4337 gasless transactions |
-| `react-native-dapp` | Broken (missing deps) | React Native mobile app |
+| App                 | Status                | Framework                                           | Description |
+| ------------------- | --------------------- | --------------------------------------------------- | ----------- |
+| `example-next-dapp` | Broken (React 19 TS)  | Next.js App Router with wallet, chain, RPC, gasless |
+| `minimal-auth-app`  | Stub                  | Vanilla JS SIWE authentication                      |
+| `rpc-dashboard-app` | Stub                  | Simple RPC method tester                            |
+| `gasless-tx-app`    | Stub                  | ERC-4337 gasless transactions                       |
+| `react-native-dapp` | Broken (missing deps) | React Native mobile app                             |
 
 ## Quick Reference
 
 ### example-next-dapp
+
 - **Status**: Broken (React 19 TypeScript error)
 - **Framework**: Next.js 16.2.0 (App Router)
 - **Key Features**: Wallet connect, chain switcher, RPC tester, gasless transactions
 - **Logic**: See [APP_LOGIC.md](./example-next-dapp/APP_LOGIC.md)
 - **Run**: `pnpm dev` in the app directory
 
-### minimal-auth-app  
+### minimal-auth-app
+
 - **Status**: Stub
 - **Framework**: Vanilla HTML + TypeScript
 - **Key Features**: SIWE (Sign-In with Ethereum) authentication flow
@@ -52,6 +54,7 @@ apps/
 - **Run**: `pnpm dev` in the app directory
 
 ### rpc-dashboard-app
+
 - **Status**: Stub
 - **Framework**: Vanilla HTML + TypeScript
 - **Key Features**: Interactive RPC method tester with auth
@@ -59,6 +62,7 @@ apps/
 - **Run**: `pnpm dev` in the app directory
 
 ### gasless-tx-app
+
 - **Status**: Stub
 - **Framework**: Vanilla HTML + TypeScript
 - **Key Features**: ERC-4337 UserOperation submission
@@ -66,6 +70,7 @@ apps/
 - **Run**: `pnpm dev` in the app directory
 
 ### react-native-dapp
+
 - **Status**: Broken (missing esbuild dependency)
 - **Framework**: Expo (React Native 0.74.5)
 - **Key Features**: Mobile wallet connection, RPC calls
@@ -81,7 +86,7 @@ import { useAccount } from '@talak-web3/hooks';
 
 function WalletButton() {
   const account = useAccount();
-  
+
   return account.isConnected ? (
     <button onClick={account.disconnect}>Disconnect</button>
   ) : (
@@ -93,23 +98,23 @@ function WalletButton() {
 ### Making RPC Calls
 
 ```typescript
-import { useRpc } from '@talak-web3/hooks';
+import { useRpc } from "@talak-web3/hooks";
 
 function RpcTester() {
   const rpc = useRpc();
-  
-  const blockNumber = await rpc.request('eth_blockNumber', []);
+
+  const blockNumber = await rpc.request("eth_blockNumber", []);
   // or
-  const balance = await rpc.request('eth_getBalance', [address, 'latest']);
+  const balance = await rpc.request("eth_getBalance", [address, "latest"]);
 }
 ```
 
 ### SIWE Authentication
 
 ```typescript
-import { TalakWeb3Client } from '@talak-web3/client';
+import { TalakWeb3Client } from "@talak-web3/client";
 
-const client = new TalakWeb3Client({ baseUrl: 'http://localhost:8787' });
+const client = new TalakWeb3Client({ baseUrl: "http://localhost:8787" });
 
 // 1. Get nonce
 const { nonce } = await client.getNonce(address);

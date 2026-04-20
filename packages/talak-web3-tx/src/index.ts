@@ -1,4 +1,4 @@
-import type { Address, Hex } from '@talak-web3/types';
+import type { Address, Hex } from "@talak-web3/types";
 
 export type { Address, Hex };
 
@@ -17,8 +17,8 @@ export interface UserOperation {
   signature: Hex;
 }
 
-export type PartialUserOp = Pick<UserOperation, 'sender' | 'callData'> &
-  Partial<Omit<UserOperation, 'sender' | 'callData' | 'signature'>>;
+export type PartialUserOp = Pick<UserOperation, "sender" | "callData"> &
+  Partial<Omit<UserOperation, "sender" | "callData" | "signature">>;
 
 export interface BundlerClient {
   sendUserOperation(op: UserOperation, entryPoint: Address): Promise<{ hash: Hex }>;
@@ -30,7 +30,12 @@ export interface PaymasterClient {
   sponsorUserOperation(
     op: PartialUserOp,
     entryPoint: Address,
-  ): Promise<{ paymasterAndData: Hex; callGasLimit: Hex; verificationGasLimit: Hex; preVerificationGas: Hex }>;
+  ): Promise<{
+    paymasterAndData: Hex;
+    callGasLimit: Hex;
+    verificationGasLimit: Hex;
+    preVerificationGas: Hex;
+  }>;
 }
 
 export interface UserOperationReceipt {
@@ -54,4 +59,4 @@ export interface GasEstimate {
   preVerificationGas: Hex;
 }
 
-export * from './aa.js';
+export * from "./aa.js";

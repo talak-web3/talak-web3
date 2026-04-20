@@ -10,9 +10,9 @@ Programmatic project templates used by **`@talak-web3/cli`** when you run `talak
 ## Usage (library)
 
 ```ts
-import { Templates } from '@talak-web3/templates';
+import { Templates } from "@talak-web3/templates";
 
-const pkg = Templates.nextjs.files['package.json'];
+const pkg = Templates.nextjs.files["package.json"];
 ```
 
 The CLI merges these files into the target directory when initializing a project.

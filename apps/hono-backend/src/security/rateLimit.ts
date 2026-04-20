@@ -1,5 +1,5 @@
-import type { MiddlewareHandler } from 'hono';
-import type { RedisClientType } from 'redis';
+import type { MiddlewareHandler } from "hono";
+import type { RedisClientType } from "redis";
 
 export type TokenBucketConfig = {
   capacity: number;
@@ -49,11 +49,11 @@ export async function rateLimitRedis(
 ): Promise<{ allowed: boolean; remaining: number }> {
   const windowMs = (cfg.capacity / cfg.refillPerSecond) * 1000;
   const now = Date.now();
-  
-  const res = await redis.eval(adaptiveSlidingWindowLua, {
+
+  const res = (await redis.eval(adaptiveSlidingWindowLua, {
     keys: [key],
     arguments: [String(windowMs), String(cfg.capacity), String(now), String(cost)],
-  }) as unknown;
+  })) as unknown;
 
   if (!Array.isArray(res) || res.length < 2) return { allowed: false, remaining: 0 };
   const allowed = Number(res[0]) === 1;
@@ -70,10 +70,9 @@ export function rateLimitMiddleware(opts: {
     const key = opts.keyFn(c);
     const result = await rateLimitRedis(opts.redis, key, opts.bucket, 1);
     if (!result.allowed) {
-      c.header('Retry-After', '1');
-      return c.json({ error: 'Rate limit exceeded' }, 429);
+      c.header("Retry-After", "1");
+      return c.json({ error: "Rate limit exceeded" }, 429);
     }
     await next();
   };
 }
-

@@ -15,14 +15,11 @@
       "default": "./dist/multichain.js"
     },
     "./react": {
-      "types": "./dist/react.d.ts", 
+      "types": "./dist/react.d.ts",
       "default": "./dist/react.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "engines": {
     "node": ">=20.12.0"
   },
@@ -45,15 +42,7 @@
     "pack:check": "npm pack --dry-run",
     "prepublishOnly": "node build-simple.cjs && npm run pack:check"
   },
-  "keywords": [
-    "web3",
-    "blockchain",
-    "ethereum",
-    "crypto",
-    "dapp",
-    "wallet",
-    "smart-contracts"
-  ],
+  "keywords": ["web3", "blockchain", "ethereum", "crypto", "dapp", "wallet", "smart-contracts"],
   "author": "Dagim Abebe",
   "license": "MIT",
   "repository": {

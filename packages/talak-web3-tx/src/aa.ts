@@ -4,16 +4,17 @@ import {
   encodeAbiParameters,
   parseAbiParameters,
   toHex,
-} from 'viem';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { TalakWeb3Context, Address, Hex } from '@talak-web3/types';
-import type { UserOperation, PartialUserOp, GasEstimate, UserOperationReceipt } from './index.js';
+} from "viem";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { TalakWeb3Context, Address, Hex } from "@talak-web3/types";
+import type { UserOperation, PartialUserOp, GasEstimate, UserOperationReceipt } from "./index.js";
 
 // ERC-4337 v0.6 EntryPoint address (canonical deployment)
-export const ENTRY_POINT_V06 = '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789' as Address;
+export const ENTRY_POINT_V06 = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Address;
 
 // Simple account execute selector
-const EXECUTE_SELECTOR = '0xb61d27f600000000000000000000000000000000000000000000000000000000' as Hex;
+const EXECUTE_SELECTOR =
+  "0xb61d27f600000000000000000000000000000000000000000000000000000000" as Hex;
 
 // ---------------------------------------------------------------------------
 // Bundler RPC client (EIP-4337 JSON-RPC)
@@ -24,14 +25,14 @@ class BundlerRpc {
 
   async call<T>(method: string, params: unknown[]): Promise<T> {
     const res = await fetch(this.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
     });
     if (!res.ok) throw new Error(`Bundler HTTP ${res.status}`);
-    const data = await res.json() as { result?: T; error?: { message: string } };
+    const data = (await res.json()) as { result?: T; error?: { message: string } };
     if (data.error) throw new Error(data.error.message);
-    if (data.result === undefined) throw new Error('No result from bundler');
+    if (data.result === undefined) throw new Error("No result from bundler");
     return data.result;
   }
 }
@@ -69,35 +70,52 @@ export class AccountAbstractionClient {
   /** Build callData for a simple token transfer / contract call. */
   buildCallData(to: Address, value: bigint, data: Hex): Hex {
     return encodeFunctionData({
-      abi: [{ name: 'execute', type: 'function', inputs: [{ type: 'address' }, { type: 'uint256' }, { type: 'bytes' }], outputs: [] }],
-      functionName: 'execute',
+      abi: [
+        {
+          name: "execute",
+          type: "function",
+          inputs: [{ type: "address" }, { type: "uint256" }, { type: "bytes" }],
+          outputs: [],
+        },
+      ],
+      functionName: "execute",
       args: [to, value, data],
     });
   }
 
   /** Estimate gas for a partial UserOperation. */
   async estimateGas(partial: PartialUserOp): Promise<GasEstimate> {
-    return this.bundler.call<GasEstimate>('eth_estimateUserOperationGas', [partial, this.entryPoint]);
+    return this.bundler.call<GasEstimate>("eth_estimateUserOperationGas", [
+      partial,
+      this.entryPoint,
+    ]);
   }
 
   /** Fetch current nonce for the smart account. */
   async getNonce(): Promise<Hex> {
     const methods = [
-      { method: 'eth_getAccountNonce', params: [this.opts.sender, 'latest'] },
-      { 
-        method: 'eth_call', 
+      { method: "eth_getAccountNonce", params: [this.opts.sender, "latest"] },
+      {
+        method: "eth_call",
         params: [
-          { 
-            to: this.entryPoint, 
+          {
+            to: this.entryPoint,
             data: encodeFunctionData({
-              abi: [{ name: 'getNonce', type: 'function', inputs: [{ type: 'address' }, { type: 'uint192' }], outputs: [{ type: 'uint256' }] }],
-              functionName: 'getNonce',
+              abi: [
+                {
+                  name: "getNonce",
+                  type: "function",
+                  inputs: [{ type: "address" }, { type: "uint192" }],
+                  outputs: [{ type: "uint256" }],
+                },
+              ],
+              functionName: "getNonce",
               args: [this.opts.sender, 0n],
-            })
-          }, 
-          'latest'
-        ] 
-      }
+            }),
+          },
+          "latest",
+        ],
+      },
     ];
 
     let lastError: Error | undefined;
@@ -110,8 +128,8 @@ export class AccountAbstractionClient {
       }
     }
 
-    throw new TalakWeb3Error('Failed to fetch smart account nonce via any supported method', {
-      code: 'AA_NONCE_FAILED',
+    throw new TalakWeb3Error("Failed to fetch smart account nonce via any supported method", {
+      code: "AA_NONCE_FAILED",
       status: 502,
       cause: lastError,
     });
@@ -125,7 +143,7 @@ export class AccountAbstractionClient {
       sender: this.opts.sender,
       callData,
       nonce: await this.getNonce(),
-      initCode: '0x',
+      initCode: "0x",
     };
 
     // Get gas sponsorship from paymaster
@@ -135,19 +153,22 @@ export class AccountAbstractionClient {
         callGasLimit: Hex;
         verificationGasLimit: Hex;
         preVerificationGas: Hex;
-      }>('pm_sponsorUserOperation', [partial, this.entryPoint]);
+      }>("pm_sponsorUserOperation", [partial, this.entryPoint]);
 
       partial = { ...partial, ...sponsored };
     } else {
       // Self-sponsored: estimate gas and set fees
       const [gas, fees] = await Promise.all([
         this.estimateGas(partial),
-        this.bundler.call<{ maxFeePerGas: Hex; maxPriorityFeePerGas: Hex }>('eth_maxPriorityFeePerGas', []),
+        this.bundler.call<{ maxFeePerGas: Hex; maxPriorityFeePerGas: Hex }>(
+          "eth_maxPriorityFeePerGas",
+          [],
+        ),
       ]);
       partial = {
         ...partial,
         ...gas,
-        paymasterAndData: '0x',
+        paymasterAndData: "0x",
         maxFeePerGas: fees.maxFeePerGas,
         maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
       };
@@ -159,7 +180,10 @@ export class AccountAbstractionClient {
     const opHash = this.hashUserOp(op);
     op.signature = await this.opts.sign(opHash);
 
-    const { hash } = await this.bundler.call<{ hash: Hex }>('eth_sendUserOperation', [op, this.entryPoint]);
+    const { hash } = await this.bundler.call<{ hash: Hex }>("eth_sendUserOperation", [
+      op,
+      this.entryPoint,
+    ]);
     return hash;
   }
 
@@ -168,14 +192,14 @@ export class AccountAbstractionClient {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       const receipt = await this.bundler.call<UserOperationReceipt | null>(
-        'eth_getUserOperationReceipt',
+        "eth_getUserOperationReceipt",
         [userOpHash],
       );
       if (receipt !== null) return receipt;
-      await new Promise(r => setTimeout(r, 2_000));
+      await new Promise((r) => setTimeout(r, 2_000));
     }
     throw new TalakWeb3Error(`UserOperation ${userOpHash} not mined within ${timeoutMs}ms`, {
-      code: 'TX_RECEIPT_TIMEOUT',
+      code: "TX_RECEIPT_TIMEOUT",
       status: 504,
     });
   }
@@ -183,7 +207,9 @@ export class AccountAbstractionClient {
   /** ERC-4337 v0.6 UserOperation hash (matches EntryPoint.getUserOpHash). */
   private hashUserOp(op: UserOperation): Hex {
     const packed = encodeAbiParameters(
-      parseAbiParameters('address,uint256,bytes32,bytes32,uint256,uint256,uint256,uint256,uint256,bytes32'),
+      parseAbiParameters(
+        "address,uint256,bytes32,bytes32,uint256,uint256,uint256,uint256,uint256,bytes32",
+      ),
       [
         op.sender,
         BigInt(op.nonce),
@@ -198,10 +224,11 @@ export class AccountAbstractionClient {
       ],
     );
     const innerHash = keccak256(packed);
-    const outer = encodeAbiParameters(
-      parseAbiParameters('bytes32,address,uint256'),
-      [innerHash, this.entryPoint, BigInt(this.opts.chainId)],
-    );
+    const outer = encodeAbiParameters(parseAbiParameters("bytes32,address,uint256"), [
+      innerHash,
+      this.entryPoint,
+      BigInt(this.opts.chainId),
+    ]);
     return keccak256(outer);
   }
 }
@@ -220,7 +247,10 @@ export interface AccountAbstractionPluginOptions {
 export class AccountAbstractionPlugin {
   readonly client: AccountAbstractionClient;
 
-  constructor(private readonly ctx: TalakWeb3Context, opts: AccountAbstractionPluginOptions) {
+  constructor(
+    private readonly ctx: TalakWeb3Context,
+    opts: AccountAbstractionPluginOptions,
+  ) {
     const chainId = ctx.config.chains[0]?.id ?? 1;
     this.client = new AccountAbstractionClient({
       ...opts,
@@ -229,19 +259,22 @@ export class AccountAbstractionPlugin {
   }
 
   async sendGasless(to: Address, data: Hex, value?: bigint): Promise<Hex> {
-    this.ctx.hooks.emit('tx:gasless-start', { to, data });
+    this.ctx.hooks.emit("tx:gasless-start", { to, data });
     try {
       const hash = await this.client.sendGasless(to, data, value);
-      this.ctx.hooks.emit('tx:gasless-success', { hash });
+      this.ctx.hooks.emit("tx:gasless-success", { hash });
       this.ctx.logger.info(`Gasless TX sent: ${hash}`);
       return hash;
     } catch (error) {
-      this.ctx.hooks.emit('tx:gasless-error', { error });
+      this.ctx.hooks.emit("tx:gasless-error", { error });
       throw error;
     }
   }
 
-  static setup(ctx: TalakWeb3Context, opts: AccountAbstractionPluginOptions): AccountAbstractionPlugin {
+  static setup(
+    ctx: TalakWeb3Context,
+    opts: AccountAbstractionPluginOptions,
+  ): AccountAbstractionPlugin {
     const plugin = new AccountAbstractionPlugin(ctx, opts);
     ctx.adapters = { ...ctx.adapters, aa: plugin };
     return plugin;

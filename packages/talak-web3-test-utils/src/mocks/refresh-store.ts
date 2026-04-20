@@ -2,11 +2,11 @@
  * Mock Refresh Token Store for testing
  */
 
-import { createHash, randomBytes } from 'node:crypto';
-import type { RefreshStore, RefreshSession } from '@talak-web3/auth';
+import { createHash, randomBytes } from "node:crypto";
+import type { RefreshStore, RefreshSession } from "@talak-web3/auth";
 
 function sha256Hex(input: string): string {
-  return createHash('sha256').update(input).digest('hex');
+  return createHash("sha256").update(input).digest("hex");
 }
 
 /**
@@ -16,7 +16,7 @@ function sha256Hex(input: string): string {
 export class MockRefreshStore implements RefreshStore {
   private sessions = new Map<string, RefreshSession>(); // keyed by hash
   private operationLog: Array<{
-    operation: 'create' | 'rotate' | 'revoke' | 'lookup';
+    operation: "create" | "rotate" | "revoke" | "lookup";
     address?: string;
     sessionId?: string;
     success: boolean;
@@ -26,12 +26,16 @@ export class MockRefreshStore implements RefreshStore {
   /**
    * Create a new refresh session
    */
-  async create(address: string, chainId: number, ttlMs: number): Promise<{ token: string; session: RefreshSession }> {
+  async create(
+    address: string,
+    chainId: number,
+    ttlMs: number,
+  ): Promise<{ token: string; session: RefreshSession }> {
     const addr = address.toLowerCase();
-    const token = randomBytes(32).toString('base64url');
+    const token = randomBytes(32).toString("base64url");
     const hash = sha256Hex(token);
-    const id = randomBytes(16).toString('hex');
-    
+    const id = randomBytes(16).toString("hex");
+
     const session: RefreshSession = {
       id,
       address: addr,
@@ -40,11 +44,11 @@ export class MockRefreshStore implements RefreshStore {
       expiresAt: Date.now() + ttlMs,
       revoked: false,
     };
-    
+
     this.sessions.set(hash, session);
-    
+
     this.operationLog.push({
-      operation: 'create',
+      operation: "create",
       address: addr,
       sessionId: id,
       success: true,
@@ -61,13 +65,13 @@ export class MockRefreshStore implements RefreshStore {
     const session = this.sessions.get(sha256Hex(token)) ?? null;
 
     const lookupEntry: {
-      operation: 'lookup';
+      operation: "lookup";
       address?: string;
       sessionId?: string;
       success: boolean;
       timestamp: number;
     } = {
-      operation: 'lookup',
+      operation: "lookup",
       success: session !== null,
       timestamp: Date.now(),
     };
@@ -90,33 +94,33 @@ export class MockRefreshStore implements RefreshStore {
 
     if (!old) {
       this.operationLog.push({
-        operation: 'rotate',
+        operation: "rotate",
         success: false,
         timestamp: Date.now(),
       });
-      throw new Error('Refresh session not found');
+      throw new Error("Refresh session not found");
     }
 
     if (old.revoked) {
       this.operationLog.push({
-        operation: 'rotate',
+        operation: "rotate",
         address: old.address,
         sessionId: old.id,
         success: false,
         timestamp: Date.now(),
       });
-      throw new Error('Refresh token already used or revoked');
+      throw new Error("Refresh token already used or revoked");
     }
 
     if (Date.now() > old.expiresAt) {
       this.operationLog.push({
-        operation: 'rotate',
+        operation: "rotate",
         address: old.address,
         sessionId: old.id,
         success: false,
         timestamp: Date.now(),
       });
-      throw new Error('Refresh token expired');
+      throw new Error("Refresh token expired");
     }
 
     // Revoke old synchronously
@@ -126,7 +130,7 @@ export class MockRefreshStore implements RefreshStore {
     const result = await this.create(old.address, old.chainId, ttlMs);
 
     this.operationLog.push({
-      operation: 'rotate',
+      operation: "rotate",
       address: old.address,
       sessionId: result.session.id,
       success: true,
@@ -142,12 +146,12 @@ export class MockRefreshStore implements RefreshStore {
   async revoke(token: string): Promise<void> {
     const hash = sha256Hex(token);
     const session = this.sessions.get(hash);
-    
+
     if (session) {
       this.sessions.set(hash, { ...session, revoked: true });
-      
+
       this.operationLog.push({
-        operation: 'revoke',
+        operation: "revoke",
         address: session.address,
         sessionId: session.id,
         success: true,
@@ -155,7 +159,7 @@ export class MockRefreshStore implements RefreshStore {
       });
     } else {
       this.operationLog.push({
-        operation: 'revoke',
+        operation: "revoke",
         success: false,
         timestamp: Date.now(),
       });
@@ -167,14 +171,14 @@ export class MockRefreshStore implements RefreshStore {
    */
   getSessionsForAddress(address: string): RefreshSession[] {
     const addr = address.toLowerCase();
-    return Array.from(this.sessions.values()).filter(s => s.address === addr);
+    return Array.from(this.sessions.values()).filter((s) => s.address === addr);
   }
 
   /**
    * Get operation log for verification
    */
   getOperationLog(): Array<{
-    operation: 'create' | 'rotate' | 'revoke' | 'lookup';
+    operation: "create" | "rotate" | "revoke" | "lookup";
     address?: string;
     sessionId?: string;
     success: boolean;

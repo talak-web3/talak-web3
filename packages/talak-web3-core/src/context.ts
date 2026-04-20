@@ -1,5 +1,5 @@
-import type { TalakWeb3Context, TalakWeb3Instance } from '@talak-web3/types';
-import { randomBytes } from 'node:crypto';
+import type { TalakWeb3Context, TalakWeb3Instance } from "@talak-web3/types";
+import { randomBytes } from "node:crypto";
 
 export interface RequestContext extends TalakWeb3Context {
   readonly requestId: string;
@@ -23,9 +23,9 @@ export class ContextFactory {
    */
   static create(
     instance: TalakWeb3Instance,
-    meta: { ip?: string; userAgent?: string } = {}
+    meta: { ip?: string; userAgent?: string } = {},
   ): RequestContext {
-    const requestId = randomBytes(16).toString('hex');
+    const requestId = randomBytes(16).toString("hex");
     const timestamp = Date.now();
 
     // Deep copy or re-create request-specific parts of the context

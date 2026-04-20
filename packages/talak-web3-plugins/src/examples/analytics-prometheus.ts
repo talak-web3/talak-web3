@@ -1,33 +1,33 @@
-import type { TalakWeb3Plugin, TalakWeb3Context } from '@talak-web3/types';
+import type { TalakWeb3Plugin, TalakWeb3Context } from "@talak-web3/types";
 
 /**
  * [INFO] Analytics-Prometheus Plugin
- * 
+ *
  * Demonstrates how to use system-wide hooks to track operational metrics.
- * In a real production environment, this would interface with a 
+ * In a real production environment, this would interface with a
  * Prometheus client library (e.g., prom-client).
  */
 export const prometheusPlugin = (options: { prefix?: string } = {}): TalakWeb3Plugin => {
-  const prefix = options.prefix || 'web3';
+  const prefix = options.prefix || "web3";
 
   return {
-    name: 'analytics-prometheus',
-    version: '1.0.0',
+    name: "analytics-prometheus",
+    version: "1.0.0",
 
     async setup(ctx: TalakWeb3Context) {
       ctx.logger.info(`[INFO] Setting up ${this.name} with prefix: ${prefix}`);
 
       // Track successful plugin loads
-      ctx.hooks.on('plugin-load', (data: any) => {
+      ctx.hooks.on("plugin-load", (data: any) => {
         ctx.logger.info(`[PERFORMANCE] ${prefix}_plugin_load_total{name="${data.name}"} 1`);
       });
 
       // Track RPC errors
-      ctx.hooks.on('rpc-error', (data: any) => {
-        ctx.logger.error(
-          `[ERROR] ${prefix}_rpc_error_total{endpoint="${data.endpoint}"} 1`,
-          { error: data.error.message, attempt: data.attempt }
-        );
+      ctx.hooks.on("rpc-error", (data: any) => {
+        ctx.logger.error(`[ERROR] ${prefix}_rpc_error_total{endpoint="${data.endpoint}"} 1`, {
+          error: data.error.message,
+          attempt: data.attempt,
+        });
       });
 
       // Track Gasless Transaction attempts (using generic event for demo)
@@ -46,7 +46,7 @@ export const prometheusPlugin = (options: { prefix?: string } = {}): TalakWeb3Pl
     },
 
     teardown() {
-       // Cleanup logic (e.g., stopping metric export intervals)
-    }
+      // Cleanup logic (e.g., stopping metric export intervals)
+    },
   };
 };

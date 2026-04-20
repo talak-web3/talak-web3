@@ -1,6 +1,6 @@
-import type Redis from 'ioredis';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { NonceStore } from '../contracts.js';
+import type Redis from "ioredis";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { NonceStore } from "../contracts.js";
 
 /** Atomic GET+DEL — returns 1 if key existed (nonce valid), 0 if missing/expired. */
 const CONSUME_NONCE_LUA = `
@@ -31,7 +31,7 @@ export class RedisNonceStore implements NonceStore {
   constructor(opts: RedisNonceStoreOptions) {
     this.redis = opts.redis;
     this.ttlMs = Math.min(opts.ttlMs ?? 5 * 60_000, 5 * 60_000);
-    this.prefix = opts.keyPrefix ?? 'talak:nonce:';
+    this.prefix = opts.keyPrefix ?? "talak:nonce:";
   }
 
   private key(address: string, nonce: string): string {
@@ -40,8 +40,8 @@ export class RedisNonceStore implements NonceStore {
 
   async create(address: string, _meta?: { ip?: string; ua?: string }): Promise<string> {
     const addr = address.toLowerCase();
-    const nonce = crypto.randomUUID().replace(/-/g, '');
-    await this.redis.set(this.key(addr, nonce), '1', 'PX', this.ttlMs);
+    const nonce = crypto.randomUUID().replace(/-/g, "");
+    await this.redis.set(this.key(addr, nonce), "1", "PX", this.ttlMs);
     return nonce;
   }
 
@@ -52,8 +52,8 @@ export class RedisNonceStore implements NonceStore {
       const n = (await this.redis.eval(CONSUME_NONCE_LUA, 1, k)) as number;
       return n === 1;
     } catch (err) {
-      throw new TalakWeb3Error('Redis nonce store failure', {
-        code: 'AUTH_REDIS_NONCE_ERROR',
+      throw new TalakWeb3Error("Redis nonce store failure", {
+        code: "AUTH_REDIS_NONCE_ERROR",
         status: 503,
         cause: err,
       });

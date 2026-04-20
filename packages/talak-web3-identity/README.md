@@ -17,19 +17,19 @@ pnpm add @talak-web3/identity
 ### DID Management
 
 ```typescript
-import { createIdentityManager } from '@talak-web3/identity';
+import { createIdentityManager } from "@talak-web3/identity";
 
 const identity = createIdentityManager({
-  provider: 'ethereum',
+  provider: "ethereum",
 });
 
 // Create a DID
 const did = await identity.createDID({
-  address: '0x1111111111111111111111111111111111111111',
+  address: "0x1111111111111111111111111111111111111111",
 });
 
 // Resolve a DID
-const doc = await identity.resolveDID('did:ethr:0x1111111111111111111111111111111111111111');
+const doc = await identity.resolveDID("did:ethr:0x1111111111111111111111111111111111111111");
 ```
 
 ### Verifiable Credentials
@@ -37,10 +37,10 @@ const doc = await identity.resolveDID('did:ethr:0x111111111111111111111111111111
 ```typescript
 // Issue a credential
 const credential = await identity.issueCredential({
-  subject: 'did:ethr:0x1111111111111111111111111111111111111111',
+  subject: "did:ethr:0x1111111111111111111111111111111111111111",
   claims: {
-    name: 'Alice',
-    role: 'admin',
+    name: "Alice",
+    role: "admin",
   },
 });
 
@@ -52,13 +52,13 @@ const isValid = await identity.verifyCredential(credential);
 
 ```typescript
 // Get profile
-const profile = await identity.getProfile('0x1111111111111111111111111111111111111111');
+const profile = await identity.getProfile("0x1111111111111111111111111111111111111111");
 
 // Update profile
 await identity.updateProfile({
-  name: 'Alice',
-  avatar: 'https://example.com/resource',
-  bio: 'Web3 enthusiast',
+  name: "Alice",
+  avatar: "https://example.com/resource",
+  bio: "Web3 enthusiast",
 });
 ```
 

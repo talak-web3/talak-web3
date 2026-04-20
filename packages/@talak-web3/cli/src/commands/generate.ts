@@ -1,20 +1,20 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 interface GenerateOptions {
   project?: string;
 }
 
-type GenerateType = 'component' | 'hook' | 'api-route' | 'middleware' | 'plugin';
+type GenerateType = "component" | "hook" | "api-route" | "middleware" | "plugin";
 
 export async function generateCommand(type: string, name: string, options: GenerateOptions = {}) {
-  const projectPath = options.project || '.';
-  
-  const validTypes: GenerateType[] = ['component', 'hook', 'api-route', 'middleware', 'plugin'];
-  
+  const projectPath = options.project || ".";
+
+  const validTypes: GenerateType[] = ["component", "hook", "api-route", "middleware", "plugin"];
+
   if (!validTypes.includes(type as GenerateType)) {
     console.error(`❌ Unknown type: ${type}`);
-    console.log(`Valid types: ${validTypes.join(', ')}`);
+    console.log(`Valid types: ${validTypes.join(", ")}`);
     process.exit(1);
   }
 
@@ -27,7 +27,7 @@ export async function generateCommand(type: string, name: string, options: Gener
   for (const [filePath, content] of Object.entries(files)) {
     const fullPath = path.join(projectPath, filePath);
     const dir = path.dirname(fullPath);
-    
+
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -132,7 +132,7 @@ describe('use${name}', () => {
 `,
   }),
 
-  'api-route': (name) => ({
+  "api-route": (name) => ({
     [`src/app/api/${name.toLowerCase()}/route.ts`]: `import { NextRequest, NextResponse } from 'next/server';
 import { app } from '../../../talak.config';
 

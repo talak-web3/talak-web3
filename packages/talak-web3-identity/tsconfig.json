@@ -11,9 +11,6 @@
       "@talak-web3/types": ["../talak-web3-types/dist/index.d.ts"]
     }
   },
-  "references": [
-    { "path": "../talak-web3-adapters" },
-    { "path": "../talak-web3-types" }
-  ],
+  "references": [{ "path": "../talak-web3-adapters" }, { "path": "../talak-web3-types" }],
   "include": ["src/**/*.ts"]
 }

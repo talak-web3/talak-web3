@@ -5,6 +5,5 @@ export {
   useAccount,
   useRpc,
   useGasless,
-  useIdentity
-} from '@talak-web3/hooks';
-
+  useIdentity,
+} from "@talak-web3/hooks";

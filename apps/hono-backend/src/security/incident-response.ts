@@ -1,4 +1,4 @@
-import { TalakWeb3Error } from '@talak-web3/errors';
+import { TalakWeb3Error } from "@talak-web3/errors";
 
 // ---------------------------------------------------------------------------
 // Incident Response Procedures and Revocation Mechanisms
@@ -19,18 +19,18 @@ export interface Incident {
   metadata: Record<string, any>;
 }
 
-export type IncidentType = 
-  | 'key_compromise'
-  | 'data_breach'
-  | 'denial_of_service'
-  | 'unauthorized_access'
-  | 'security_misconfiguration'
-  | 'vulnerability_exploitation'
-  | 'system_failure';
+export type IncidentType =
+  | "key_compromise"
+  | "data_breach"
+  | "denial_of_service"
+  | "unauthorized_access"
+  | "security_misconfiguration"
+  | "vulnerability_exploitation"
+  | "system_failure";
 
-export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type IncidentSeverity = "low" | "medium" | "high" | "critical";
 
-export type IncidentStatus = 'open' | 'investigating' | 'contained' | 'resolved' | 'closed';
+export type IncidentStatus = "open" | "investigating" | "contained" | "resolved" | "closed";
 
 export interface RevocationStrategy {
   name: string;
@@ -41,7 +41,7 @@ export interface RevocationStrategy {
 export interface RevocationContext {
   incidentId: string;
   reason: string;
-  scope: 'global' | 'selective' | 'targeted';
+  scope: "global" | "selective" | "targeted";
   targets: string[]; // JWT IDs, wallet addresses, IP ranges, etc.
   immediate: boolean;
   notifyUsers: boolean;
@@ -73,25 +73,29 @@ export class IncidentResponseManager {
   // Incident Management
   // ---------------------------------------------------------------------------
 
-  async createIncident(incident: Omit<Incident, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<Incident> {
+  async createIncident(
+    incident: Omit<Incident, "id" | "createdAt" | "updatedAt" | "status">,
+  ): Promise<Incident> {
     const newIncident: Incident = {
       ...incident,
       id: this.generateIncidentId(),
-      status: 'open',
+      status: "open",
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
 
     this.incidents.set(newIncident.id, newIncident);
-    
+
     // Trigger immediate response for critical incidents
-    if (incident.severity === 'critical') {
+    if (incident.severity === "critical") {
       await this.triggerEmergencyResponse(newIncident);
     }
 
     // Log incident creation
-    console.warn(`[INCIDENT] New incident created: ${newIncident.id} - ${newIncident.type} (${newIncident.severity})`);
-    
+    console.warn(
+      `[INCIDENT] New incident created: ${newIncident.id} - ${newIncident.type} (${newIncident.severity})`,
+    );
+
     return newIncident;
   }
 
@@ -99,7 +103,7 @@ export class IncidentResponseManager {
     const incident = this.incidents.get(id);
     if (!incident) {
       throw new TalakWeb3Error(`Incident ${id} not found`, {
-        code: 'INCIDENT_NOT_FOUND',
+        code: "INCIDENT_NOT_FOUND",
         status: 404,
       });
     }
@@ -111,7 +115,7 @@ export class IncidentResponseManager {
     };
 
     this.incidents.set(id, updatedIncident);
-    
+
     console.info(`[INCIDENT] Incident updated: ${id}`);
     return updatedIncident;
   }
@@ -130,20 +134,20 @@ export class IncidentResponseManager {
 
     if (filters) {
       if (filters.type) {
-        incidents = incidents.filter(i => i.type === filters.type);
+        incidents = incidents.filter((i) => i.type === filters.type);
       }
       if (filters.severity) {
-        incidents = incidents.filter(i => i.severity === filters.severity);
+        incidents = incidents.filter((i) => i.severity === filters.severity);
       }
       if (filters.status) {
-        incidents = incidents.filter(i => i.status === filters.status);
+        incidents = incidents.filter((i) => i.status === filters.status);
       }
       if (filters.since) {
-        incidents = incidents.filter(i => i.createdAt >= filters.since!);
+        incidents = incidents.filter((i) => i.createdAt >= filters.since!);
       }
     }
 
-    return incidents.sort((a, b) => b.createdAt - a.createdAt);
+    return incidents.toSorted((a, b) => b.createdAt - a.createdAt);
   }
 
   // ---------------------------------------------------------------------------
@@ -152,22 +156,22 @@ export class IncidentResponseManager {
 
   private async triggerEmergencyResponse(incident: Incident): Promise<void> {
     console.error(`[EMERGENCY] Critical incident detected: ${incident.id}`);
-    
+
     // Execute immediate containment actions
     await this.executeContainmentActions(incident);
-    
+
     // Notify emergency contacts
     await this.notifyEmergencyContacts(incident);
-    
+
     // Initiate automated revocation if needed
-    if (incident.type === 'key_compromise') {
+    if (incident.type === "key_compromise") {
       await this.executeEmergencyRevocation(incident);
     }
   }
 
   private async executeContainmentActions(incident: Incident): Promise<void> {
     const actions = this.getContainmentActions(incident.type, incident.severity);
-    
+
     for (const action of actions) {
       try {
         console.info(`[INCIDENT] Executing containment action: ${action}`);
@@ -181,46 +185,101 @@ export class IncidentResponseManager {
   private getContainmentActions(type: IncidentType, severity: IncidentSeverity): string[] {
     const actionMap: Record<IncidentType, Record<IncidentSeverity, string[]>> = {
       key_compromise: {
-        low: ['audit_key_usage', 'monitor_anomalies'],
-        medium: ['audit_key_usage', 'monitor_anomalies', 'prepare_rotation'],
-        high: ['audit_key_usage', 'monitor_anomalies', 'prepare_rotation', 'restrict_access'],
-        critical: ['immediate_key_rotation', 'revoke_active_tokens', 'restrict_access', 'enable_enhanced_monitoring'],
+        low: ["audit_key_usage", "monitor_anomalies"],
+        medium: ["audit_key_usage", "monitor_anomalies", "prepare_rotation"],
+        high: ["audit_key_usage", "monitor_anomalies", "prepare_rotation", "restrict_access"],
+        critical: [
+          "immediate_key_rotation",
+          "revoke_active_tokens",
+          "restrict_access",
+          "enable_enhanced_monitoring",
+        ],
       },
       data_breach: {
-        low: ['audit_access_logs', 'monitor_data_access'],
-        medium: ['audit_access_logs', 'monitor_data_access', 'restrict_affected_accounts'],
-        high: ['audit_access_logs', 'monitor_data_access', 'restrict_affected_accounts', 'force_password_reset'],
-        critical: ['immediate_system_lockdown', 'revoke_all_sessions', 'audit_access_logs', 'notify_regulators'],
+        low: ["audit_access_logs", "monitor_data_access"],
+        medium: ["audit_access_logs", "monitor_data_access", "restrict_affected_accounts"],
+        high: [
+          "audit_access_logs",
+          "monitor_data_access",
+          "restrict_affected_accounts",
+          "force_password_reset",
+        ],
+        critical: [
+          "immediate_system_lockdown",
+          "revoke_all_sessions",
+          "audit_access_logs",
+          "notify_regulators",
+        ],
       },
       denial_of_service: {
-        low: ['monitor_traffic', 'adjust_rate_limits'],
-        medium: ['monitor_traffic', 'adjust_rate_limits', 'enable_caching'],
-        high: ['monitor_traffic', 'adjust_rate_limits', 'enable_caching', 'activate_ddos_protection'],
-        critical: ['emergency_rate_limits', 'block_malicious_ips', 'activate_ddos_protection', 'scale_resources'],
+        low: ["monitor_traffic", "adjust_rate_limits"],
+        medium: ["monitor_traffic", "adjust_rate_limits", "enable_caching"],
+        high: [
+          "monitor_traffic",
+          "adjust_rate_limits",
+          "enable_caching",
+          "activate_ddos_protection",
+        ],
+        critical: [
+          "emergency_rate_limits",
+          "block_malicious_ips",
+          "activate_ddos_protection",
+          "scale_resources",
+        ],
       },
       unauthorized_access: {
-        low: ['audit_access_logs', 'monitor_suspicious_accounts'],
-        medium: ['audit_access_logs', 'monitor_suspicious_accounts', 'revoke_suspicious_sessions'],
-        high: ['audit_access_logs', 'monitor_suspicious_accounts', 'revoke_suspicious_sessions', 'force_password_reset'],
-        critical: ['revoke_all_sessions', 'force_password_reset', 'enable_enhanced_authentication', 'audit_access_logs'],
+        low: ["audit_access_logs", "monitor_suspicious_accounts"],
+        medium: ["audit_access_logs", "monitor_suspicious_accounts", "revoke_suspicious_sessions"],
+        high: [
+          "audit_access_logs",
+          "monitor_suspicious_accounts",
+          "revoke_suspicious_sessions",
+          "force_password_reset",
+        ],
+        critical: [
+          "revoke_all_sessions",
+          "force_password_reset",
+          "enable_enhanced_authentication",
+          "audit_access_logs",
+        ],
       },
       security_misconfiguration: {
-        low: ['document_issue', 'schedule_fix'],
-        medium: ['document_issue', 'schedule_fix', 'monitor_exploitation'],
-        high: ['document_issue', 'immediate_fix', 'monitor_exploitation', 'restrict_affected_features'],
-        critical: ['immediate_system_shutdown', 'emergency_fix', 'security_audit', 'restrict_all_access'],
+        low: ["document_issue", "schedule_fix"],
+        medium: ["document_issue", "schedule_fix", "monitor_exploitation"],
+        high: [
+          "document_issue",
+          "immediate_fix",
+          "monitor_exploitation",
+          "restrict_affected_features",
+        ],
+        critical: [
+          "immediate_system_shutdown",
+          "emergency_fix",
+          "security_audit",
+          "restrict_all_access",
+        ],
       },
       vulnerability_exploitation: {
-        low: ['monitor_exploitation', 'apply_patches'],
-        medium: ['monitor_exploitation', 'apply_patches', 'restrict_affected_features'],
-        high: ['emergency_patch', 'restrict_affected_features', 'monitor_exploitation'],
-        critical: ['immediate_system_shutdown', 'emergency_patch', 'security_audit', 'incident_investigation'],
+        low: ["monitor_exploitation", "apply_patches"],
+        medium: ["monitor_exploitation", "apply_patches", "restrict_affected_features"],
+        high: ["emergency_patch", "restrict_affected_features", "monitor_exploitation"],
+        critical: [
+          "immediate_system_shutdown",
+          "emergency_patch",
+          "security_audit",
+          "incident_investigation",
+        ],
       },
       system_failure: {
-        low: ['monitor_system', 'restart_services'],
-        medium: ['monitor_system', 'restart_services', 'activate_backup_systems'],
-        high: ['emergency_restart', 'activate_backup_systems', 'escalate_to_engineering'],
-        critical: ['immediate_failover', 'activate_disaster_recovery', 'escalate_to_engineering', 'notify_stakeholders'],
+        low: ["monitor_system", "restart_services"],
+        medium: ["monitor_system", "restart_services", "activate_backup_systems"],
+        high: ["emergency_restart", "activate_backup_systems", "escalate_to_engineering"],
+        critical: [
+          "immediate_failover",
+          "activate_disaster_recovery",
+          "escalate_to_engineering",
+          "notify_stakeholders",
+        ],
       },
     };
 
@@ -230,16 +289,16 @@ export class IncidentResponseManager {
   private async executeContainmentAction(action: string, incident: Incident): Promise<void> {
     // Implementation would depend on the specific action
     switch (action) {
-      case 'immediate_key_rotation':
+      case "immediate_key_rotation":
         await this.executeEmergencyKeyRotation();
         break;
-      case 'revoke_active_tokens':
+      case "revoke_active_tokens":
         await this.revokeAllActiveTokens();
         break;
-      case 'restrict_access':
+      case "restrict_access":
         await this.restrictSystemAccess();
         break;
-      case 'emergency_rate_limits':
+      case "emergency_rate_limits":
         await this.applyEmergencyRateLimits();
         break;
       // Add more action implementations as needed
@@ -254,51 +313,58 @@ export class IncidentResponseManager {
 
   private initializeRevocationStrategies(): void {
     // Global JWT revocation
-    this.revocationStrategies.set('global_jwt_revocation', {
-      name: 'Global JWT Revocation',
-      description: 'Revoke all active JWT tokens immediately',
+    this.revocationStrategies.set("global_jwt_revocation", {
+      name: "Global JWT Revocation",
+      description: "Revoke all active JWT tokens immediately",
       execute: async (context) => this.executeGlobalJwtRevocation(context),
     });
 
     // Selective wallet revocation
-    this.revocationStrategies.set('selective_wallet_revocation', {
-      name: 'Selective Wallet Revocation',
-      description: 'Revoke tokens for specific wallet addresses',
+    this.revocationStrategies.set("selective_wallet_revocation", {
+      name: "Selective Wallet Revocation",
+      description: "Revoke tokens for specific wallet addresses",
       execute: async (context) => this.executeSelectiveWalletRevocation(context),
     });
 
     // IP-based revocation
-    this.revocationStrategies.set('ip_based_revocation', {
-      name: 'IP-Based Revocation',
-      description: 'Revoke tokens from specific IP ranges',
+    this.revocationStrategies.set("ip_based_revocation", {
+      name: "IP-Based Revocation",
+      description: "Revoke tokens from specific IP ranges",
       execute: async (context) => this.executeIpBasedRevocation(context),
     });
 
     // Time-based revocation
-    this.revocationStrategies.set('time_based_revocation', {
-      name: 'Time-Based Revocation',
-      description: 'Revoke tokens issued within a time window',
+    this.revocationStrategies.set("time_based_revocation", {
+      name: "Time-Based Revocation",
+      description: "Revoke tokens issued within a time window",
       execute: async (context) => this.executeTimeBasedRevocation(context),
     });
   }
 
-  async executeRevocation(strategyName: string, context: RevocationContext): Promise<RevocationResult> {
+  async executeRevocation(
+    strategyName: string,
+    context: RevocationContext,
+  ): Promise<RevocationResult> {
     const strategy = this.revocationStrategies.get(strategyName);
     if (!strategy) {
       throw new TalakWeb3Error(`Revocation strategy "${strategyName}" not found`, {
-        code: 'REVOCATION_STRATEGY_NOT_FOUND',
+        code: "REVOCATION_STRATEGY_NOT_FOUND",
         status: 404,
       });
     }
 
-    console.info(`[REVOCATION] Executing strategy: ${strategyName} for incident: ${context.incidentId}`);
-    
+    console.info(
+      `[REVOCATION] Executing strategy: ${strategyName} for incident: ${context.incidentId}`,
+    );
+
     const startTime = Date.now();
     const result = await strategy.execute(context);
     const duration = Date.now() - startTime;
 
     // Log revocation execution
-    console.info(`[REVOCATION] Strategy ${strategyName} completed: ${result.revokedCount} tokens revoked in ${duration}ms`);
+    console.info(
+      `[REVOCATION] Strategy ${strategyName} completed: ${result.revokedCount} tokens revoked in ${duration}ms`,
+    );
 
     return {
       ...result,
@@ -314,10 +380,10 @@ export class IncidentResponseManager {
     try {
       // This would integrate with the actual JWT revocation system
       // For now, we'll simulate the revocation
-      
+
       // Get all active JWTs from Redis/database
       const activeJwts = await this.getAllActiveJwts();
-      
+
       // Revoke each JWT
       for (const jwt of activeJwts) {
         try {
@@ -330,7 +396,6 @@ export class IncidentResponseManager {
 
       // Clear any cached JWTs
       await this.clearJwtCache();
-
     } catch (err) {
       errors.push(`Global JWT revocation failed: ${err}`);
     }
@@ -344,7 +409,9 @@ export class IncidentResponseManager {
     };
   }
 
-  private async executeSelectiveWalletRevocation(context: RevocationContext): Promise<RevocationResult> {
+  private async executeSelectiveWalletRevocation(
+    context: RevocationContext,
+  ): Promise<RevocationResult> {
     const startTime = Date.now();
     const errors: string[] = [];
     let revokedCount = 0;
@@ -353,7 +420,7 @@ export class IncidentResponseManager {
       for (const walletAddress of context.targets) {
         try {
           const walletJwts = await this.getJwtsForWallet(walletAddress);
-          
+
           for (const jwt of walletJwts) {
             await this.revokeJwt(jwt.jti, jwt.exp);
             revokedCount++;
@@ -384,7 +451,7 @@ export class IncidentResponseManager {
       for (const ipOrRange of context.targets) {
         try {
           const ipJwts = await this.getJwtsForIp(ipOrRange);
-          
+
           for (const jwt of ipJwts) {
             await this.revokeJwt(jwt.jti, jwt.exp);
             revokedCount++;
@@ -414,9 +481,9 @@ export class IncidentResponseManager {
     try {
       const timeWindow = context.metadata?.timeWindow || 3600000; // 1 hour default
       const cutoffTime = Date.now() - timeWindow;
-      
+
       const recentJwts = await this.getJwtsIssuedAfter(cutoffTime);
-      
+
       for (const jwt of recentJwts) {
         try {
           await this.revokeJwt(jwt.jti, jwt.exp);
@@ -444,51 +511,51 @@ export class IncidentResponseManager {
 
   private async executeEmergencyRevocation(incident: Incident): Promise<void> {
     console.error(`[EMERGENCY] Executing emergency revocation for incident: ${incident.id}`);
-    
+
     const context: RevocationContext = {
       incidentId: incident.id,
-      reason: 'Emergency revocation due to key compromise',
-      scope: 'global',
+      reason: "Emergency revocation due to key compromise",
+      scope: "global",
       targets: [],
       immediate: true,
       notifyUsers: true,
     };
 
-    await this.executeRevocation('global_jwt_revocation', context);
+    await this.executeRevocation("global_jwt_revocation", context);
   }
 
   private async executeEmergencyKeyRotation(): Promise<void> {
-    console.error('[EMERGENCY] Executing emergency key rotation');
-    
+    console.error("[EMERGENCY] Executing emergency key rotation");
+
     // This would integrate with the key management system
     // to immediately rotate all cryptographic keys
   }
 
   private async revokeAllActiveTokens(): Promise<void> {
-    console.warn('[EMERGENCY] Revoking all active tokens');
-    
+    console.warn("[EMERGENCY] Revoking all active tokens");
+
     const context: RevocationContext = {
-      incidentId: 'emergency',
-      reason: 'Emergency token revocation',
-      scope: 'global',
+      incidentId: "emergency",
+      reason: "Emergency token revocation",
+      scope: "global",
       targets: [],
       immediate: true,
       notifyUsers: true,
     };
 
-    await this.executeRevocation('global_jwt_revocation', context);
+    await this.executeRevocation("global_jwt_revocation", context);
   }
 
   private async restrictSystemAccess(): Promise<void> {
-    console.warn('[EMERGENCY] Restricting system access');
-    
+    console.warn("[EMERGENCY] Restricting system access");
+
     // This would implement system-wide access restrictions
     // such as enabling maintenance mode, blocking new requests, etc.
   }
 
   private async applyEmergencyRateLimits(): Promise<void> {
-    console.warn('[EMERGENCY] Applying emergency rate limits');
-    
+    console.warn("[EMERGENCY] Applying emergency rate limits");
+
     // This would implement extremely restrictive rate limits
     // to mitigate ongoing attacks
   }
@@ -498,11 +565,12 @@ export class IncidentResponseManager {
   // ---------------------------------------------------------------------------
 
   private async notifyEmergencyContacts(incident: Incident): Promise<void> {
-    const message = `CRITICAL INCIDENT: ${incident.type}\n\n` +
+    const message =
+      `CRITICAL INCIDENT: ${incident.type}\n\n` +
       `Incident ID: ${incident.id}\n` +
       `Severity: ${incident.severity}\n` +
       `Description: ${incident.description}\n` +
-      `Affected Systems: ${incident.affectedSystems.join(', ')}\n` +
+      `Affected Systems: ${incident.affectedSystems.join(", ")}\n` +
       `Created: ${new Date(incident.createdAt).toISOString()}`;
 
     for (const contact of this.emergencyContacts) {
@@ -514,9 +582,15 @@ export class IncidentResponseManager {
     }
   }
 
-  private async sendEmergencyNotification(contact: EmergencyContact, message: string, severity: IncidentSeverity): Promise<void> {
+  private async sendEmergencyNotification(
+    contact: EmergencyContact,
+    message: string,
+    severity: IncidentSeverity,
+  ): Promise<void> {
     // Implementation would depend on the notification channel
-    console.info(`[NOTIFICATION] Sending ${severity} alert to ${contact.name} (${contact.method}): ${contact.contact}`);
+    console.info(
+      `[NOTIFICATION] Sending ${severity} alert to ${contact.name} (${contact.method}): ${contact.contact}`,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -532,7 +606,9 @@ export class IncidentResponseManager {
     return [];
   }
 
-  private async getJwtsForWallet(walletAddress: string): Promise<Array<{ jti: string; exp: number }>> {
+  private async getJwtsForWallet(
+    walletAddress: string,
+  ): Promise<Array<{ jti: string; exp: number }>> {
     // This would query JWTs by wallet address
     return [];
   }
@@ -542,7 +618,9 @@ export class IncidentResponseManager {
     return [];
   }
 
-  private async getJwtsIssuedAfter(timestamp: number): Promise<Array<{ jti: string; exp: number }>> {
+  private async getJwtsIssuedAfter(
+    timestamp: number,
+  ): Promise<Array<{ jti: string; exp: number }>> {
     // This would query JWTs issued after a timestamp
     return [];
   }
@@ -554,7 +632,7 @@ export class IncidentResponseManager {
 
   private async clearJwtCache(): Promise<void> {
     // This would clear any JWT caches
-    console.info('[REVOCATION] Clearing JWT cache');
+    console.info("[REVOCATION] Clearing JWT cache");
   }
 
   // ---------------------------------------------------------------------------
@@ -581,14 +659,14 @@ export class IncidentResponseManager {
 export interface EmergencyContact {
   name: string;
   role: string;
-  method: 'email' | 'sms' | 'phone' | 'slack';
+  method: "email" | "sms" | "phone" | "slack";
   contact: string;
   severity: IncidentSeverity[];
 }
 
 export interface CommunicationChannel {
   name: string;
-  type: 'email' | 'slack' | 'pagerduty' | 'webhook';
+  type: "email" | "slack" | "pagerduty" | "webhook";
   config: Record<string, any>;
   enabled: boolean;
 }

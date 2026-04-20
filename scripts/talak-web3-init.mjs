@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 const INIT_BANNER = `
   _          _   _                                  _   ____  
@@ -16,8 +16,8 @@ const INIT_BANNER = `
 console.log(INIT_BANNER);
 
 const targetDir = process.cwd();
-const envExamplePath = path.join(targetDir, '.env.example');
-const envPath = path.join(targetDir, '.env');
+const envExamplePath = path.join(targetDir, ".env.example");
+const envPath = path.join(targetDir, ".env");
 
 const envTemplate = `
 # talak-web3 Hardened Environment
@@ -40,17 +40,19 @@ LOG_LEVEL=info
 `;
 
 if (!fs.existsSync(envExamplePath)) {
-  fs.writeFileSync(envExamplePath, envTemplate.trim() + '\n');
-  console.log('✅ Created .env.example');
+  fs.writeFileSync(envExamplePath, envTemplate.trim() + "\n");
+  console.log("✅ Created .env.example");
 } else {
-  console.log('ℹ️  .env.example already exists, skipping.');
+  console.log("ℹ️  .env.example already exists, skipping.");
 }
 
 if (!fs.existsSync(envPath)) {
-  fs.writeFileSync(envPath, envTemplate.trim() + '\n');
-  console.log('✅ Created .env');
+  fs.writeFileSync(envPath, envTemplate.trim() + "\n");
+  console.log("✅ Created .env");
 } else {
-  console.log('ℹ️  .env already exists. Remember to configure JWT asymmetric keys and REDIS_URL for production.');
+  console.log(
+    "ℹ️  .env already exists. Remember to configure JWT asymmetric keys and REDIS_URL for production.",
+  );
 }
 
-console.log('\\n🚀 Initialization complete. Review your .env to get started.');
+console.log("\\n🚀 Initialization complete. Review your .env to get started.");

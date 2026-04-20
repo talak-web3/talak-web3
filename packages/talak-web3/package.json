@@ -2,6 +2,30 @@
   "name": "talak-web3",
   "version": "1.0.10",
   "description": "A comprehensive Web3 SDK for blockchain development",
+  "keywords": [
+    "blockchain",
+    "crypto",
+    "dapp",
+    "ethereum",
+    "smart-contracts",
+    "wallet",
+    "web3"
+  ],
+  "homepage": "https://github.com/dagimabebe/talak-web3#readme",
+  "bugs": {
+    "url": "https://github.com/dagimabebe/talak-web3/issues"
+  },
+  "license": "MIT",
+  "author": "Dagim Abebe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dagimabebe/talak-web3.git",
+    "directory": "packages/talak-web3"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -26,24 +50,30 @@
       "default": "./dist/react.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "engines": {
-    "node": ">=20.12.0"
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node build-simple.cjs",
+    "typecheck": "echo 'Typecheck skipped - validated via consumer/build pipeline'",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "node build-simple.cjs"
   },
   "dependencies": {
-    "@talak-web3/core": "workspace:*",
     "@talak-web3/client": "workspace:*",
     "@talak-web3/config": "workspace:*",
-    "@talak-web3/types": "workspace:*",
+    "@talak-web3/core": "workspace:*",
     "@talak-web3/hooks": "workspace:*",
     "@talak-web3/rpc": "workspace:*",
+    "@talak-web3/types": "workspace:*",
     "ioredis": "5.10.1",
     "jose": "5.9.6",
     "viem": "2.21.54",
     "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
@@ -57,37 +87,7 @@
       "optional": true
     }
   },
-  "devDependencies": {
-    "esbuild": "^0.24.0"
-  },
-  "scripts": {
-    "build": "node build-simple.cjs",
-    "typecheck": "echo 'Typecheck skipped - validated via consumer/build pipeline'",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "pack:check": "npm pack --dry-run",
-    "prepublishOnly": "node build-simple.cjs"
-  },
-  "keywords": [
-    "web3",
-    "blockchain",
-    "ethereum",
-    "crypto",
-    "dapp",
-    "wallet",
-    "smart-contracts"
-  ],
-  "author": "Dagim Abebe",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dagimabebe/talak-web3.git",
-    "directory": "packages/talak-web3"
-  },
-  "bugs": {
-    "url": "https://github.com/dagimabebe/talak-web3/issues"
-  },
-  "homepage": "https://github.com/dagimabebe/talak-web3#readme",
-  "publishConfig": {
-    "access": "public"
+  "engines": {
+    "node": ">=20.12.0"
   }
 }

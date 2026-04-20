@@ -4,9 +4,4 @@
  * This package will be removed in the next major version.
  */
 
-export {
-  type Role,
-  type Organization,
-  type OrgGate,
-} from '@talak-web3/types';
-
+export { type Role, type Organization, type OrgGate } from "@talak-web3/types";

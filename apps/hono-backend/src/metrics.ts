@@ -1,4 +1,4 @@
-import type { Context, MiddlewareHandler } from 'hono';
+import type { Context, MiddlewareHandler } from "hono";
 
 export interface MetricsClient {
   increment(name: string, tags?: Record<string, string>): void;
@@ -24,12 +24,12 @@ export const metrics = new ConsoleMetricsClient();
  */
 export function metricsMiddleware(): MiddlewareHandler {
   return async (c, next) => {
-    c.set('metrics', metrics);
+    c.set("metrics", metrics);
     await next();
   };
 }
 
-declare module 'hono' {
+declare module "hono" {
   interface ContextVariableMap {
     metrics: MetricsClient;
   }

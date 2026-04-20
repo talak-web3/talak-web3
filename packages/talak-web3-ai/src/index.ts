@@ -9,7 +9,7 @@ export {
   type AgentRunOutput,
   type AiAgent,
   type ToolDefinition,
-} from '@talak-web3/types';
+} from "@talak-web3/types";
 
 // Re-export plugin if it exists
-export * from './plugin';
+export * from "./plugin";

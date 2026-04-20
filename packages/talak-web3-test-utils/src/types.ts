@@ -2,8 +2,8 @@
  * Type definitions for test utilities
  */
 
-import type { Address } from 'viem';
-import type { SessionPayload } from '@talak-web3/auth';
+import type { Address } from "viem";
+import type { SessionPayload } from "@talak-web3/auth";
 
 /**
  * Mock wallet for testing

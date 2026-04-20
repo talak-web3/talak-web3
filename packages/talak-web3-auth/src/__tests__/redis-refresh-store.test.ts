@@ -2,14 +2,14 @@
  * Integration tests for RedisRefreshStore
  * Tests WATCH/MULTI/EXEC retry logic under concurrent load
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import Redis from 'ioredis';
-import { RedisRefreshStore } from '../stores/redis-refresh.js';
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import Redis from "ioredis";
+import { RedisRefreshStore } from "../stores/redis-refresh.js";
 
 const REDIS_URL = process.env.REDIS_URL;
-const describeIf = (condition: boolean) => condition ? describe : describe.skip;
+const describeIf = (condition: boolean) => (condition ? describe : describe.skip);
 
-describeIf(!!REDIS_URL)('RedisRefreshStore Integration', () => {
+describeIf(!!REDIS_URL)("RedisRefreshStore Integration", () => {
   let redis: Redis;
   let store: RedisRefreshStore;
 
@@ -22,19 +22,19 @@ describeIf(!!REDIS_URL)('RedisRefreshStore Integration', () => {
     await redis.quit();
   });
 
-  it('should create and lookup a refresh session', async () => {
-    const address = '0x1234567890abcdef1234567890abcdef12345678';
+  it("should create and lookup a refresh session", async () => {
+    const address = "0x1234567890abcdef1234567890abcdef12345678";
     const chainId = 1;
     const ttlMs = 7 * 24 * 60 * 60 * 1000; // 7 days
 
     const { token, session } = await store.create(address, chainId, ttlMs);
-    
+
     expect(token).toBeDefined();
     expect(token.length).toBeGreaterThan(0);
     expect(session.address).toBe(address.toLowerCase());
     expect(session.chainId).toBe(chainId);
     expect(session.revoked).toBe(false);
-    
+
     // Lookup should return the session
     const lookedUp = await store.lookup(token);
     expect(lookedUp).not.toBeNull();
@@ -42,127 +42,133 @@ describeIf(!!REDIS_URL)('RedisRefreshStore Integration', () => {
     expect(lookedUp!.chainId).toBe(chainId);
   });
 
-  it('should rotate a refresh token atomically', async () => {
-    const address = '0xabcdefabcdefabcdefabcdefabcdefabcdef';
+  it("should rotate a refresh token atomically", async () => {
+    const address = "0xabcdefabcdefabcdefabcdefabcdefabcdef";
     const chainId = 137;
     const ttlMs = 3600000; // 1 hour
 
     const { token: oldToken } = await store.create(address, chainId, ttlMs);
-    
+
     // Rotate the token
     const { token: newToken, session: newSession } = await store.rotate(oldToken, ttlMs);
-    
+
     expect(newToken).toBeDefined();
     expect(newToken).not.toBe(oldToken);
     expect(newSession.address).toBe(address.toLowerCase());
     expect(newSession.chainId).toBe(chainId);
     expect(newSession.revoked).toBe(false);
-    
+
     // Old token should be revoked
     const oldSession = await store.lookup(oldToken);
     expect(oldSession).not.toBeNull();
     expect(oldSession!.revoked).toBe(true);
-    
+
     // New token should work
     const newSessionLookup = await store.lookup(newToken);
     expect(newSessionLookup).not.toBeNull();
     expect(newSessionLookup!.revoked).toBe(false);
   });
 
-  it('should reject rotation of already revoked token', async () => {
-    const address = '0x9999999999999999999999999999999999999999';
+  it("should reject rotation of already revoked token", async () => {
+    const address = "0x9999999999999999999999999999999999999999";
     const chainId = 1;
     const ttlMs = 3600000;
 
     const { token } = await store.create(address, chainId, ttlMs);
-    
+
     // First rotation should succeed
     await store.rotate(token, ttlMs);
-    
+
     // Second rotation should fail (token already used)
-    await expect(store.rotate(token, ttlMs)).rejects.toThrow('Refresh token already used or revoked');
+    await expect(store.rotate(token, ttlMs)).rejects.toThrow(
+      "Refresh token already used or revoked",
+    );
   });
 
-  it('should reject rotation of expired token', async () => {
-    const address = '0x8888888888888888888888888888888888888888';
+  it("should reject rotation of expired token", async () => {
+    const address = "0x8888888888888888888888888888888888888888";
     const chainId = 1;
     const shortTtlMs = 100; // 100ms
 
     const { token } = await store.create(address, chainId, shortTtlMs);
-    
+
     // Wait for expiration
-    await new Promise(resolve => setTimeout(resolve, 150));
-    
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
     // Rotation should fail
-    await expect(store.rotate(token, shortTtlMs)).rejects.toThrow('Refresh token expired');
+    await expect(store.rotate(token, shortTtlMs)).rejects.toThrow("Refresh token expired");
   });
 
-  it('should handle concurrent rotation attempts with retry', async () => {
-    const address = '0x7777777777777777777777777777777777777777';
+  it("should handle concurrent rotation attempts with retry", async () => {
+    const address = "0x7777777777777777777777777777777777777777";
     const chainId = 1;
     const ttlMs = 3600000;
 
     const { token } = await store.create(address, chainId, ttlMs);
-    
+
     // Fire 5 concurrent rotation requests
-    const promises = Array(5).fill(null).map(async (_, i) => {
-      try {
-        const result = await store.rotate(token, ttlMs);
-        return { success: true, index: i, token: result.token };
-      } catch (error: any) {
-        return { success: false, index: i, error: error.message };
-      }
-    });
-    
+    const promises = Array(5)
+      .fill(null)
+      .map(async (_, i) => {
+        try {
+          const result = await store.rotate(token, ttlMs);
+          return { success: true, index: i, token: result.token };
+        } catch (error: any) {
+          return { success: false, index: i, error: error.message };
+        }
+      });
+
     const results = await Promise.all(promises);
-    
+
     // Only ONE should succeed (WATCH/MULTI/EXEC ensures atomicity)
-    const successes = results.filter(r => r.success);
-    const failures = results.filter(r => !r.success);
-    
+    const successes = results.filter((r) => r.success);
+    const failures = results.filter((r) => !r.success);
+
     expect(successes.length).toBe(1);
     expect(failures.length).toBe(4);
-    
+
     // The failed attempts should be conflicts or "already used" errors
-    failures.forEach(failure => {
+    failures.forEach((failure) => {
       expect(
-        failure.error.includes('conflict') || 
-        failure.error.includes('already used') ||
-        failure.error.includes('not found')
+        failure.error.includes("conflict") ||
+          failure.error.includes("already used") ||
+          failure.error.includes("not found"),
       ).toBe(true);
     });
   });
 
-  it('should revoke a refresh token', async () => {
-    const address = '0x6666666666666666666666666666666666666666';
+  it("should revoke a refresh token", async () => {
+    const address = "0x6666666666666666666666666666666666666666";
     const chainId = 1;
     const ttlMs = 3600000;
 
     const { token } = await store.create(address, chainId, ttlMs);
-    
+
     // Revoke the token
     await store.revoke(token);
-    
+
     // Lookup should show it's revoked
     const session = await store.lookup(token);
     expect(session).not.toBeNull();
     expect(session!.revoked).toBe(true);
-    
+
     // Rotation should fail
-    await expect(store.rotate(token, ttlMs)).rejects.toThrow('Refresh token already used or revoked');
+    await expect(store.rotate(token, ttlMs)).rejects.toThrow(
+      "Refresh token already used or revoked",
+    );
   });
 
-  it('should handle rotation retry on WATCH failures', async () => {
-    const address = '0x5555555555555555555555555555555555555555';
+  it("should handle rotation retry on WATCH failures", async () => {
+    const address = "0x5555555555555555555555555555555555555555";
     const chainId = 1;
     const ttlMs = 3600000;
 
     const { token } = await store.create(address, chainId, ttlMs);
-    
+
     // Manually trigger a WATCH conflict by modifying the key during rotation
-    const hash = require('crypto').createHash('sha256').update(token).digest('hex');
+    const hash = require("crypto").createHash("sha256").update(token).digest("hex");
     const key = `talak:rt:${hash}`;
-    
+
     // This test validates that the store's retry logic works
     // The store should retry up to maxRotateAttempts times
     const result = await store.rotate(token, ttlMs);
@@ -170,23 +176,23 @@ describeIf(!!REDIS_URL)('RedisRefreshStore Integration', () => {
     expect(result.session.revoked).toBe(false);
   });
 
-  it('should clean up with TTL', async () => {
-    const address = '0x4444444444444444444444444444444444444444';
+  it("should clean up with TTL", async () => {
+    const address = "0x4444444444444444444444444444444444444444";
     const chainId = 1;
     const shortTtlMs = 200;
 
     const { token } = await store.create(address, chainId, shortTtlMs);
-    
-    const hash = require('crypto').createHash('sha256').update(token).digest('hex');
+
+    const hash = require("crypto").createHash("sha256").update(token).digest("hex");
     const key = `talak:rt:${hash}`;
-    
+
     // Key should exist
     const existsBefore = await redis.exists(key);
     expect(existsBefore).toBe(1);
-    
+
     // Wait for TTL
-    await new Promise(resolve => setTimeout(resolve, 250));
-    
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
     // Key should be auto-deleted by Redis
     const existsAfter = await redis.exists(key);
     expect(existsAfter).toBe(0);
