@@ -2,6 +2,7 @@
  * Rate limiting utilities for talak-web3
  * 
  * Provides both in-memory and Redis-backed rate limiting implementations.
+ * Supports IPv4 and IPv6 subnet extraction for distributed rate limiting.
  */
 
 // ---------------------------------------------------------------------------
@@ -17,6 +18,54 @@ export interface RateLimitResult {
 export interface RateLimiter {
   check(key: string, cost?: number): Promise<RateLimitResult>;
   reset(key: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// IP Subnet Extraction (IPv4 + IPv6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract subnet from IP address for rate limiting
+ * - IPv4: /30 subnet (4 IPs max - true NAT scenarios)
+ * - IPv6: /64 subnet (standard subnet size)
+ * 
+ * This prevents IP rotation attacks while allowing legitimate NAT users.
+ */
+export function extractSubnet(ip: string): string {
+  // IPv6 detection
+  if (ip.includes(':')) {
+    // IPv6 - use /64 subnet (first 4 hextets)
+    const parts = ip.split(':');
+    if (parts.length >= 4) {
+      return parts.slice(0, 4).join(':') + '::/64';
+    }
+    // Fallback for compressed IPv6
+    return ip.split('::')[0] + '::/64';
+  }
+  
+  // IPv4 - use /30 subnet
+  const octets = ip.split('.');
+  if (octets.length === 4) {
+    const lastOctet = parseInt(octets[3] || '0', 10);
+    const subnetLastOctet = lastOctet & 0xFC; // /30 = mask last 2 bits
+    return `${octets[0]}.${octets[1]}.${octets[2]}.${subnetLastOctet}/30`;
+  }
+  
+  // Invalid IP format
+  throw new Error(`Invalid IP format: ${ip}`);
+}
+
+/**
+ * Normalize IP for rate limiting (extracts subnet)
+ * Handles both IPv4 and IPv6 addresses
+ */
+export function normalizeIpForRateLimit(ip: string): string {
+  try {
+    return extractSubnet(ip);
+  } catch {
+    // If extraction fails, use raw IP
+    return ip;
+  }
 }
 
 // ---------------------------------------------------------------------------
