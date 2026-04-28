@@ -1,10 +1,10 @@
-import type { RevocationStore } from '@talak-web3/auth';
+import type { RevocationStore } from "@talak-web3/auth";
 
 export class MockRevocationStore implements RevocationStore {
   private revokedTokens = new Map<string, number>();
   private globalInvalidationAt = 0;
   private operationLog: Array<{
-    operation: 'revoke' | 'check';
+    operation: "revoke" | "check";
     jti: string;
     wasRevoked: boolean;
     timestamp: number;
@@ -14,7 +14,7 @@ export class MockRevocationStore implements RevocationStore {
     this.revokedTokens.set(jti, expiresAtMs);
 
     this.operationLog.push({
-      operation: 'revoke',
+      operation: "revoke",
       jti,
       wasRevoked: true,
       timestamp: Date.now(),
@@ -29,7 +29,6 @@ export class MockRevocationStore implements RevocationStore {
     if (exp === undefined) {
       isRevoked = false;
     } else if (Date.now() > exp) {
-
       this.revokedTokens.delete(jti);
       isRevoked = false;
     } else {
@@ -37,7 +36,7 @@ export class MockRevocationStore implements RevocationStore {
     }
 
     this.operationLog.push({
-      operation: 'check',
+      operation: "check",
       jti,
       wasRevoked: isRevoked,
       timestamp: Date.now(),
@@ -51,7 +50,7 @@ export class MockRevocationStore implements RevocationStore {
   }
 
   getOperationLog(): Array<{
-    operation: 'revoke' | 'check';
+    operation: "revoke" | "check";
     jti: string;
     wasRevoked: boolean;
     timestamp: number;

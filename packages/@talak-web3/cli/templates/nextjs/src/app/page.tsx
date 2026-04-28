@@ -1,19 +1,17 @@
-'use client';
+"use client";
 
-import { useSIWE } from 'talak-web3/react';
+import { useSIWE } from "talak-web3/react";
 
 export default function Home() {
   const { signIn, signOut, isAuthenticated, user } = useSIWE({
-    domain: process.env.NEXT_PUBLIC_SIWE_DOMAIN || 'localhost:3000',
-    uri: typeof window !== 'undefined' ? window.location.origin : '',
+    domain: process.env.NEXT_PUBLIC_SIWE_DOMAIN || "localhost:3000",
+    uri: typeof window !== "undefined" ? window.location.origin : "",
   });
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold mb-8 text-center">
-          Welcome to talak-web3
-        </h1>
+        <h1 className="text-4xl font-bold mb-8 text-center">Welcome to talak-web3</h1>
 
         <div className="flex flex-col items-center gap-4">
           {isAuthenticated ? (

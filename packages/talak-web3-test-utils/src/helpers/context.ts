@@ -1,4 +1,4 @@
-import type { TestContext } from '../types.js';
+import type { TestContext } from "../types.js";
 
 export function createTestContext(): TestContext {
   const cleanupFns: (() => Promise<void> | void)[] = [];
@@ -11,13 +11,12 @@ export function createTestContext(): TestContext {
       cleanupFns.push(fn);
     },
     async runCleanup(): Promise<void> {
-
       for (let i = cleanupFns.length - 1; i >= 0; i--) {
         try {
           const fn = cleanupFns[i];
           if (fn) await fn();
         } catch (error) {
-          console.error('Cleanup error:', error);
+          console.error("Cleanup error:", error);
         }
       }
       cleanupFns.length = 0;
@@ -28,19 +27,19 @@ export function createTestContext(): TestContext {
 export function setupTestContext(): TestContext {
   const context = createTestContext();
 
-  if (typeof process !== 'undefined') {
+  if (typeof process !== "undefined") {
     const cleanupHandler = async () => {
       await context.runCleanup();
     };
 
-    process.on('beforeExit', cleanupHandler);
-    process.on('SIGINT', async () => {
+    process.on("beforeExit", cleanupHandler);
+    process.on("SIGINT", async () => {
       await cleanupHandler();
       process.exit(0);
     });
 
     context.addCleanup(() => {
-      process.off('beforeExit', cleanupHandler);
+      process.off("beforeExit", cleanupHandler);
     });
   }
 

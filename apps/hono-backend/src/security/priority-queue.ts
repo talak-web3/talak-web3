@@ -1,16 +1,15 @@
-import type { MiddlewareHandler, Context } from 'hono';
-import { TalakWeb3Error } from '@talak-web3/errors';
+import type { MiddlewareHandler, Context } from "hono";
+import { TalakWeb3Error } from "@talak-web3/errors";
 
 export enum RequestPriority {
   CRITICAL = 100,
   HIGH = 75,
   NORMAL = 50,
   LOW = 25,
-  BACKGROUND = 0
+  BACKGROUND = 0,
 }
 
 export interface PriorityQueueConfig {
-
   concurrency: {
     [key in RequestPriority]?: number;
   };
@@ -42,16 +41,16 @@ export class PriorityRequestQueue {
         [RequestPriority.HIGH]: 50,
         [RequestPriority.NORMAL]: 25,
         [RequestPriority.LOW]: 10,
-        [RequestPriority.BACKGROUND]: 5
+        [RequestPriority.BACKGROUND]: 5,
       },
       defaultConcurrency: 10,
       maxQueueSize: 1000,
       timeout: 30000,
-      ...config
+      ...config,
     };
 
-    Object.values(RequestPriority).forEach(priority => {
-      if (typeof priority === 'number') {
+    Object.values(RequestPriority).forEach((priority) => {
+      if (typeof priority === "number") {
         this.queues.set(priority, []);
         this.activeCount.set(priority, 0);
       }
@@ -62,18 +61,18 @@ export class PriorityRequestQueue {
     const path = context.req.path;
     const method = context.req.method;
 
-    if (path.startsWith('/auth/')) {
-      if (path.endsWith('/login') || path.endsWith('/nonce')) {
+    if (path.startsWith("/auth/")) {
+      if (path.endsWith("/login") || path.endsWith("/nonce")) {
         return RequestPriority.CRITICAL;
       }
       return RequestPriority.HIGH;
     }
 
-    if (path.startsWith('/rpc/')) {
+    if (path.startsWith("/rpc/")) {
       return RequestPriority.HIGH;
     }
 
-    if (path === '/health' || path === '/metrics') {
+    if (path === "/health" || path === "/metrics") {
       return RequestPriority.BACKGROUND;
     }
 
@@ -92,9 +91,9 @@ export class PriorityRequestQueue {
 
     const queue = this.queues.get(priority) ?? [];
     if (queue.length >= this.config.maxQueueSize) {
-      throw new TalakWeb3Error('Service temporarily unavailable', {
-        code: 'RATE_LIMIT',
-        status: 429
+      throw new TalakWeb3Error("Service temporarily unavailable", {
+        code: "RATE_LIMIT",
+        status: 429,
       });
     }
 
@@ -107,7 +106,7 @@ export class PriorityRequestQueue {
           this.activeCount.set(priority, (this.activeCount.get(priority) ?? 0) + 1);
           resolve();
         },
-        reject
+        reject,
       };
 
       queue.push(request);
@@ -118,10 +117,12 @@ export class PriorityRequestQueue {
         if (index > -1) {
           queue.splice(index, 1);
           this.queues.set(priority, queue);
-          reject(new TalakWeb3Error('Request timeout in queue', {
-            code: 'QUEUE_TIMEOUT',
-            status: 408
-          }));
+          reject(
+            new TalakWeb3Error("Request timeout in queue", {
+              code: "QUEUE_TIMEOUT",
+              status: 408,
+            }),
+          );
         }
       }, this.config.timeout);
     });
@@ -156,13 +157,10 @@ export class PriorityRequestQueue {
   createMiddleware(): MiddlewareHandler {
     return async (context, next) => {
       try {
-
         await this.enqueue(context);
 
         await next();
-
       } finally {
-
         this.release(context);
       }
     };
@@ -177,13 +175,13 @@ export class PriorityRequestQueue {
       };
     } = {};
 
-    Object.values(RequestPriority).forEach(priority => {
-      if (typeof priority === 'number') {
+    Object.values(RequestPriority).forEach((priority) => {
+      if (typeof priority === "number") {
         const name = RequestPriority[priority];
         stats[name] = {
           queued: this.queues.get(priority)?.length ?? 0,
           active: this.activeCount.get(priority) ?? 0,
-          concurrency: this.config.concurrency[priority] ?? this.config.defaultConcurrency
+          concurrency: this.config.concurrency[priority] ?? this.config.defaultConcurrency,
         };
       }
     });

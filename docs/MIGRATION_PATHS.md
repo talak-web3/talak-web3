@@ -12,22 +12,22 @@ This document defines **upgrade paths** for each security invariant when the cur
 
 Migrate when **ANY** of these triggers occur:
 
-| Trigger | Current System | Migration Required |
-|---------|---------------|-------------------|
-| Multi-region active/active deployment | ❌ Cannot guarantee linearizability | ✅ Linearizable storage |
-| Regulatory compliance (SOC2, ISO27001) | ❌ No formal proofs | ✅ Audited consensus system |
-| Insider threat model expansion | ❌ Trusts infrastructure | ✅ Zero-trust architecture |
-| Byzantine fault tolerance required | ❌ Crash faults only | ✅ BFT consensus |
-| Pre-execution trust required | ❌ Post-load checks only | ✅ Verified boot |
+| Trigger                                | Current System                      | Migration Required          |
+| -------------------------------------- | ----------------------------------- | --------------------------- |
+| Multi-region active/active deployment  | ❌ Cannot guarantee linearizability | ✅ Linearizable storage     |
+| Regulatory compliance (SOC2, ISO27001) | ❌ No formal proofs                 | ✅ Audited consensus system |
+| Insider threat model expansion         | ❌ Trusts infrastructure            | ✅ Zero-trust architecture  |
+| Byzantine fault tolerance required     | ❌ Crash faults only                | ✅ BFT consensus            |
+| Pre-execution trust required           | ❌ Post-load checks only            | ✅ Verified boot            |
 
 ### Cost-Benefit Analysis
 
-| System | Complexity | Latency | Cost | Guarantees |
-|--------|-----------|---------|------|------------|
-| **Current (Redis)** | Low | <50ms | $ | Replicated durability |
-| **etcd/Consul** | Medium | 50-200ms | $$ | Linearizability |
-| **HSM-backed** | High | 100-500ms | $$$ | Hardware trust |
-| **Blockchain-based** | Very High | 1-10s | $$$$ | BFT, global ordering |
+| System               | Complexity | Latency   | Cost | Guarantees            |
+| -------------------- | ---------- | --------- | ---- | --------------------- |
+| **Current (Redis)**  | Low        | <50ms     | $    | Replicated durability |
+| **etcd/Consul**      | Medium     | 50-200ms  | $$   | Linearizability       |
+| **HSM-backed**       | High       | 100-500ms | $$$  | Hardware trust        |
+| **Blockchain-based** | Very High  | 1-10s     | $$$$ | BFT, global ordering  |
 
 ---
 
@@ -36,6 +36,7 @@ Migrate when **ANY** of these triggers occur:
 ### Current Limitation
 
 Redis replication provides **crash safety** but not **linearizability**:
+
 - Partitioned primaries can accept divergent writes
 - Failover may lose recent writes (<1s window)
 - No quorum reads for strong consistency
@@ -60,27 +61,21 @@ Redis replication provides **crash safety** but not **linearizability**:
 ### Implementation
 
 ```typescript
-import { Etcd3 } from 'etcd3';
+import { Etcd3 } from "etcd3";
 
 const client = new Etcd3({
-  hosts: ['etcd-1:2379', 'etcd-2:2379', 'etcd-3:2379']
+  hosts: ["etcd-1:2379", "etcd-2:2379", "etcd-3:2379"],
 });
 
 async function consumeNonce(address: string, nonce: string): Promise<boolean> {
   const key = `nonces/${address}/${nonce}`;
 
   try {
-
-    const result = await client
-      .lease(300)
-      .put(key)
-      .ifNotExists()
-      .value('consumed');
+    const result = await client.lease(300).put(key).ifNotExists().value("consumed");
 
     return result.succeeded;
   } catch (err) {
-
-    throw new Error('Nonce store unavailable');
+    throw new Error("Nonce store unavailable");
   }
 }
 
@@ -92,11 +87,11 @@ async function isRevoked(jti: string): Promise<boolean> {
 
 ### Guarantees Gained
 
-| Property | Redis | etcd | Improvement |
-|----------|-------|------|-------------|
-| Linearizability | ❌ No | ✅ Yes | Strong consistency |
-| Quorum reads | ❌ No | ✅ Yes | Partition safety |
-| Global ordering | ❌ No | ✅ Yes | Total order |
+| Property        | Redis     | etcd          | Improvement         |
+| --------------- | --------- | ------------- | ------------------- |
+| Linearizability | ❌ No     | ✅ Yes        | Strong consistency  |
+| Quorum reads    | ❌ No     | ✅ Yes        | Partition safety    |
+| Global ordering | ❌ No     | ✅ Yes        | Total order         |
 | Crash tolerance | 1 replica | (N-1)/2 nodes | Better availability |
 
 ### Migration Steps
@@ -129,6 +124,7 @@ async function isRevoked(jti: string): Promise<boolean> {
 ### Current Limitation
 
 Monotonic floor prevents rollback but doesn't establish **global total ordering**:
+
 - Concurrent events on different nodes may be unordered
 - NTP can be spoofed (mitigated but not eliminated)
 - No causal relationship tracking
@@ -149,7 +145,7 @@ class HybridLogicalClock {
     this.timestamp = {
       logical: 0,
       physical: Date.now(),
-      nodeId
+      nodeId,
     };
   }
 
@@ -159,7 +155,7 @@ class HybridLogicalClock {
     this.timestamp = {
       logical: Math.max(this.timestamp.logical + 1, now - this.timestamp.physical),
       physical: now,
-      nodeId: this.timestamp.nodeId
+      nodeId: this.timestamp.nodeId,
     };
 
     return { ...this.timestamp };
@@ -169,13 +165,12 @@ class HybridLogicalClock {
     this.timestamp = {
       logical: Math.max(this.timestamp.logical, other.logical) + 1,
       physical: Math.max(this.timestamp.physical, other.physical, Date.now()),
-      nodeId: this.timestamp.nodeId
+      nodeId: this.timestamp.nodeId,
     };
   }
 
   happensBefore(a: HLCTimestamp, b: HLCTimestamp): boolean {
-    return a.physical < b.physical ||
-           (a.physical === b.physical && a.logical < b.logical);
+    return a.physical < b.physical || (a.physical === b.physical && a.logical < b.logical);
   }
 }
 ```
@@ -191,7 +186,6 @@ async function issueToken(address: string): Promise<string> {
   const token = {
     iat: timestamp.physical,
     hlc: timestamp,
-
   };
 
   return jwt.sign(token, privateKey);
@@ -213,12 +207,12 @@ async function validateToken(token: JWT): Promise<boolean> {
 
 ### Guarantees Gained
 
-| Property | Current HLC | Improvement |
-|----------|------------|-------------|
-| Causal ordering | ✅ Yes | Tracks happens-before |
-| Global monotonicity | ✅ Yes | Logical counter |
-| Partition tolerance | ✅ Yes | No coordination needed |
-| Bounded skew | ✅ Yes | Physical time bound |
+| Property            | Current HLC | Improvement            |
+| ------------------- | ----------- | ---------------------- |
+| Causal ordering     | ✅ Yes      | Tracks happens-before  |
+| Global monotonicity | ✅ Yes      | Logical counter        |
+| Partition tolerance | ✅ Yes      | No coordination needed |
+| Bounded skew        | ✅ Yes      | Physical time bound    |
 
 ### Migration Steps
 
@@ -241,6 +235,7 @@ async function validateToken(token: JWT): Promise<boolean> {
 ### Current Limitation
 
 Post-load integrity checks cannot prevent **pre-execution compromise**:
+
 - Malicious code runs before hash verification
 - Native addons bypass JavaScript checks
 - Module loader not verified
@@ -288,36 +283,36 @@ metadata:
   name: auth-service-signature
 spec:
   images:
-  - glob: "registry.internal/auth-service:*"
+    - glob: "registry.internal/auth-service:*"
   authorities:
-  - key:
-      ref: "cosign.pub"
-    attestations:
-    - name: sbom
-      predicateType: cosign.sigstore.dev/attestation/v1
+    - key:
+        ref: "cosign.pub"
+      attestations:
+        - name: sbom
+          predicateType: cosign.sigstore.dev/attestation/v1
 ```
 
 #### 3. Runtime Verification
 
 ```typescript
-import { verifySignature } from '@sigstore/verify';
+import { verifySignature } from "@sigstore/verify";
 
 async function verifyContainer(): Promise<void> {
-  const imageDigest = process.env['CONTAINER_DIGEST'];
+  const imageDigest = process.env["CONTAINER_DIGEST"];
   const signature = await fetchSignature(imageDigest);
 
   const valid = await verifySignature({
     signature,
     publicKey: COSIGN_PUBLIC_KEY,
-    image: imageDigest
+    image: imageDigest,
   });
 
   if (!valid) {
-    console.error('Container signature verification failed');
+    console.error("Container signature verification failed");
     process.exit(1);
   }
 
-  console.log('Container signature verified');
+  console.log("Container signature verified");
 }
 
 verifyContainer().then(startApplication);
@@ -325,12 +320,12 @@ verifyContainer().then(startApplication);
 
 ### Guarantees Gained
 
-| Property | Current | Verified Boot | Improvement |
-|----------|---------|---------------|-------------|
-| Pre-execution trust | ❌ No | ✅ Yes | Prevents tampering |
-| Build reproducibility | ❌ No | ✅ Yes | SBOM verification |
-| Runtime attestation | ❌ No | ✅ Yes (with TEE) | Hardware proof |
-| Supply chain visibility | Partial | ✅ Full | Complete audit trail |
+| Property                | Current | Verified Boot     | Improvement          |
+| ----------------------- | ------- | ----------------- | -------------------- |
+| Pre-execution trust     | ❌ No   | ✅ Yes            | Prevents tampering   |
+| Build reproducibility   | ❌ No   | ✅ Yes            | SBOM verification    |
+| Runtime attestation     | ❌ No   | ✅ Yes (with TEE) | Hardware proof       |
+| Supply chain visibility | Partial | ✅ Full           | Complete audit trail |
 
 ### Migration Steps
 
@@ -357,6 +352,7 @@ verifyContainer().then(startApplication);
 ### Scenario: Multi-Region Active/Active
 
 **Trigger** (ANY of these):
+
 - Deployment spans ≥2 geographic regions
 - Cross-region latency >100ms
 - Regional failover required (RTO <5 min)
@@ -366,6 +362,7 @@ verifyContainer().then(startApplication);
 **Required**: etcd with cross-region consensus OR regional isolation
 
 **Recommendation**:
+
 - If <3 regions: etcd global cluster
 - If >3 regions: Regional etcd + cross-region async replication
 
@@ -376,6 +373,7 @@ verifyContainer().then(startApplication);
 ### Scenario: SOC2 Compliance
 
 **Trigger** (ANY of these):
+
 - Audit requires linearizability proof
 - Compliance deadline <12 months
 - Customer requires SOC2 Type II
@@ -385,6 +383,7 @@ verifyContainer().then(startApplication);
 **Required**: Linearizable storage + verified boot + audit logging
 
 **Recommendation**:
+
 1. Migrate to etcd (linearizability)
 2. Implement container signing (supply chain)
 3. Add comprehensive audit logging
@@ -396,6 +395,7 @@ verifyContainer().then(startApplication);
 ### Scenario: Revocation SLA <50ms Globally
 
 **Trigger** (ALL of these):
+
 - Product requirement: revocation <50ms P99
 - Current system: revocation >50ms (replication lag)
 - Measured via `revocation_propagation_ms` metric
@@ -405,6 +405,7 @@ verifyContainer().then(startApplication);
 **Required**: Consensus-backed storage with quorum reads
 
 **Recommendation**:
+
 - Migrate to etcd/Consul
 - Deploy globally distributed cluster
 - Use quorum reads for linearizability
@@ -416,6 +417,7 @@ verifyContainer().then(startApplication);
 ### Scenario: Supply Chain Risk > Threshold
 
 **Trigger** (ANY of these):
+
 - Handling custodial assets (user funds)
 - Detected supply chain attempt in industry
 - Regulatory mandate (e.g., financial services)
@@ -426,6 +428,7 @@ verifyContainer().then(startApplication);
 **Required**: Verified boot + signed containers + reproducible builds
 
 **Recommendation**:
+
 1. Implement container signing (Cosign)
 2. Add admission controller
 3. Deploy in confidential VM (optional)
@@ -438,6 +441,7 @@ verifyContainer().then(startApplication);
 ### Scenario: Nation-State Threat Model
 
 **Trigger** (ALL of these):
+
 - High-value target (government, critical infrastructure)
 - Nation-state adversary in threat model
 - Budget allows 10x infrastructure cost
@@ -447,6 +451,7 @@ verifyContainer().then(startApplication);
 **Required**: HSM + TEE + BFT consensus + zero-trust
 
 **Recommendation**:
+
 1. Move to HSM-backed key management
 2. Run in confidential computing (AWS Nitro/GCP SEV)
 3. Migrate to BFT consensus (Tendermint/HotStuff)
@@ -460,6 +465,7 @@ verifyContainer().then(startApplication);
 ### Scenario: Regulatory Mandate (Financial Services)
 
 **Trigger** (ANY of these):
+
 - Handling regulated financial data
 - License requires specific technical controls
 - Audit mandates formal verification
@@ -469,6 +475,7 @@ verifyContainer().then(startApplication);
 **Required**: Likely linearizability + formal verification + audit
 
 **Recommendation**:
+
 1. Consult with compliance team
 2. Map requirements to technical controls
 3. Implement etcd + verified boot minimum
@@ -500,13 +507,13 @@ verifyContainer().then(startApplication);
 
 ## Cost Estimates
 
-| Migration | Engineering | Infrastructure | Timeline | Risk |
-|-----------|------------|----------------|----------|------|
-| Redis → etcd | 2-3 engineers | 2-3x Redis cost | 3 months | Medium |
-| Add HLC | 1 engineer | No change | 1 month | Low |
-| Container signing | 1 engineer | Minimal | 1 month | Low |
-| TEE deployment | 2-3 engineers | 3-5x compute | 6 months | High |
-| BFT consensus | 3-5 engineers | 5-10x current | 12 months | Very High |
+| Migration         | Engineering   | Infrastructure  | Timeline  | Risk      |
+| ----------------- | ------------- | --------------- | --------- | --------- |
+| Redis → etcd      | 2-3 engineers | 2-3x Redis cost | 3 months  | Medium    |
+| Add HLC           | 1 engineer    | No change       | 1 month   | Low       |
+| Container signing | 1 engineer    | Minimal         | 1 month   | Low       |
+| TEE deployment    | 2-3 engineers | 3-5x compute    | 6 months  | High      |
+| BFT consensus     | 3-5 engineers | 5-10x current   | 12 months | Very High |
 
 ---
 
@@ -515,6 +522,7 @@ verifyContainer().then(startApplication);
 **For 95% of deployments, the current system is sufficient.**
 
 Migrate only when:
+
 1. **Specific requirements** demand stronger guarantees
 2. **Regulatory mandates** require formal properties
 3. **Threat model** expands beyond current assumptions

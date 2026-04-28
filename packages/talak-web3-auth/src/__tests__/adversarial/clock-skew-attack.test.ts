@@ -1,21 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { AuthoritativeTime, HttpTimeSource, setAuthoritativeTime } from '../../time.js';
-import { TalakWeb3Error } from '@talak-web3/errors';
+import { describe, it, expect, beforeEach } from "vitest";
+import { AuthoritativeTime, HttpTimeSource, setAuthoritativeTime } from "../../time.js";
+import { TalakWeb3Error } from "@talak-web3/errors";
 
-describe('Adversarial: Clock Skew Attack', () => {
+describe("Adversarial: Clock Skew Attack", () => {
   beforeEach(() => {
-
-    setAuthoritativeTime(new AuthoritativeTime({
-      syncIntervalMs: 1000,
-      maxDriftMs: 5000,
-    }));
+    setAuthoritativeTime(
+      new AuthoritativeTime({
+        syncIntervalMs: 1000,
+        maxDriftMs: 5000,
+      }),
+    );
   });
 
-  it('should detect and reject excessive clock drift', async () => {
-
+  it("should detect and reject excessive clock drift", async () => {
     const skewedSource = {
       getTime: async () => {
-
         return Date.now() + 10000;
       },
     };
@@ -26,10 +25,10 @@ describe('Adversarial: Clock Skew Attack', () => {
     });
 
     await expect(authTime.sync()).rejects.toThrow(TalakWeb3Error);
-    await expect(authTime.sync()).rejects.toThrow('Clock drift exceeds threshold');
+    await expect(authTime.sync()).rejects.toThrow("Clock drift exceeds threshold");
   });
 
-  it('should use authoritative time instead of system time', async () => {
+  it("should use authoritative time instead of system time", async () => {
     const accurateSource = {
       getTime: async () => {
         const accurateTime = Date.now() + 100;
@@ -42,7 +41,7 @@ describe('Adversarial: Clock Skew Attack', () => {
       maxDriftMs: 5000,
     });
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const authoritativeNow = authTime.now();
     const systemNow = Date.now();
@@ -51,7 +50,7 @@ describe('Adversarial: Clock Skew Attack', () => {
     expect(Math.abs(offset - 100)).toBeLessThan(50);
   });
 
-  it('should auto-resync when interval elapses', async () => {
+  it("should auto-resync when interval elapses", async () => {
     let callCount = 0;
     const countingSource = {
       getTime: async () => {
@@ -65,21 +64,21 @@ describe('Adversarial: Clock Skew Attack', () => {
       syncIntervalMs: 100,
     });
 
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     const initialCalls = callCount;
 
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     authTime.now();
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(callCount).toBeGreaterThan(initialCalls);
   });
 
-  it('should handle time source failures gracefully', async () => {
+  it("should handle time source failures gracefully", async () => {
     const failingSource = {
       getTime: async () => {
-        throw new Error('Time source unavailable');
+        throw new Error("Time source unavailable");
       },
     };
 
@@ -88,18 +87,17 @@ describe('Adversarial: Clock Skew Attack', () => {
       maxDriftMs: 5000,
     });
 
-    await expect(authTime.sync()).rejects.toThrow('Time source unavailable');
+    await expect(authTime.sync()).rejects.toThrow("Time source unavailable");
 
     const time = authTime.now();
-    expect(typeof time).toBe('number');
+    expect(typeof time).toBe("number");
     expect(time).toBeGreaterThan(0);
   });
 
-  it('should compensate for network latency', async () => {
+  it("should compensate for network latency", async () => {
     const latencySource = {
       getTime: async () => {
-
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
         return Date.now();
       },
     };
@@ -116,9 +114,8 @@ describe('Adversarial: Clock Skew Attack', () => {
   });
 });
 
-describe('Adversarial: Time-Based Token Expiration Bypass', () => {
-  it('should prevent token validity extension via clock manipulation', async () => {
-
+describe("Adversarial: Time-Based Token Expiration Bypass", () => {
+  it("should prevent token validity extension via clock manipulation", async () => {
     const accurateSource = {
       getTime: async () => Date.now(),
     };

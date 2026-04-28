@@ -11,6 +11,6 @@ export interface StorageAdapter {
   get(uri: string): Promise<Uint8Array>;
 }
 
-export * from './ceramic';
-export * from './tableland';
-export * from './storage';
+export * from "./ceramic";
+export * from "./tableland";
+export * from "./storage";

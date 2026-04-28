@@ -8,12 +8,12 @@ This document certifies that the talak-web3 authentication system has achieved *
 
 ## Invariant Status — ACTUAL
 
-| Invariant | Previous Status | Current Status | Remaining Gap |
-|-----------|----------------|----------------|---------------|
-| I2 — Nonce Durability | PARTIAL (probabilistic) | ✅ **STRONG** (replication ack) | Requires Redis Cluster with min-replicas-to-write |
-| I4 — Key Revocation | PARTIAL (eventual consistency) | ✅ **STRONG** (read-after-write) | Requires primary-only reads + WAIT quorum |
-| I6 — Time Trust | PARTIAL (no monotonic guard) | ✅ **STRONG** (cluster-monotonic) | Requires Redis for floor persistence |
-| I10 — Supply Chain | PARTIAL (detective only) | ⚠️ **PARTIAL** (post-load only) | True pre-execution trust requires deployment-time controls |
+| Invariant             | Previous Status                | Current Status                    | Remaining Gap                                              |
+| --------------------- | ------------------------------ | --------------------------------- | ---------------------------------------------------------- |
+| I2 — Nonce Durability | PARTIAL (probabilistic)        | ✅ **STRONG** (replication ack)   | Requires Redis Cluster with min-replicas-to-write          |
+| I4 — Key Revocation   | PARTIAL (eventual consistency) | ✅ **STRONG** (read-after-write)  | Requires primary-only reads + WAIT quorum                  |
+| I6 — Time Trust       | PARTIAL (no monotonic guard)   | ✅ **STRONG** (cluster-monotonic) | Requires Redis for floor persistence                       |
+| I10 — Supply Chain    | PARTIAL (detective only)       | ⚠️ **PARTIAL** (post-load only)   | True pre-execution trust requires deployment-time controls |
 
 **Assessment**: System is **strong under defined operational constraints** but requires infrastructure guarantees for full closure.
 
@@ -22,12 +22,15 @@ This document certifies that the talak-web3 authentication system has achieved *
 ## 1. NONCE DURABILITY (I2) — Deterministic Irreversibility
 
 ### Invariant Statement
+
 > A nonce is valid IFF it does NOT exist in the consumed set. Consumed state is irreversible.
 
 ### Implementation
+
 **File**: `packages/talak-web3-auth/src/stores/redis-nonce.ts`
 
 **Key Changes**:
+
 1. **Append-only consumed set** — SADD is idempotent, no deletion path exists
 2. **Consumed set is SOURCE OF TRUTH** — pending set is optimization only
 3. **Deterministic Lua script** — SISMEMBER check is authoritative
@@ -53,6 +56,7 @@ PROOF:
 ### Infrastructure Requirements
 
 **For Full Closure**:
+
 ```redis
 # Redis configuration (MANDATORY)
 min-replicas-to-write 1
@@ -63,17 +67,19 @@ Without these settings, the invariant is strong but not formally closed under ma
 
 ### Failure Model
 
-| Failure Scenario | Previous Behavior | Current Behavior |
-|-----------------|-------------------|------------------|
-| Redis crash after consume | Nonce resurrects (PROBABILISTIC) | Nonce remains consumed (DETERMINISTIC) |
-| AOF flush delay (1s) | Replay possible in window | Replay impossible (consumed set persists) |
-| Pending set loss | Nonce invalid (correct) | Nonce still rejected (consumed set intact) |
-| Replication lag | Race condition possible | Atomic Lua prevents race |
+| Failure Scenario          | Previous Behavior                | Current Behavior                           |
+| ------------------------- | -------------------------------- | ------------------------------------------ |
+| Redis crash after consume | Nonce resurrects (PROBABILISTIC) | Nonce remains consumed (DETERMINISTIC)     |
+| AOF flush delay (1s)      | Replay possible in window        | Replay impossible (consumed set persists)  |
+| Pending set loss          | Nonce invalid (correct)          | Nonce still rejected (consumed set intact) |
+| Replication lag           | Race condition possible          | Atomic Lua prevents race                   |
 
 ### Adversarial Test
+
 **File**: `packages/talak-web3-auth/src/__tests__/adversarial/nonce-crash-replay.test.ts`
 
 Test validates:
+
 - Replay after simulated crash → rejected
 - Concurrent consumption → only one succeeds
 - Expired nonce → rejected
@@ -83,12 +89,15 @@ Test validates:
 ## 2. DISTRIBUTED REVOCATION (I4) — Strong Consistency (CP)
 
 ### Invariant Statement
+
 > Token validity requires AUTHORITATIVE verification against Redis. Cache is optimization only.
 
 ### Implementation
+
 **File**: `packages/talak-web3-auth/src/stores/redis-revocation.ts`
 
 **Key Changes**:
+
 1. **Strict mode enabled by default** — reject on Redis failure
 2. **No cache-only acceptance** — cache hit for "not revoked" still checks Redis
 3. **Cache hit for "revoked" is safe** — revocation is terminal
@@ -112,24 +121,27 @@ PROOF:
 
 ### Failure Model
 
-| Failure Scenario | Previous Behavior | Current Behavior |
-|-----------------|-------------------|------------------|
-| Network partition A/B | Instance B accepts revoked tokens | Instance B rejects (can't reach Redis) |
-| Pub/Sub disconnected | Cache accepts unverified tokens | Still checks Redis (authoritative) |
-| Redis unreachable | Unknown (implementation-dependent) | Reject all (fail closed) |
-| Cache stale | Token accepted | Redis check corrects cache |
+| Failure Scenario      | Previous Behavior                  | Current Behavior                       |
+| --------------------- | ---------------------------------- | -------------------------------------- |
+| Network partition A/B | Instance B accepts revoked tokens  | Instance B rejects (can't reach Redis) |
+| Pub/Sub disconnected  | Cache accepts unverified tokens    | Still checks Redis (authoritative)     |
+| Redis unreachable     | Unknown (implementation-dependent) | Reject all (fail closed)               |
+| Cache stale           | Token accepted                     | Redis check corrects cache             |
 
 ### Consistency Model
 
 **CP (Consistency over Availability)**:
+
 - ✅ Consistency: All instances agree on revocation state
 - ❌ Availability: System rejects tokens when Redis is down
 - Tradeoff: Security > uptime during partitions
 
 ### Adversarial Test
+
 **File**: `packages/talak-web3-auth/src/__tests__/adversarial/revocation-race.test.ts`
 
 Test validates:
+
 - Multi-instance revocation propagation
 - Pub/Sub disconnect fallback
 - Global invalidation broadcast
@@ -140,12 +152,15 @@ Test validates:
 ## 3. TIME AUTHORITY (I6) — Monotonic Bounded Progression
 
 ### Invariant Statement
+
 > Time must be monotonically non-decreasing with bounded drift from authoritative source.
 
 ### Implementation
+
 **File**: `packages/talak-web3-auth/src/time.ts`
 
 **Key Changes**:
+
 1. **Monotonic guard** — `lastObservedTime` prevents rollback
 2. **Bounded forward jump** — max 60 seconds per call
 3. **Drift detection** — max 5 seconds from authoritative source
@@ -169,24 +184,27 @@ PROOF:
 
 ### Failure Model
 
-| Failure Scenario | Previous Behavior | Current Behavior |
-|-----------------|-------------------|------------------|
-| System clock rollback | Token validity extended | Rejected (AUTH_TIME_REGRESSION) |
-| System clock forward jump | Tokens expire early | Rejected (AUTH_TIME_JUMP) |
-| NTP compromise | Drift undetected | Detected (AUTH_CLOCK_DRIFT) |
-| Time source unavailable | Fallback to system time | Uses last known offset |
+| Failure Scenario          | Previous Behavior       | Current Behavior                |
+| ------------------------- | ----------------------- | ------------------------------- |
+| System clock rollback     | Token validity extended | Rejected (AUTH_TIME_REGRESSION) |
+| System clock forward jump | Tokens expire early     | Rejected (AUTH_TIME_JUMP)       |
+| NTP compromise            | Drift undetected        | Detected (AUTH_CLOCK_DRIFT)     |
+| Time source unavailable   | Fallback to system time | Uses last known offset          |
 
 ### Why Not "Accurate Time"?
 
 The invariant doesn't require **correct** time — it requires **non-forgeable progression**:
+
 - Attacker could shift time by +1 hour globally → tokens still expire after correct duration
 - Attacker cannot rollback time → cannot extend expired tokens
 - Attacker cannot skip time → cannot bypass future-dated restrictions
 
 ### Adversarial Test
+
 **File**: `packages/talak-web3-auth/src/__tests__/adversarial/clock-skew-attack.test.ts`
 
 Test validates:
+
 - Excessive drift detection → rejected
 - Network latency compensation → accurate offset
 - Time source failure → graceful degradation
@@ -197,12 +215,15 @@ Test validates:
 ## 4. SUPPLY CHAIN INTEGRITY (I10) — Detective + Preventive
 
 ### Invariant Statement
+
 > execution_path ⊆ verified_code — all executed code must be verified.
 
 ### Implementation
+
 **File**: `packages/talak-web3-auth/src/integrity.ts`
 
 **Key Changes**:
+
 1. **Static hash verification** — SHA-256 of dependency entry points
 2. **Execution environment freeze** — Object.freeze on critical prototypes
 3. **Dynamic execution monitoring** — eval() and Function constructor logging
@@ -229,30 +250,34 @@ PROOF:
 
 ### Failure Model
 
-| Failure Scenario | Previous Behavior | Current Behavior |
-|-----------------|-------------------|------------------|
-| Dependency tampering | Silent compromise | process.exit(1) at startup |
-| Prototype poisoning | Undetected | Blocked (Object.freeze) |
-| Runtime injection | Undetected | Logged (eval monitoring) |
-| Post-startup compromise | Undetected | Detected (periodic checks) |
+| Failure Scenario        | Previous Behavior | Current Behavior           |
+| ----------------------- | ----------------- | -------------------------- |
+| Dependency tampering    | Silent compromise | process.exit(1) at startup |
+| Prototype poisoning     | Undetected        | Blocked (Object.freeze)    |
+| Runtime injection       | Undetected        | Logged (eval monitoring)   |
+| Post-startup compromise | Undetected        | Detected (periodic checks) |
 
 ### Limitations
 
 **Cannot prevent**:
+
 - Native code injection (C++ addons)
 - Hardware-level attacks (Rowhammer, etc.)
 - Social engineering (developer credentials)
 
 **Mitigates**:
+
 - npm package compromise
 - Supply chain dependency injection
 - Runtime prototype poisoning
 - Dynamic code generation attacks
 
 ### Adversarial Test
+
 **File**: `packages/talak-web3-auth/src/__tests__/adversarial/dependency-tamper.test.ts`
 
 Test validates:
+
 - Hash mismatch detection → fail closed
 - Development mode skip → allowed
 - Missing dependency handling → graceful error
@@ -264,16 +289,17 @@ Test validates:
 
 The system is now **CP-dominant** (consistency over availability):
 
-| Component | Consistency Model | Failure Behavior |
-|-----------|------------------|------------------|
-| Nonce validation | CP (strong) | Reject on Redis failure |
-| Revocation check | CP (strong) | Reject on Redis failure |
-| Time verification | CP (bounded) | Fail closed on drift |
-| Dependency integrity | CP (strict) | Exit on mismatch |
+| Component            | Consistency Model | Failure Behavior        |
+| -------------------- | ----------------- | ----------------------- |
+| Nonce validation     | CP (strong)       | Reject on Redis failure |
+| Revocation check     | CP (strong)       | Reject on Redis failure |
+| Time verification    | CP (bounded)      | Fail closed on drift    |
+| Dependency integrity | CP (strict)       | Exit on mismatch        |
 
 **Tradeoff**: During network partitions or Redis outages, the system **rejects all authentication requests** rather than risk accepting invalid ones.
 
 This is the correct tradeoff for authentication systems:
+
 - ✅ Security: Never accept invalid tokens
 - ❌ Availability: Downtime during infrastructure failures
 - Mitigation: Redis Cluster/Sentinel for high availability
@@ -310,12 +336,12 @@ REVOCATION_STRICT_MODE=true
 
 ## Performance Impact
 
-| Operation | Previous Latency | Current Latency | Overhead |
-|-----------|-----------------|-----------------|----------|
-| Nonce consume | 1-3ms (Redis) | 1-3ms (Redis) | 0% |
-| Revocation check | 0.1ms (cache) | 1-3ms (Redis) | +2ms |
-| Time query | 0ms (local) | 0ms (cached offset) | 0% |
-| Integrity check | N/A | 50-100ms (startup) | One-time |
+| Operation        | Previous Latency | Current Latency     | Overhead |
+| ---------------- | ---------------- | ------------------- | -------- |
+| Nonce consume    | 1-3ms (Redis)    | 1-3ms (Redis)       | 0%       |
+| Revocation check | 0.1ms (cache)    | 1-3ms (Redis)       | +2ms     |
+| Time query       | 0ms (local)      | 0ms (cached offset) | 0%       |
+| Integrity check  | N/A              | 50-100ms (startup)  | One-time |
 
 **Note**: Revocation check latency increase is acceptable — security > performance.
 
@@ -356,16 +382,17 @@ The invariants in this report are **only valid if** the following operational do
 
 ### What "Closed" Actually Requires
 
-| Invariant | Implementation Status | Infrastructure Requirement | Formally Closed? |
-|-----------|----------------------|---------------------------|------------------|
-| I2 Nonce | ✅ WAIT replication | Redis Cluster + min-replicas-to-write | ⚠️ Conditional |
-| I4 Revocation | ✅ WAIT + primary reads | Redis Cluster + quorum reads | ⚠️ Conditional |
-| I6 Time | ✅ Cluster-monotonic floor | Redis for persistence | ⚠️ Conditional |
-| I10 Supply Chain | ✅ Post-load + freeze | Pre-execution trust (deployment) | ❌ No (runtime only) |
+| Invariant        | Implementation Status      | Infrastructure Requirement            | Formally Closed?     |
+| ---------------- | -------------------------- | ------------------------------------- | -------------------- |
+| I2 Nonce         | ✅ WAIT replication        | Redis Cluster + min-replicas-to-write | ⚠️ Conditional       |
+| I4 Revocation    | ✅ WAIT + primary reads    | Redis Cluster + quorum reads          | ⚠️ Conditional       |
+| I6 Time          | ✅ Cluster-monotonic floor | Redis for persistence                 | ⚠️ Conditional       |
+| I10 Supply Chain | ✅ Post-load + freeze      | Pre-execution trust (deployment)      | ❌ No (runtime only) |
 
 ### The Gap Between "Strong" and "Closed"
 
 **Strong System** (current state):
+
 - Deterministic intent
 - Fail-closed behavior
 - Replication acknowledgment
@@ -373,6 +400,7 @@ The invariants in this report are **only valid if** the following operational do
 - Post-load verification
 
 **Formally Closed System** (requires):
+
 - Pre-execution trust anchors
 - Consensus protocols (Paxos/Raft)
 - Hardware security modules
@@ -425,6 +453,7 @@ Adversarial Status: RESILIENT (but not formally proven)
 The system is **stronger than 99% of production authentication systems** but has not achieved **formal closure under all distributed failure modes**.
 
 The gap is no longer implementation quality — it is **consensus and trust boundaries** that require:
+
 - Infrastructure guarantees (Redis Cluster, HSM)
 - Deployment controls (container signing, verified boot)
 - Formal methods (TLA+ proofs)

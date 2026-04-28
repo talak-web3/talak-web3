@@ -1,15 +1,18 @@
-import { describe, it, expect, vi } from 'vitest';
-import { verifyDependencyIntegrity, generateDependencyHashes, PeriodicIntegrityChecker } from '../../integrity.js';
-import { TalakWeb3Error } from '@talak-web3/errors';
+import { describe, it, expect, vi } from "vitest";
+import {
+  verifyDependencyIntegrity,
+  generateDependencyHashes,
+  PeriodicIntegrityChecker,
+} from "../../integrity.js";
+import { TalakWeb3Error } from "@talak-web3/errors";
 
-describe('Adversarial: Dependency Tampering', () => {
-  it('should detect hash mismatch and fail closed', () => {
-
+describe("Adversarial: Dependency Tampering", () => {
+  it("should detect hash mismatch and fail closed", () => {
     const tamperedDeps = [
       {
-        packageName: 'jose',
-        expectedHash: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
-        entryPoint: 'main' as const,
+        packageName: "jose",
+        expectedHash: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        entryPoint: "main" as const,
       },
     ];
 
@@ -25,15 +28,15 @@ describe('Adversarial: Dependency Tampering', () => {
         dependencies: tamperedDeps,
         failClosed: false,
       });
-    }).toThrow('Dependency integrity check failed');
+    }).toThrow("Dependency integrity check failed");
   });
 
-  it('should skip verification in development mode (sha256:skip)', () => {
+  it("should skip verification in development mode (sha256:skip)", () => {
     const devDeps = [
       {
-        packageName: 'jose',
-        expectedHash: 'sha256:skip',
-        entryPoint: 'main' as const,
+        packageName: "jose",
+        expectedHash: "sha256:skip",
+        entryPoint: "main" as const,
       },
     ];
 
@@ -45,19 +48,19 @@ describe('Adversarial: Dependency Tampering', () => {
     }).not.toThrow();
   });
 
-  it('should generate correct hashes for dependencies', () => {
-    const hashes = generateDependencyHashes(['jose']);
+  it("should generate correct hashes for dependencies", () => {
+    const hashes = generateDependencyHashes(["jose"]);
 
-    expect(hashes).toHaveProperty('jose');
-    expect(hashes['jose']).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(hashes).toHaveProperty("jose");
+    expect(hashes["jose"]).toMatch(/^sha256:[a-f0-9]{64}$/);
   });
 
-  it('should handle missing dependencies gracefully', () => {
+  it("should handle missing dependencies gracefully", () => {
     const missingDeps = [
       {
-        packageName: 'nonexistent-package-12345',
-        expectedHash: 'sha256:abc123',
-        entryPoint: 'main' as const,
+        packageName: "nonexistent-package-12345",
+        expectedHash: "sha256:abc123",
+        entryPoint: "main" as const,
       },
     ];
 
@@ -66,20 +69,20 @@ describe('Adversarial: Dependency Tampering', () => {
         dependencies: missingDeps,
         failClosed: false,
       });
-    }).toThrow('Failed to resolve nonexistent-package-12345');
+    }).toThrow("Failed to resolve nonexistent-package-12345");
   });
 
-  it('should verify multiple dependencies and report all failures', () => {
+  it("should verify multiple dependencies and report all failures", () => {
     const multipleTampered = [
       {
-        packageName: 'jose',
-        expectedHash: 'sha256:wrong1',
-        entryPoint: 'main' as const,
+        packageName: "jose",
+        expectedHash: "sha256:wrong1",
+        entryPoint: "main" as const,
       },
       {
-        packageName: 'viem',
-        expectedHash: 'sha256:wrong2',
-        entryPoint: 'main' as const,
+        packageName: "viem",
+        expectedHash: "sha256:wrong2",
+        entryPoint: "main" as const,
       },
     ];
 
@@ -92,15 +95,15 @@ describe('Adversarial: Dependency Tampering', () => {
   });
 });
 
-describe('Adversarial: Periodic Integrity Checking', () => {
-  it('should start and stop periodic checker', () => {
+describe("Adversarial: Periodic Integrity Checking", () => {
+  it("should start and stop periodic checker", () => {
     const checker = new PeriodicIntegrityChecker({
       intervalMs: 1000,
       dependencies: [
         {
-          packageName: 'jose',
-          expectedHash: 'sha256:skip',
-          entryPoint: 'main',
+          packageName: "jose",
+          expectedHash: "sha256:skip",
+          entryPoint: "main",
         },
       ],
     });
@@ -110,7 +113,7 @@ describe('Adversarial: Periodic Integrity Checking', () => {
     expect(() => checker.stop()).not.toThrow();
   });
 
-  it('should not start multiple timers', () => {
+  it("should not start multiple timers", () => {
     const checker = new PeriodicIntegrityChecker({
       intervalMs: 1000,
     });
@@ -121,24 +124,22 @@ describe('Adversarial: Periodic Integrity Checking', () => {
   });
 });
 
-describe('Adversarial: Supply Chain Attack Scenarios', () => {
-  it('should detect entry point modification', () => {
+describe("Adversarial: Supply Chain Attack Scenarios", () => {
+  it("should detect entry point modification", () => {
+    const realHashes = generateDependencyHashes(["jose"]);
+    const realHash = realHashes["jose"];
 
-    const realHashes = generateDependencyHashes(['jose']);
-    const realHash = realHashes['jose'];
-
-    const tamperedHash = realHash.replace(/[a-f0-9]/g, '0').substring(0, 71);
+    const tamperedHash = realHash.replace(/[a-f0-9]/g, "0").substring(0, 71);
 
     expect(realHash).not.toBe(tamperedHash);
   });
 
-  it('should prevent running with compromised crypto library', () => {
-
+  it("should prevent running with compromised crypto library", () => {
     const cryptoDepCheck = [
       {
-        packageName: 'jose',
-        expectedHash: 'sha256:incorrecthash',
-        entryPoint: 'main' as const,
+        packageName: "jose",
+        expectedHash: "sha256:incorrecthash",
+        entryPoint: "main" as const,
       },
     ];
 

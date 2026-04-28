@@ -1,23 +1,20 @@
-export type SDKType = 'ethers' | 'viem' | 'web3js' | 'rainbowkit' | 'thirdweb';
+export type SDKType = "ethers" | "viem" | "web3js" | "rainbowkit" | "thirdweb";
 
 export class MigrationTool {
   static suggestConfig(sdk: SDKType, existingConfig: any) {
     switch (sdk) {
-      case 'ethers':
+      case "ethers":
         return {
           chains: existingConfig.networks || [],
           rpc: { retries: 5 },
-
         };
-      case 'viem':
+      case "viem":
         return {
           chains: existingConfig.chains || [],
-
         };
-      case 'thirdweb':
+      case "thirdweb":
         return {
-          plugins: ['storage', 'aa', 'nft'],
-
+          plugins: ["storage", "aa", "nft"],
         };
       default:
         return {};
@@ -27,23 +24,23 @@ export class MigrationTool {
   static getMapping(sdk: SDKType) {
     const mappings: Record<SDKType, Record<string, string>> = {
       ethers: {
-        'ethers.providers.JsonRpcProvider': 'new TalakWeb3Rpc(ctx)',
-        'signer.sendTransaction': 'ctx.rpc.request("eth_sendTransaction", [...])',
+        "ethers.providers.JsonRpcProvider": "new TalakWeb3Rpc(ctx)",
+        "signer.sendTransaction": 'ctx.rpc.request("eth_sendTransaction", [...])',
       },
       viem: {
-        'createPublicClient': 'talakWeb3(config)',
-        'client.readContract': 'ctx.rpc.request("eth_call", [...])',
+        createPublicClient: "talakWeb3(config)",
+        "client.readContract": 'ctx.rpc.request("eth_call", [...])',
       },
       web3js: {
-        'new Web3(provider)': 'talakWeb3({ rpc: { url: provider } })',
+        "new Web3(provider)": "talakWeb3({ rpc: { url: provider } })",
       },
       rainbowkit: {
-        'RainbowKitProvider': 'TalakWeb3Provider',
+        RainbowKitProvider: "TalakWeb3Provider",
       },
       thirdweb: {
-        'ThirdwebProvider': 'TalakWeb3Provider',
-        'useAddress': 'useAccount().address',
-      }
+        ThirdwebProvider: "TalakWeb3Provider",
+        useAddress: "useAccount().address",
+      },
     };
     return mappings[sdk] || {};
   }

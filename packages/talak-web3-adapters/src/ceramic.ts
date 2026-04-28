@@ -1,6 +1,6 @@
-import type { TalakWeb3Context } from '@talak-web3/types';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import type { CeramicAdapter } from './index.js';
+import type { TalakWeb3Context } from "@talak-web3/types";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import type { CeramicAdapter } from "./index.js";
 
 interface CeramicClient {
   did: unknown;
@@ -18,23 +18,23 @@ export class CeramicPlugin implements CeramicAdapter {
 
     const ceramicConfig = this.ctx.config.ceramic;
     if (!ceramicConfig) {
-      throw new TalakWeb3Error('Ceramic configuration missing', {
-        code: 'CERAMIC_CONFIG_MISSING',
+      throw new TalakWeb3Error("Ceramic configuration missing", {
+        code: "CERAMIC_CONFIG_MISSING",
         status: 500,
       });
     }
 
-    throw new Error('Ceramic adapter requires optional dependencies: @ceramicnetwork/http-client, dids, key-did-provider-ed25519, key-did-resolver');
-
+    throw new Error(
+      "Ceramic adapter requires optional dependencies: @ceramicnetwork/http-client, dids, key-did-provider-ed25519, key-did-resolver",
+    );
   }
 
   async createProfile(input: { did: string }): Promise<{ id: string }> {
     const ceramic = await this.ensureInit();
 
-    this.ctx.hooks.emit('identity:profile-create', input);
+    this.ctx.hooks.emit("identity:profile-create", input);
 
-    throw new Error('Ceramic adapter requires optional dependency: @ceramicnetwork/stream-tile');
-
+    throw new Error("Ceramic adapter requires optional dependency: @ceramicnetwork/stream-tile");
   }
 
   static setup(ctx: TalakWeb3Context): CeramicPlugin {

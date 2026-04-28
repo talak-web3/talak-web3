@@ -7,23 +7,17 @@ export * from "./schema";
 export * from "./presets";
 
 export function validateConfig(input: unknown): TalakWeb3Config {
-
   const result = TalakWeb3ConfigSchema.safeParse(input || {});
 
   if (!result.success) {
-
     throw new TalakWeb3Error("Invalid config", {
-
       code: "CONFIG_INVALID",
 
       status: 400,
 
-      cause: result.error
-
+      cause: result.error,
     });
-
   }
 
   return result.data;
-
 }

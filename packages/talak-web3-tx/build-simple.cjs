@@ -1,24 +1,24 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-fs.rmSync('dist', { recursive: true, force: true });
-fs.mkdirSync('dist', { recursive: true });
+fs.rmSync("dist", { recursive: true, force: true });
+fs.mkdirSync("dist", { recursive: true });
 
-const srcDir = 'src';
+const srcDir = "src";
 if (fs.existsSync(srcDir)) {
   const files = fs.readdirSync(srcDir);
-  files.forEach(file => {
-    if (file.endsWith('.ts')) {
+  files.forEach((file) => {
+    if (file.endsWith(".ts")) {
       const srcFile = path.join(srcDir, file);
-      const destFile = path.join('dist', file.replace('.ts', '.js'));
+      const destFile = path.join("dist", file.replace(".ts", ".js"));
 
-      const content = fs.readFileSync(srcFile, 'utf8');
+      const content = fs.readFileSync(srcFile, "utf8");
 
       const jsContent = content
-        .replace(/export\s+type\s+/g, '// export type ')
-        .replace(/:\s*[^=,\)\{]+(?=\s*[=,\)\{])/g, '')
-        .replace(/interface\s+\w+\s*\{[^}]*\}/gs, '')
-        .replace(/import\s+type\s+/g, '// import type ');
+        .replace(/export\s+type\s+/g, "// export type ")
+        .replace(/:\s*[^=,\)\{]+(?=\s*[=,\)\{])/g, "")
+        .replace(/interface\s+\w+\s*\{[^}]*\}/gs, "")
+        .replace(/import\s+type\s+/g, "// import type ");
 
       fs.writeFileSync(destFile, jsContent);
       console.log(`Built: ${destFile}`);
@@ -26,4 +26,4 @@ if (fs.existsSync(srcDir)) {
   });
 }
 
-console.log('Build completed successfully!');
+console.log("Build completed successfully!");

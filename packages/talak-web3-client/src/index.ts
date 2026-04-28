@@ -10,35 +10,49 @@ export class InMemoryTokenStorage implements TokenStorage {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
 
-  getAccessToken(): string | null { return this.accessToken; }
-  setAccessToken(token: string): void { this.accessToken = token; }
-  getRefreshToken(): string | null { return this.refreshToken; }
-  setRefreshToken(token: string): void { this.refreshToken = token; }
-  clear(): void { this.accessToken = null; this.refreshToken = null; }
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+  setAccessToken(token: string): void {
+    this.accessToken = token;
+  }
+  getRefreshToken(): string | null {
+    return this.refreshToken;
+  }
+  setRefreshToken(token: string): void {
+    this.refreshToken = token;
+  }
+  clear(): void {
+    this.accessToken = null;
+    this.refreshToken = null;
+  }
 }
 
 export class CookieTokenStorage implements TokenStorage {
   private accessToken: string | null = null;
 
-  getAccessToken(): string | null { return this.accessToken; }
-  setAccessToken(token: string): void { this.accessToken = token; }
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+  setAccessToken(token: string): void {
+    this.accessToken = token;
+  }
 
   getRefreshToken(): string | null {
-
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(new RegExp('(^| )talak_web3_refresh=([^;]+)'));
-    return match ? match[2] ?? null : null;
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(new RegExp("(^| )talak_web3_refresh=([^;]+)"));
+    return match ? (match[2] ?? null) : null;
   }
 
   setRefreshToken(token: string): void {
-    if (typeof document === 'undefined') return;
+    if (typeof document === "undefined") return;
     document.cookie = `talak_web3_refresh=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure`;
   }
 
   clear(): void {
     this.accessToken = null;
-    if (typeof document !== 'undefined') {
-      document.cookie = 'talak_web3_refresh=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    if (typeof document !== "undefined") {
+      document.cookie = "talak_web3_refresh=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
   }
 }
@@ -76,7 +90,7 @@ export class TalakWeb3Client {
   private refreshPromise: Promise<RefreshResponse> | null = null;
 
   constructor(opts: TalakWeb3ClientOptions) {
-    this.baseUrl = opts.baseUrl.replace(/\/+$/, '');
+    this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
     this.fetchImpl = opts.fetch ?? globalThis.fetch.bind(globalThis);
     this.storage = opts.storage ?? new InMemoryTokenStorage();
   }
@@ -88,17 +102,17 @@ export class TalakWeb3Client {
   ): Promise<T> {
     const accessToken = this.storage.getAccessToken();
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(options.headers as Record<string, string> | undefined),
     };
 
-    if (['POST', 'PUT', 'DELETE'].includes(options.method ?? 'GET')) {
+    if (["POST", "PUT", "DELETE"].includes(options.method ?? "GET")) {
       const csrfToken = this.getCsrfToken();
-      if (csrfToken) headers['x-csrf-token'] = csrfToken;
+      if (csrfToken) headers["x-csrf-token"] = csrfToken;
     }
 
     if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+      headers["Authorization"] = `Bearer ${accessToken}`;
     }
 
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, { ...options, headers });
@@ -107,12 +121,10 @@ export class TalakWeb3Client {
       const refreshToken = this.storage.getRefreshToken();
       if (refreshToken) {
         try {
-
           await this.getOrStartRefresh(refreshToken);
 
           return this.request<T>(path, options, false);
         } catch (err) {
-
           this.storage.clear();
           throw err;
         }
@@ -120,7 +132,7 @@ export class TalakWeb3Client {
     }
 
     if (!res.ok) {
-      const text = await res.text().catch(() => '');
+      const text = await res.text().catch(() => "");
       throw new Error(`HTTP ${res.status}: ${text}`);
     }
     return res.json() as Promise<T>;
@@ -136,29 +148,29 @@ export class TalakWeb3Client {
   }
 
   private getCsrfToken(): string | null {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(new RegExp('(^| )csrf_token=([^;]+)'));
-    return match ? match[2] ?? null : null;
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(new RegExp("(^| )csrf_token=([^;]+)"));
+    return match ? (match[2] ?? null) : null;
   }
 
   async getNonce(address: string): Promise<NonceResponse> {
-    return this.request<NonceResponse>('/auth/nonce', {
-      method: 'POST',
+    return this.request<NonceResponse>("/auth/nonce", {
+      method: "POST",
       body: JSON.stringify({ address }),
     });
   }
 
   async loginWithSiwe(message: string, signature: string): Promise<LoginResponse> {
     const res = await this.fetchImpl(`${this.baseUrl}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, signature }),
     });
     if (!res.ok) {
-      const text = await res.text().catch(() => '');
+      const text = await res.text().catch(() => "");
       throw new Error(`Login failed: HTTP ${res.status}: ${text}`);
     }
-    const data = await res.json() as LoginResponse;
+    const data = (await res.json()) as LoginResponse;
     this.storage.setAccessToken(data.accessToken);
     this.storage.setRefreshToken(data.refreshToken);
     return data;
@@ -166,15 +178,15 @@ export class TalakWeb3Client {
 
   async refresh(refreshToken: string): Promise<RefreshResponse> {
     const res = await this.fetchImpl(`${this.baseUrl}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
     });
     if (!res.ok) {
-      const text = await res.text().catch(() => '');
+      const text = await res.text().catch(() => "");
       throw new Error(`Refresh failed: HTTP ${res.status}: ${text}`);
     }
-    const data = await res.json() as RefreshResponse;
+    const data = (await res.json()) as RefreshResponse;
     this.storage.setAccessToken(data.accessToken);
     this.storage.setRefreshToken(data.refreshToken);
     return data;
@@ -188,26 +200,34 @@ export class TalakWeb3Client {
     }
 
     try {
-      await this.request<{ ok: boolean }>('/auth/logout', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-      }, false);
+      await this.request<{ ok: boolean }>(
+        "/auth/logout",
+        {
+          method: "POST",
+          body: JSON.stringify({ refreshToken }),
+        },
+        false,
+      );
     } finally {
       this.storage.clear();
     }
   }
 
   async verifySession(): Promise<VerifyResponse> {
-    return this.request<VerifyResponse>('/auth/verify');
+    return this.request<VerifyResponse>("/auth/verify");
   }
 
-  async getChain(id: number): Promise<unknown> { return this.request(`/chains/${id}`); }
-  async listChains(): Promise<unknown> { return this.request('/chains'); }
+  async getChain(id: number): Promise<unknown> {
+    return this.request(`/chains/${id}`);
+  }
+  async listChains(): Promise<unknown> {
+    return this.request("/chains");
+  }
 
   async rpcCall(chainId: number, method: string, params: unknown[]): Promise<unknown> {
     return this.request(`/rpc/${chainId}`, {
-      method: 'POST',
-      body: JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' }),
+      method: "POST",
+      body: JSON.stringify({ method, params, id: 1, jsonrpc: "2.0" }),
     });
   }
 }

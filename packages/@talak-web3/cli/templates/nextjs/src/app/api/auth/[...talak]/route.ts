@@ -1,5 +1,5 @@
-import { createAuthHandler } from '@talak-web3/handlers/nextjs';
-import { app } from '../../../../talak.config';
+import { createAuthHandler } from "@talak-web3/handlers/nextjs";
+import { app } from "../../../../talak.config";
 
 const handler = createAuthHandler(app);
 

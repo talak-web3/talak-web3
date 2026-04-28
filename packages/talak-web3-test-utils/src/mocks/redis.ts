@@ -1,4 +1,4 @@
-import type { MockRedisOperations } from '../types.js';
+import type { MockRedisOperations } from "../types.js";
 
 export class MockRedis implements MockRedisOperations {
   private store = new Map<string, { value: string; expiresAt?: number }>();
@@ -27,9 +27,8 @@ export class MockRedis implements MockRedisOperations {
   }
 
   async eval(script: string, keys: string[], args: string[]): Promise<unknown> {
-
-    if (script.includes('nonce') && script.includes('del')) {
-      return this.executeNonceConsumption(keys[0] ?? '', args[0] ?? '');
+    if (script.includes("nonce") && script.includes("del")) {
+      return this.executeNonceConsumption(keys[0] ?? "", args[0] ?? "");
     }
 
     return 0;
@@ -59,8 +58,8 @@ export class MockRedis implements MockRedisOperations {
   }
 
   async keys(pattern: string): Promise<string[]> {
-    const regex = new RegExp(pattern.replace('*', '.*'));
-    return Array.from(this.store.keys()).filter(key => regex.test(key));
+    const regex = new RegExp(pattern.replace("*", ".*"));
+    return Array.from(this.store.keys()).filter((key) => regex.test(key));
   }
 
   async exists(key: string): Promise<number> {
@@ -99,7 +98,7 @@ export class MockRedis implements MockRedisOperations {
 
   private ensureConnected(): void {
     if (!this.isConnected) {
-      throw new Error('Redis connection lost');
+      throw new Error("Redis connection lost");
     }
   }
 }

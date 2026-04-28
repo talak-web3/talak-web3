@@ -20,6 +20,7 @@ Redis is the only stateful dependency for the core authentication layer.
 ## <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> RPC Provider Scaling
 
 The `talak-web3-rpc` package handles provider management. To scale your blockchain interactions:
+
 - **Provider Rotation**: Configure multiple RPC URLs per chain. The framework will automatically failover and load-balance across them.
 - **Rate Limits**: monitor your upstream provider usage. If you hit provider-side limits, add more unique providers to your configuration.
 

@@ -1,10 +1,9 @@
-import type { MiddlewareHandler } from 'hono';
-import type { RedisClientType } from 'redis';
-import { TalakWeb3Error } from '@talak-web3/errors';
-import { randomBytes, createHash } from 'node:crypto';
+import type { MiddlewareHandler } from "hono";
+import type { RedisClientType } from "redis";
+import { TalakWeb3Error } from "@talak-web3/errors";
+import { randomBytes, createHash } from "node:crypto";
 
 export interface AdaptiveRateLimitConfig {
-
   baseLimits: {
     global: { capacity: number; refillPerSecond: number };
     auth: { capacity: number; refillPerSecond: number };
@@ -60,11 +59,11 @@ export const DEFAULT_ADAPTIVE_CONFIG: AdaptiveRateLimitConfig = {
 export class AdaptiveRateLimiter {
   constructor(
     private redis: RedisClientType,
-    private config: AdaptiveRateLimitConfig = DEFAULT_ADAPTIVE_CONFIG
+    private config: AdaptiveRateLimitConfig = DEFAULT_ADAPTIVE_CONFIG,
   ) {}
 
   async checkRateLimit(params: {
-    type: keyof AdaptiveRateLimitConfig['baseLimits'];
+    type: keyof AdaptiveRateLimitConfig["baseLimits"];
     ip: string;
     wallet?: string;
     cost?: number;
@@ -83,17 +82,17 @@ export class AdaptiveRateLimiter {
     const globalResult = await this.checkTokenBucket(
       `rl:global:ip:${ip}`,
       this.config.baseLimits.global,
-      cost
+      cost,
     );
     if (!globalResult.allowed) {
-      penalties.push('global_ip_limit');
+      penalties.push("global_ip_limit");
       totalRiskScore += 0.3;
     }
 
     const typeResult = await this.checkTokenBucket(
       `rl:${type}:ip:${ip}`,
       this.config.baseLimits[type],
-      cost
+      cost,
     );
     if (!typeResult.allowed) {
       penalties.push(`${type}_ip_limit`);
@@ -105,7 +104,7 @@ export class AdaptiveRateLimiter {
       walletResult = await this.checkTokenBucket(
         `rl:${type}:wallet:${wallet}`,
         this.config.baseLimits[type],
-        cost
+        cost,
       );
       if (!walletResult.allowed) {
         penalties.push(`${type}_wallet_limit`);
@@ -115,7 +114,7 @@ export class AdaptiveRateLimiter {
       if (this.config.correlation.enableIpWalletCorrelation) {
         const correlationResult = await this.checkIpWalletCorrelation(ip, wallet);
         if (!correlationResult.allowed) {
-          penalties.push('ip_wallet_correlation');
+          penalties.push("ip_wallet_correlation");
           totalRiskScore += 0.6;
         }
       }
@@ -124,23 +123,27 @@ export class AdaptiveRateLimiter {
     if (this.config.burstProtection.enabled) {
       const burstResult = await this.checkBurstProtection(ip, cost);
       if (!burstResult.allowed) {
-        penalties.push('burst_protection');
+        penalties.push("burst_protection");
         totalRiskScore += 0.7;
       }
     }
 
     const suspiciousResult = await this.checkSuspiciousPatterns(ip, wallet, userAgent);
     if (suspiciousResult.isSuspicious) {
-      penalties.push('suspicious_pattern');
+      penalties.push("suspicious_pattern");
       totalRiskScore += suspiciousResult.riskScore;
     }
 
     if (totalRiskScore > 0.8) {
-      await this.applyAdaptivePenalty(ip, wallet, 'high_risk', totalRiskScore);
+      await this.applyAdaptivePenalty(ip, wallet, "high_risk", totalRiskScore);
     }
 
     const allowed = globalResult.allowed && typeResult.allowed && walletResult.allowed;
-    const remaining = Math.min(globalResult.remaining, typeResult.remaining, walletResult.remaining);
+    const remaining = Math.min(
+      globalResult.remaining,
+      typeResult.remaining,
+      walletResult.remaining,
+    );
 
     return {
       allowed,
@@ -153,13 +156,23 @@ export class AdaptiveRateLimiter {
   async applyAuthFailurePenalty(ip: string, wallet?: string): Promise<void> {
     await Promise.all([
       this.applyPenalty(`rl:auth:ip:${ip}`, this.config.penalties.authFailure.ipPenalty),
-      wallet ? this.applyPenalty(`rl:auth:wallet:${wallet}`, this.config.penalties.authFailure.walletPenalty) : Promise.resolve(),
+      wallet
+        ? this.applyPenalty(
+            `rl:auth:wallet:${wallet}`,
+            this.config.penalties.authFailure.walletPenalty,
+          )
+        : Promise.resolve(),
     ]);
 
-    await this.trackFailurePattern(ip, wallet, 'auth_failure');
+    await this.trackFailurePattern(ip, wallet, "auth_failure");
   }
 
-  async applyRateLimitPenalty(ip: string, wallet?: string, limitType: string = 'global', cost: number = 1): Promise<void> {
+  async applyRateLimitPenalty(
+    ip: string,
+    wallet?: string,
+    limitType: string = "global",
+    cost: number = 1,
+  ): Promise<void> {
     const penalty = Math.floor(cost * this.config.penalties.rateLimitHit.multiplier);
     await this.applyPenalty(`rl:${limitType}:ip:${ip}`, penalty);
 
@@ -168,7 +181,10 @@ export class AdaptiveRateLimiter {
     }
   }
 
-  private async checkIpWalletCorrelation(ip: string, wallet: string): Promise<{ allowed: boolean }> {
+  private async checkIpWalletCorrelation(
+    ip: string,
+    wallet: string,
+  ): Promise<{ allowed: boolean }> {
     const window = this.config.correlation.correlationWindowMs;
     const now = Date.now();
 
@@ -178,11 +194,11 @@ export class AdaptiveRateLimiter {
     const decayWindow = now - window;
     try {
       await Promise.all([
-        this.redis.zRemRangeByScore(ipWalletsKey, '-inf', decayWindow),
-        this.redis.zRemRangeByScore(walletIpsKey, '-inf', decayWindow),
+        this.redis.zRemRangeByScore(ipWalletsKey, "-inf", decayWindow),
+        this.redis.zRemRangeByScore(walletIpsKey, "-inf", decayWindow),
       ]);
     } catch (err) {
-      console.error('[RATE_LIMIT] Failed to decay correlations:', err);
+      console.error("[RATE_LIMIT] Failed to decay correlations:", err);
     }
 
     const [ipWallets, walletIps] = await Promise.all([
@@ -218,12 +234,16 @@ export class AdaptiveRateLimiter {
       return { allowed: false };
     }
 
-    await this.recordItem(burstKey, `req_${now}_${randomBytes(4).toString('hex')}`, now);
+    await this.recordItem(burstKey, `req_${now}_${randomBytes(4).toString("hex")}`, now);
 
     return { allowed: true };
   }
 
-  private async checkSuspiciousPatterns(ip: string, wallet?: string, userAgent?: string): Promise<{
+  private async checkSuspiciousPatterns(
+    ip: string,
+    wallet?: string,
+    userAgent?: string,
+  ): Promise<{
     isSuspicious: boolean;
     riskScore: number;
     patterns: string[];
@@ -235,7 +255,7 @@ export class AdaptiveRateLimiter {
     const rapidKey = `patterns:rapid:${ip}`;
     const recentRequests = await this.getRecentItems(rapidKey, now, 10000);
     if (recentRequests.size > 20) {
-      patterns.push('rapid_requests');
+      patterns.push("rapid_requests");
       riskScore += 0.3;
     }
 
@@ -243,7 +263,7 @@ export class AdaptiveRateLimiter {
       const uaKey = `patterns:ua:${ip}`;
       const userAgents = await this.getRecentItems(uaKey, now, 300000);
       if (userAgents.size > 5) {
-        patterns.push('multiple_user_agents');
+        patterns.push("multiple_user_agents");
         riskScore += 0.2;
       }
       await this.recordItem(uaKey, this.hashUserAgent(userAgent), now);
@@ -253,7 +273,7 @@ export class AdaptiveRateLimiter {
       const walletHoppingKey = `patterns:hop:${ip}`;
       const wallets = await this.getRecentItems(walletHoppingKey, now, 600000);
       if (wallets.size > 8) {
-        patterns.push('wallet_hopping');
+        patterns.push("wallet_hopping");
         riskScore += 0.4;
       }
       await this.recordItem(walletHoppingKey, wallet, now);
@@ -269,7 +289,7 @@ export class AdaptiveRateLimiter {
   private async getRecentItems(key: string, now: number, windowMs: number): Promise<Set<string>> {
     const minScore = now - windowMs;
     try {
-      const items = await this.redis.zRange(key, minScore, now, { BY: 'SCORE' });
+      const items = await this.redis.zRange(key, minScore, now, { BY: "SCORE" });
       return new Set(items);
     } catch {
       return new Set();
@@ -281,25 +301,39 @@ export class AdaptiveRateLimiter {
       await this.redis.zAdd(key, { score: timestamp, value });
       await this.redis.expire(key, 3600);
     } catch (err) {
-      console.error('[RATE_LIMIT] Failed to record item:', err);
+      console.error("[RATE_LIMIT] Failed to record item:", err);
     }
   }
 
-  private async trackFailurePattern(ip: string, wallet: string | undefined, type: string): Promise<void> {
+  private async trackFailurePattern(
+    ip: string,
+    wallet: string | undefined,
+    type: string,
+  ): Promise<void> {
     const patternKey = `patterns:failures:${type}`;
     const now = Date.now();
 
-    await this.redis.zAdd(patternKey, { score: now, value: `${ip}:${wallet || 'anonymous'}:${now}` });
+    await this.redis.zAdd(patternKey, {
+      score: now,
+      value: `${ip}:${wallet || "anonymous"}:${now}`,
+    });
     await this.redis.expire(patternKey, 86400);
   }
 
-  private async applyAdaptivePenalty(ip: string, wallet: string | undefined, type: string, riskScore: number): Promise<void> {
+  private async applyAdaptivePenalty(
+    ip: string,
+    wallet: string | undefined,
+    type: string,
+    riskScore: number,
+  ): Promise<void> {
     const penaltyMultiplier = Math.ceil(riskScore * 10);
     const penalty = penaltyMultiplier * 5;
 
     await Promise.all([
       this.applyPenalty(`rl:adaptive:ip:${ip}`, penalty),
-      wallet ? this.applyPenalty(`rl:adaptive:wallet:${wallet}`, Math.floor(penalty * 0.7)) : Promise.resolve(),
+      wallet
+        ? this.applyPenalty(`rl:adaptive:wallet:${wallet}`, Math.floor(penalty * 0.7))
+        : Promise.resolve(),
     ]);
   }
 
@@ -309,18 +343,21 @@ export class AdaptiveRateLimiter {
       const windowMs = 60000;
 
       for (let i = 0; i < cost; i++) {
-        await this.redis.zAdd(key, { score: now, value: `penalty_${now}_${i}_${randomBytes(4).toString('hex')}` });
+        await this.redis.zAdd(key, {
+          score: now,
+          value: `penalty_${now}_${i}_${randomBytes(4).toString("hex")}`,
+        });
       }
       await this.redis.expire(key, windowMs);
     } catch (err) {
-      console.error('[RATE_LIMIT] Failed to apply penalty:', err);
+      console.error("[RATE_LIMIT] Failed to apply penalty:", err);
     }
   }
 
   private async checkTokenBucket(
     key: string,
     config: { capacity: number; refillPerSecond: number },
-    cost: number
+    cost: number,
   ): Promise<{ allowed: boolean; remaining: number }> {
     const windowMs = (config.capacity / config.refillPerSecond) * 1000;
 
@@ -362,10 +399,10 @@ export class AdaptiveRateLimiter {
     `;
 
     try {
-      const res = await this.redis.eval(lua, {
+      const res = (await this.redis.eval(lua, {
         keys: [key],
         arguments: [String(windowMs), String(config.capacity), String(cost)],
-      }) as unknown;
+      })) as unknown;
 
       if (!Array.isArray(res) || res.length < 2) {
         return { allowed: false, remaining: 0 };
@@ -375,27 +412,27 @@ export class AdaptiveRateLimiter {
       const remaining = Math.max(0, Number(res[1]));
       return { allowed, remaining };
     } catch (err) {
-      console.error('[RATE_LIMIT] Token bucket check failed:', err);
+      console.error("[RATE_LIMIT] Token bucket check failed:", err);
       return { allowed: false, remaining: 0 };
     }
   }
 
   private hashUserAgent(userAgent: string): string {
-    return createHash('sha256').update(userAgent).digest('hex').substring(0, 16);
+    return createHash("sha256").update(userAgent).digest("hex").substring(0, 16);
   }
 }
 
 export function createAdaptiveRateLimitMiddleware(
   rateLimiter: AdaptiveRateLimiter,
   options: {
-    type: keyof AdaptiveRateLimitConfig['baseLimits'];
+    type: keyof AdaptiveRateLimitConfig["baseLimits"];
     extractWallet?: (c: any) => string | undefined;
-  }
+  },
 ): MiddlewareHandler {
   return async (c, next) => {
     const ip = getIp(c);
     const wallet = options.extractWallet?.(c);
-    const userAgent = c.req.header('user-agent');
+    const userAgent = c.req.header("user-agent");
 
     const result = await rateLimiter.checkRateLimit({
       type: options.type,
@@ -405,8 +442,7 @@ export function createAdaptiveRateLimitMiddleware(
     });
 
     if (!result.allowed) {
-
-      console.warn('[RATE_LIMIT] Rate limit exceeded', {
+      console.warn("[RATE_LIMIT] Rate limit exceeded", {
         ip,
         wallet,
         type: options.type,
@@ -416,17 +452,20 @@ export function createAdaptiveRateLimitMiddleware(
 
       await rateLimiter.applyRateLimitPenalty(ip, wallet, options.type);
 
-      c.header('Retry-After', '60');
-      return c.json({
-        error: 'Rate limit exceeded',
-        penalties: result.penalties,
-        riskScore: result.riskScore,
-      }, 429);
+      c.header("Retry-After", "60");
+      return c.json(
+        {
+          error: "Rate limit exceeded",
+          penalties: result.penalties,
+          riskScore: result.riskScore,
+        },
+        429,
+      );
     }
 
-    c.header('X-RateLimit-Remaining', String(result.remaining));
+    c.header("X-RateLimit-Remaining", String(result.remaining));
     if (result.resetTime) {
-      c.header('X-RateLimit-Reset', String(result.resetTime));
+      c.header("X-RateLimit-Reset", String(result.resetTime));
     }
 
     await next();
@@ -434,5 +473,9 @@ export function createAdaptiveRateLimitMiddleware(
 }
 
 function getIp(c: any): string {
-  return (c.req.header('x-forwarded-for') ?? c.req.raw.headers.get('cf-connecting-ip') ?? 'unknown').split(',')[0]?.trim() ?? 'unknown';
+  return (
+    (c.req.header("x-forwarded-for") ?? c.req.raw.headers.get("cf-connecting-ip") ?? "unknown")
+      .split(",")[0]
+      ?.trim() ?? "unknown"
+  );
 }

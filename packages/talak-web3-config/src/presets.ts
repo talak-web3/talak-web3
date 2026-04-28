@@ -1,13 +1,13 @@
-import { z } from 'zod';
-import { ChainSchema, PluginSchema, TalakWeb3ConfigSchema } from './schema';
+import { z } from "zod";
+import { ChainSchema, PluginSchema, TalakWeb3ConfigSchema } from "./schema";
 
 export const MainnetPreset = {
   chains: [
     {
       id: 1,
-      name: 'Ethereum Mainnet',
-      rpcUrls: ['https://cloudflare-eth.com'],
-      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      name: "Ethereum Mainnet",
+      rpcUrls: ["https://cloudflare-eth.com"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
     },
   ],
 };
@@ -16,9 +16,9 @@ export const PolygonPreset = {
   chains: [
     {
       id: 137,
-      name: 'Polygon Mainnet',
-      rpcUrls: ['https://polygon-rpc.com'],
-      nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+      name: "Polygon Mainnet",
+      rpcUrls: ["https://polygon-rpc.com"],
+      nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
     },
   ],
 };
@@ -28,7 +28,7 @@ export class ConfigManager {
     return TalakWeb3ConfigSchema.parse(config);
   }
 
-  static fromPreset(preset: 'mainnet' | 'polygon') {
+  static fromPreset(preset: "mainnet" | "polygon") {
     const presets = {
       mainnet: MainnetPreset,
       polygon: PolygonPreset,

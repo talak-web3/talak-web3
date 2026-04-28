@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createWalletClient, http } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
-import { mainnet } from 'viem/chains';
-import { TalakWeb3Auth, InMemoryNonceStore, InMemoryRefreshStore, InMemoryRevocationStore } from '../../index.js';
+import { describe, it, expect, beforeEach } from "vitest";
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { mainnet } from "viem/chains";
+import {
+  TalakWeb3Auth,
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
+} from "../../index.js";
 
-describe('Login Flow Integration', () => {
+describe("Login Flow Integration", () => {
   let auth: TalakWeb3Auth;
   let nonceStore: InMemoryNonceStore;
   let refreshStore: InMemoryRefreshStore;
@@ -24,10 +29,9 @@ describe('Login Flow Integration', () => {
     });
   });
 
-  describe('complete SIWE login flow', () => {
-    it('should complete full login flow with valid signature', async () => {
-
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  describe("complete SIWE login flow", () => {
+    it("should complete full login flow with valid signature", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
 
       const nonce = await auth.createNonce(address);
@@ -49,8 +53,8 @@ Issued At: ${issuedAt}`;
       expect(await nonceStore.consume(address, nonce)).toBe(true);
     });
 
-    it('should prevent replay attacks with nonce consumption', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should prevent replay attacks with nonce consumption", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
       const nonce = await auth.createNonce(address);
 
@@ -61,8 +65,8 @@ Issued At: ${issuedAt}`;
       expect(consumed2).toBe(false);
     });
 
-    it('should handle concurrent nonce consumption attempts', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should handle concurrent nonce consumption attempts", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
       const nonce = await auth.createNonce(address);
 
@@ -77,9 +81,9 @@ Issued At: ${issuedAt}`;
     });
   });
 
-  describe('session lifecycle', () => {
-    it('should create and verify a session', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  describe("session lifecycle", () => {
+    it("should create and verify a session", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
 
       const accessToken = await auth.createSession(address, chainId);
@@ -90,8 +94,8 @@ Issued At: ${issuedAt}`;
       expect(session.chainId).toBe(chainId);
     });
 
-    it('should validate JWT correctly', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should validate JWT correctly", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
 
       const accessToken = await auth.createSession(address, chainId);
@@ -99,22 +103,27 @@ Issued At: ${issuedAt}`;
       const isValid = await auth.validateJwt(accessToken);
       expect(isValid).toBe(true);
 
-      const isInvalidValid = await auth.validateJwt('invalid-token');
+      const isInvalidValid = await auth.validateJwt("invalid-token");
       expect(isInvalidValid).toBe(false);
     });
   });
 
-  describe('token refresh flow', () => {
-    it('should rotate refresh tokens atomically', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  describe("token refresh flow", () => {
+    it("should rotate refresh tokens atomically", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
       const ttlMs = 7 * 24 * 60 * 60 * 1000;
 
-      const { token: refreshToken, session: initialSession } = await refreshStore.create(address, chainId, ttlMs);
+      const { token: refreshToken, session: initialSession } = await refreshStore.create(
+        address,
+        chainId,
+        ttlMs,
+      );
       expect(refreshToken).toBeDefined();
       expect(initialSession.revoked).toBe(false);
 
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await auth.refresh(refreshToken);
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+        await auth.refresh(refreshToken);
       expect(newRefreshToken).toBeDefined();
       expect(newRefreshToken).not.toBe(refreshToken);
       expect(newAccessToken).toBeDefined();
@@ -126,21 +135,23 @@ Issued At: ${issuedAt}`;
       expect(newSessionLookup?.revoked).toBe(false);
     });
 
-    it('should detect token reuse attempts', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should detect token reuse attempts", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
       const ttlMs = 7 * 24 * 60 * 60 * 1000;
 
       const { token: refreshToken } = await refreshStore.create(address, chainId, ttlMs);
       await auth.refresh(refreshToken);
 
-      await expect(auth.refresh(refreshToken)).rejects.toThrow('Refresh token already used or revoked');
+      await expect(auth.refresh(refreshToken)).rejects.toThrow(
+        "Refresh token already used or revoked",
+      );
     });
   });
 
-  describe('session revocation', () => {
-    it('should revoke access tokens', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  describe("session revocation", () => {
+    it("should revoke access tokens", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
 
       const accessToken = await auth.createSession(address, chainId);
@@ -152,8 +163,8 @@ Issued At: ${issuedAt}`;
       expect(await auth.validateJwt(accessToken)).toBe(false);
     });
 
-    it('should revoke both access and refresh tokens', async () => {
-      const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+    it("should revoke both access and refresh tokens", async () => {
+      const address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
       const chainId = 1;
       const ttlMs = 7 * 24 * 60 * 60 * 1000;
 

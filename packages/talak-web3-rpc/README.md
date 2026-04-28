@@ -15,18 +15,18 @@ pnpm add @talak-web3/rpc
 ## Usage
 
 ```typescript
-import { UnifiedRpc } from '@talak-web3/rpc';
-import type { TalakWeb3Context } from '@talak-web3/types';
+import { UnifiedRpc } from "@talak-web3/rpc";
+import type { TalakWeb3Context } from "@talak-web3/types";
 
 const rpc = new UnifiedRpc(context, [
-  { url: 'https://eth-mainnet.g.alchemy.com/v2/demo', priority: 0 },
-  { url: 'https://mainnet.infura.io/v3/demo', priority: 1 },
+  { url: "https://eth-mainnet.g.alchemy.com/v2/demo", priority: 0 },
+  { url: "https://mainnet.infura.io/v3/demo", priority: 1 },
 ]);
 
-const blockNumber = await rpc.request<string>('eth_blockNumber', []);
-const balance = await rpc.request<string>('eth_getBalance', [
-  '0x1111111111111111111111111111111111111111',
-  'latest'
+const blockNumber = await rpc.request<string>("eth_blockNumber", []);
+const balance = await rpc.request<string>("eth_getBalance", [
+  "0x1111111111111111111111111111111111111111",
+  "latest",
 ]);
 
 rpc.stop();

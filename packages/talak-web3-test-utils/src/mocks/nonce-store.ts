@@ -1,8 +1,13 @@
-import type { NonceStore } from '@talak-web3/auth';
+import type { NonceStore } from "@talak-web3/auth";
 
 export class MockNonceStore implements NonceStore {
   private nonces = new Map<string, Map<string, number>>();
-  private operationLog: Array<{ operation: string; address: string; nonce?: string; timestamp: number }> = [];
+  private operationLog: Array<{
+    operation: string;
+    address: string;
+    nonce?: string;
+    timestamp: number;
+  }> = [];
 
   async create(address: string, meta?: { ip?: string; ua?: string }): Promise<string> {
     const addr = address.toLowerCase();
@@ -18,7 +23,7 @@ export class MockNonceStore implements NonceStore {
     addrNonces.set(nonce, expiresAt);
 
     this.operationLog.push({
-      operation: 'create',
+      operation: "create",
       address: addr,
       nonce,
       timestamp: Date.now(),
@@ -32,7 +37,7 @@ export class MockNonceStore implements NonceStore {
     const addrNonces = this.nonces.get(addr);
 
     this.operationLog.push({
-      operation: 'consume',
+      operation: "consume",
       address: addr,
       nonce,
       timestamp: Date.now(),
@@ -82,7 +87,12 @@ export class MockNonceStore implements NonceStore {
     return this.nonces.get(address.toLowerCase()) ?? new Map();
   }
 
-  getOperationLog(): Array<{ operation: string; address: string; nonce?: string; timestamp: number }> {
+  getOperationLog(): Array<{
+    operation: string;
+    address: string;
+    nonce?: string;
+    timestamp: number;
+  }> {
     return [...this.operationLog];
   }
 
@@ -101,7 +111,7 @@ export class MockNonceStore implements NonceStore {
 
   private generateNonce(): string {
     return Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
   }
 }

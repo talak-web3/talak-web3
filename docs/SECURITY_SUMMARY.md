@@ -8,13 +8,13 @@ This document provides a high-level overview of the authentication system's secu
 
 ## Quick Reference
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [THREAT_MODEL.md](./THREAT_MODEL.md) | Security contract, adversary classes, trust boundaries | Security team, architects |
-| [INVARIANT_CLOSURE_REPORT.md](./INVARIANT_CLOSURE_REPORT.md) | Invariant proofs, failure models, closure status | Engineers, auditors |
-| [MONITORING_AND_ALERTING.md](./MONITORING_AND_ALERTING.md) | Metrics, alerts, dashboards for all invariants | SRE, on-call engineers |
-| [REDIS_DEPLOYMENT_RUNBOOK.md](./REDIS_DEPLOYMENT_RUNBOOK.md) | Redis configuration, topology, operational procedures | Infrastructure team |
-| [MIGRATION_PATHS.md](./MIGRATION_PATHS.md) | Upgrade paths when architecture reaches limits | Architects, engineering leads |
+| Document                                                     | Purpose                                                | Audience                      |
+| ------------------------------------------------------------ | ------------------------------------------------------ | ----------------------------- |
+| [THREAT_MODEL.md](./THREAT_MODEL.md)                         | Security contract, adversary classes, trust boundaries | Security team, architects     |
+| [INVARIANT_CLOSURE_REPORT.md](./INVARIANT_CLOSURE_REPORT.md) | Invariant proofs, failure models, closure status       | Engineers, auditors           |
+| [MONITORING_AND_ALERTING.md](./MONITORING_AND_ALERTING.md)   | Metrics, alerts, dashboards for all invariants         | SRE, on-call engineers        |
+| [REDIS_DEPLOYMENT_RUNBOOK.md](./REDIS_DEPLOYMENT_RUNBOOK.md) | Redis configuration, topology, operational procedures  | Infrastructure team           |
+| [MIGRATION_PATHS.md](./MIGRATION_PATHS.md)                   | Upgrade paths when architecture reaches limits         | Architects, engineering leads |
 
 **All five documents are required for production deployment.**
 
@@ -53,13 +53,13 @@ This document provides a high-level overview of the authentication system's secu
 
 ## Security Invariants
 
-| ID | Invariant | Status | Detection |
-|----|-----------|--------|-----------|
-| I2 | Nonce single-use durability | ✅ Strong (replicated) | `nonce_reuse_detected_total` |
-| I4 | Distributed key revocation | ✅ Strong (read-after-write) | `revocation_pubsub_lag_ms` |
-| I6 | Time trust integrity | ✅ Strong (cluster-monotonic) | `time_drift_ms` |
-| I7 | Token binding | ✅ Strong (context hash) | `AUTH_TOKEN_CONTEXT_MISMATCH` |
-| I10 | Supply chain integrity | ⚠️ Partial (post-load) | `integrity_check_failures_total` |
+| ID  | Invariant                   | Status                        | Detection                        |
+| --- | --------------------------- | ----------------------------- | -------------------------------- |
+| I2  | Nonce single-use durability | ✅ Strong (replicated)        | `nonce_reuse_detected_total`     |
+| I4  | Distributed key revocation  | ✅ Strong (read-after-write)  | `revocation_pubsub_lag_ms`       |
+| I6  | Time trust integrity        | ✅ Strong (cluster-monotonic) | `time_drift_ms`                  |
+| I7  | Token binding               | ✅ Strong (context hash)      | `AUTH_TOKEN_CONTEXT_MISMATCH`    |
+| I10 | Supply chain integrity      | ⚠️ Partial (post-load)        | `integrity_check_failures_total` |
 
 See [INVARIANT_CLOSURE_REPORT.md](./INVARIANT_CLOSURE_REPORT.md) for detailed proofs.
 
@@ -67,12 +67,12 @@ See [INVARIANT_CLOSURE_REPORT.md](./INVARIANT_CLOSURE_REPORT.md) for detailed pr
 
 ## Residual Risks
 
-| Risk | Window | Impact | Probability | Mitigation |
-|------|--------|--------|-------------|------------|
-| Redis partition during failover | 1-5s | Potential replay | LOW | WAIT + monitoring |
-| Coordinated time compromise | Continuous | Token manipulation | VERY LOW | Drift detection |
-| Supply chain pre-execution | Build/deploy | Full compromise | LOW-MEDIUM | CI/CD security |
-| Byzantine Redis node | Continuous | State manipulation | VERY LOW | Network isolation |
+| Risk                            | Window       | Impact             | Probability | Mitigation        |
+| ------------------------------- | ------------ | ------------------ | ----------- | ----------------- |
+| Redis partition during failover | 1-5s         | Potential replay   | LOW         | WAIT + monitoring |
+| Coordinated time compromise     | Continuous   | Token manipulation | VERY LOW    | Drift detection   |
+| Supply chain pre-execution      | Build/deploy | Full compromise    | LOW-MEDIUM  | CI/CD security    |
+| Byzantine Redis node            | Continuous   | State manipulation | VERY LOW    | Network isolation |
 
 See [THREAT_MODEL.md](./THREAT_MODEL.md) for detailed analysis.
 
@@ -201,6 +201,7 @@ For 95% of deployments, the current system is sufficient.
 ### Change Management
 
 All changes to security invariants require:
+
 1. Threat model update
 2. Invariant proof update
 3. Monitoring/alert updates
@@ -219,9 +220,9 @@ All changes to security invariants require:
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-04-20 | Initial security summary with all operational documents |
+| Version | Date       | Changes                                                 |
+| ------- | ---------- | ------------------------------------------------------- |
+| 1.0     | 2026-04-20 | Initial security summary with all operational documents |
 
 ---
 
@@ -230,6 +231,7 @@ All changes to security invariants require:
 This system is **complete relative to its threat model**.
 
 The guarantees are:
+
 - **Explicitly defined** in THREAT_MODEL.md
 - **Formally proven** in INVARIANT_CLOSURE_REPORT.md
 - **Continuously verified** by MONITORING_AND_ALERTING.md

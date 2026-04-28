@@ -65,7 +65,6 @@ Verifies a SIWE signature.
 
 ```typescript
 const result = await app.context.auth.verifySignature(message, signature);
-
 ```
 
 ##### `createSession(address, chainId)`
@@ -74,7 +73,6 @@ Creates a new session.
 
 ```typescript
 const session = await app.context.auth.createSession(address, chainId);
-
 ```
 
 ##### `verifySession(token)`
@@ -83,7 +81,6 @@ Verifies an access token.
 
 ```typescript
 const session = await app.context.auth.verifySession(token);
-
 ```
 
 ##### `refreshSession(refreshToken)`
@@ -92,7 +89,6 @@ Refreshes a session using a refresh token.
 
 ```typescript
 const newSession = await app.context.auth.refreshSession(refreshToken);
-
 ```
 
 ##### `revokeSession(token)`
