@@ -30,10 +30,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
-    "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
-    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
-    "lint": "node -e \"process.exit(0)\"",
-    "clean": "node -e \"process.exit(0)\""
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
   }
 }

@@ -32,9 +32,7 @@
   "scripts": {
     "build": "node build-simple.cjs",
     "typecheck": "echo 'Typecheck skipped - using simple build'",
-    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
-    "lint": "node -e \"process.exit(0)\"",
-    "clean": "node -e \"process.exit(0)\""
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@talak-web3/errors": "workspace:*",

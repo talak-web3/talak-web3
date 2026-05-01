@@ -42,6 +42,9 @@ export interface RevocationContext {
   targets: string[];
   immediate: boolean;
   notifyUsers: boolean;
+  metadata?: {
+    timeWindow?: number;
+  };
 }
 
 export interface RevocationResult {

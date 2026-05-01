@@ -36,8 +36,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "node -e \"process.exit(0)\"",
-    "lint:fix": "node -e \"process.exit(0)\"",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -49,6 +47,7 @@
   },
   "devDependencies": {
     "@types/node": "22.13.1",
+    "jose": "^6",
     "typescript": "5.7.3",
     "vitest": "2.1.9"
   }

@@ -25,8 +25,8 @@ export class ContextFactory {
       ...instance.context,
       requestId,
       timestamp,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
+      ...(meta.ip !== undefined && { ip: meta.ip }),
+      ...(meta.userAgent !== undefined && { userAgent: meta.userAgent }),
       authState: {
         isAuthenticated: false,
       },

@@ -35,13 +35,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "node -e \"process.exit(0)\"",
-    "lint:fix": "node -e \"process.exit(0)\"",
     "clean": "rm -rf dist"
   },
   "dependencies": {
     "@talak-web3/errors": "workspace:*",
     "@talak-web3/types": "workspace:*",
-    "@talak-web3/utils": "workspace:*"
+    "@talak-web3/utils": "workspace:*",
+    "zod": "^4.3.6"
   }
 }

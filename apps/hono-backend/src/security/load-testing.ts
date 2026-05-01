@@ -191,7 +191,7 @@ export const redisFailureTest: LoadTestScenario = {
           request = executeNonceRequest(target, startTime, endTime, results);
           break;
         case 1:
-          request = executeLoginAttempt(target, generateTestWallet(i), startTime, endTime, results);
+          request = executeLoginAttemptWithNonce(target, generateTestWalletWithKeys(i), startTime, endTime, results);
           break;
         case 2:
           request = executeRpcRequest(target, startTime, endTime, results);
@@ -205,7 +205,7 @@ export const redisFailureTest: LoadTestScenario = {
 
     await Promise.all(requests);
 
-    return calculateResults("redis-failure-under-load", startTime, results);
+    return calculateLoadTestResults("redis-failure-under-load", startTime, results);
   },
 };
 
@@ -397,7 +397,7 @@ export class LoadTestEngine {
       });
     }
 
-    if (options.verbose) {
+    if (options.verbose ?? false) {
       console.log(`[LOAD_TEST] Starting scenario: ${scenario.name}`);
       console.log(`[LOAD_TEST] Description: ${scenario.description}`);
       console.log(`[LOAD_TEST] Config:`, scenario.config);
@@ -405,7 +405,7 @@ export class LoadTestEngine {
 
     const result = await scenario.execute(target);
 
-    if (options.verbose) {
+    if (options.verbose ?? false) {
       console.log(`[LOAD_TEST] Scenario completed: ${scenario.name}`);
       console.log(`[LOAD_TEST] Results:`, result);
     }
@@ -425,7 +425,7 @@ export class LoadTestEngine {
     for (const scenario of this.scenarios.values()) {
       try {
         const result = await this.runScenario(scenario.name, target, {
-          verbose: options.verbose,
+          verbose: options.verbose ?? false,
         });
         results.push(result);
         options.onProgress?.(scenario.name, result);
@@ -479,7 +479,7 @@ ${generateRecommendations(results)}
   }
 }
 
-async function executeLoginAttempt(
+async function executeLoginAttemptWithNonce(
   target: LoadTestTarget,
   wallet: TestWallet,
   startTime: number,
@@ -510,8 +510,8 @@ async function executeLoginAttempt(
 
       const { nonce } = await nonceResponse.json();
 
-      const siweMessage = generateSiweMessage(wallet.address, nonce);
-      const signature = await signMessage(wallet, siweMessage);
+      const siweMessage = generateSiweMessageWithNonce(wallet.address, nonce);
+      const signature = await signMessageWithKey(wallet, siweMessage);
 
       const loginResponse = await fetch(`${target.baseUrl}${target.endpoints.login}`, {
         method: "POST",
@@ -526,7 +526,7 @@ async function executeLoginAttempt(
       results.push({
         success: loginResponse.ok,
         responseTime,
-        error: loginResponse.ok ? undefined : "login_failed",
+        ...(loginResponse.ok ? {} : { error: "login_failed" as string }),
       });
     } catch (err) {
       results.push({
@@ -540,7 +540,7 @@ async function executeLoginAttempt(
   }
 }
 
-async function executeReplayAttack(
+async function executeReplayAttackWithRetry(
   target: LoadTestTarget,
   siweMessage: string,
   signature: string,
@@ -565,7 +565,7 @@ async function executeReplayAttack(
       results.push({
         success: response.ok,
         responseTime,
-        error: response.ok ? undefined : "replay_rejected",
+        ...(response.ok ? {} : { error: "replay_rejected" as string }),
       });
     } catch (err) {
       results.push({
@@ -579,7 +579,7 @@ async function executeReplayAttack(
   }
 }
 
-async function executeMalformedRpc(
+async function executeMalformedRpcRequest(
   target: LoadTestTarget,
   malformedRequest: any,
   startTime: number,
@@ -606,7 +606,7 @@ async function executeMalformedRpc(
       results.push({
         success: response.ok,
         responseTime,
-        error: response.ok ? undefined : "malformed_rejected",
+        ...(response.ok ? {} : { error: "malformed_rejected" as string }),
       });
     } catch (err) {
       results.push({
@@ -645,7 +645,7 @@ async function executeNonceRequest(
       results.push({
         success: response.ok,
         responseTime,
-        error: response.ok ? undefined : "nonce_failed",
+        ...(response.ok ? {} : { error: "nonce_failed" as string }),
       });
     } catch (err) {
       results.push({
@@ -687,7 +687,7 @@ async function executeRpcRequest(
       results.push({
         success: response.ok,
         responseTime,
-        error: response.ok ? undefined : "rpc_failed",
+        ...(response.ok ? {} : { error: "rpc_failed" as string }),
       });
     } catch (err) {
       results.push({
@@ -701,7 +701,7 @@ async function executeRpcRequest(
   }
 }
 
-function calculateResults(
+function calculateLoadTestResults(
   scenario: string,
   startTime: number,
   results: Array<{ success: boolean; responseTime: number; error?: string }>,
@@ -786,14 +786,14 @@ interface TestWallet {
   privateKey: string;
 }
 
-function generateTestWallet(index: number): TestWallet {
+function generateTestWalletWithKeys(index: number): TestWallet {
   return {
     address: `0x${index.toString(16).padStart(40, "0")}`,
     privateKey: `0x${index.toString(16).padStart(64, "0")}`,
   };
 }
 
-function generateSiweMessage(address: string, nonce?: string): string {
+function generateSiweMessageWithNonce(address: string, nonce?: string): string {
   const timestamp = new Date().toISOString();
   const actualNonce = nonce ?? Math.random().toString(36).substring(2, 15);
 
@@ -809,7 +809,7 @@ Nonce: ${actualNonce}
 Issued At: ${timestamp}`;
 }
 
-async function signMessage(wallet: TestWallet, message: string): Promise<string> {
+async function signMessageWithKey(wallet: TestWallet, message: string): Promise<string> {
   return `0x${Buffer.from(message + wallet.privateKey).toString("hex")}`;
 }
 

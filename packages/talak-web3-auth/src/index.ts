@@ -17,6 +17,7 @@ import type { JwksResponse } from "./jwks.js";
 import { getAuthoritativeTime, type AuthoritativeTime } from "./time.js";
 
 export type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from "./contracts.js";
+export type { KeyProviderType } from "./key-management.js";
 
 interface SiweFields {
   domain: string;

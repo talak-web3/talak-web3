@@ -197,7 +197,7 @@ export class HttpSiemSink implements SecurityEventSink {
     try {
       const response = await fetch(this.config.url, {
         method: "HEAD",
-        headers: this.config.headers,
+        ...(this.config.headers && { headers: this.config.headers }),
         signal: AbortSignal.timeout(5000),
       });
 

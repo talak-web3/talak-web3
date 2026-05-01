@@ -40,9 +40,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "node -e \"process.exit(0)\"",
-    "lint:fix": "node -e \"process.exit(0)\"",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@talak-web3/templates": "workspace:*",

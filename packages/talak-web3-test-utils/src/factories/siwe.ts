@@ -1,4 +1,3 @@
-import type { Address } from "viem";
 import type { SiweMessageFields } from "../types.js";
 
 export function generateSiweMessage(fields: SiweMessageFields): string {

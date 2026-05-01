@@ -26,5 +26,7 @@ export function metricsMiddleware(): MiddlewareHandler {
 declare module "hono" {
   interface ContextVariableMap {
     metrics: MetricsClient;
+    talak: import("@talak-web3/types").TalakWeb3Instance;
+    session: { address?: string } | undefined;
   }
 }

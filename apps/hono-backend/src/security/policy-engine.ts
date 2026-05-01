@@ -154,7 +154,7 @@ export class PolicyEngine {
         throw new TalakWeb3Error(decision.reason || "Access denied", {
           code: "ACCESS_DENIED",
           status: 403,
-          details: decision.constraints,
+          data: decision.constraints,
         });
       }
 
@@ -168,17 +168,22 @@ export class PolicyEngine {
     const resource = c.req.path;
     const chainId = this.extractChainId(c);
 
-    return {
+    const result: PolicyContext = {
       user,
       action,
       resource,
-      chainId,
       timestamp: Date.now(),
       metadata: {
-        ip: c.req.header("x-forwarded-for") || c.req.header("x-real-ip"),
-        userAgent: c.req.header("user-agent"),
+        ip: c.req.header("x-forwarded-for") || c.req.header("x-real-ip") || undefined,
+        userAgent: c.req.header("user-agent") || undefined,
       },
     };
+
+    if (chainId !== undefined) {
+      result.chainId = chainId;
+    }
+
+    return result;
   }
 
   private getActionFromRequest(c: Context): string {
@@ -200,6 +205,7 @@ export class PolicyEngine {
   private extractChainId(c: Context): number | undefined {
     if (c.req.path.startsWith("/rpc/")) {
       const chainIdStr = c.req.param("chainId");
+      if (!chainIdStr) return undefined;
       return parseInt(chainIdStr, 10);
     }
     return undefined;

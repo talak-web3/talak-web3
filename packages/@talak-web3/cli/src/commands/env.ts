@@ -11,7 +11,7 @@ export async function envCommand() {
   console.log("Environment (presence only — values not shown)\n");
 
   for (const key of KEYS) {
-    if (key === "VITE_*") {
+    if (key.startsWith("VITE_")) {
       const vite = Object.keys(process.env).filter((k) => k.startsWith("VITE_"));
       console.log(`  ${key}: ${vite.length ? `${vite.length} set (${vite.join(", ")})` : "none"}`);
       continue;

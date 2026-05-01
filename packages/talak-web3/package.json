@@ -67,6 +67,7 @@
     "@talak-web3/hooks": "workspace:*",
     "@talak-web3/rpc": "workspace:*",
     "@talak-web3/types": "workspace:*",
+    "esbuild": "^0.24.0",
     "ioredis": "5.10.1",
     "jose": "5.9.6",
     "viem": "2.21.54",

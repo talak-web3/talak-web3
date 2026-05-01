@@ -52,7 +52,7 @@ export async function assertRedisConfiguration(redis: Redis): Promise<void> {
 
   for (const assertion of assertions) {
     try {
-      const value = await redis.config("GET", assertion.key);
+      const value = (await redis.config("GET", assertion.key)) as string[] | null;
       const actualValue = value?.[1] || "";
 
       let isValid = false;

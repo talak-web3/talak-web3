@@ -36,7 +36,7 @@ export function validateRpcRequest(payload: unknown): RpcRequest {
 
   const result = RpcRequestSchema.safeParse(payload);
   if (!result.success) {
-    const firstError = result.error.errors[0];
+    const firstError = result.error.issues[0];
     throw new TalakWeb3Error(`Invalid RPC request: ${firstError?.message ?? "Schema mismatch"}`, {
       code: "RPC_VALIDATION_ERROR",
       status: 400,

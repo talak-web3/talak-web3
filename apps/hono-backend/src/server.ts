@@ -4,11 +4,13 @@ import { z } from "zod";
 import crypto from "node:crypto";
 import { TalakWeb3Error } from "@talak-web3/errors";
 import { talakWeb3 } from "@talak-web3/core";
-import type { TalakWeb3Instance } from "@talak-web3/types";
-import { createClient } from "redis";
+import type { TalakWeb3Instance, TalakWeb3Context } from "@talak-web3/types";
+import { createClient, type RedisClientType } from "redis";
 import { strictCors } from "./security/cors.js";
 import { RedisAuthStorage } from "./security/storage.js";
 import { TalakWeb3Auth } from "@talak-web3/auth";
+import type { KeyProviderType } from "@talak-web3/auth";
+import { RedisRevocationStore } from "./security/redis-revocation.js";
 import { logger, requestLogger, getLogger } from "./logger.js";
 import {
   createHardenedRedisClient,
@@ -24,7 +26,15 @@ import { ImmutableAuditLogger } from "./security/audit-logger.js";
 import { validateEnv } from "./security/env.js";
 import { AdaptiveRateLimiter, DEFAULT_ADAPTIVE_CONFIG } from "./security/adaptive-rate-limit.js";
 import { PrometheusMetrics, createMetricsMiddleware } from "./security/prometheus-metrics.js";
-import { ElasticsearchSink, SplunkSink, HttpSiemSink } from "./security/security-events.js";
+import {
+  ElasticsearchSink,
+  SplunkSink,
+  HttpSiemSink,
+  type SecurityEventSink,
+  type SecurityEventType,
+  type SecuritySeverity,
+} from "./security/security-events.js";
+import "./metrics.js";
 import { IncidentResponseManager } from "./security/incident-response.js";
 import { createJwksEndpoint } from "./security/jwks-endpoint.js";
 
@@ -39,16 +49,24 @@ try {
 const app = new Hono();
 
 const redisUrl = process.env["REDIS_URL"]!;
-const redisConfig = createHardenedRedisClient(redisUrl, {
+const redisHardeningConfig: Parameters<typeof createHardenedRedisClient>[1] = {
   auth: {
     enabled: process.env["REDIS_AUTH_ENABLED"] !== "false",
-    password: process.env["REDIS_PASSWORD"],
+    ...(process.env["REDIS_PASSWORD"] !== undefined && {
+      password: process.env["REDIS_PASSWORD"]!,
+    }),
   },
   tls: {
     enabled: process.env["REDIS_TLS_ENABLED"] !== "false",
-    certPath: process.env["REDIS_TLS_CERT_PATH"],
-    keyPath: process.env["REDIS_TLS_KEY_PATH"],
-    caPath: process.env["REDIS_TLS_CA_PATH"],
+    ...(process.env["REDIS_TLS_CERT_PATH"] !== undefined && {
+      certPath: process.env["REDIS_TLS_CERT_PATH"]!,
+    }),
+    ...(process.env["REDIS_TLS_KEY_PATH"] !== undefined && {
+      keyPath: process.env["REDIS_TLS_KEY_PATH"]!,
+    }),
+    ...(process.env["REDIS_TLS_CA_PATH"] !== undefined && {
+      caPath: process.env["REDIS_TLS_CA_PATH"]!,
+    }),
   },
   connectionLimits: {
     maxConnections: parseInt(process.env["REDIS_MAX_CONNECTIONS"] ?? "100"),
@@ -62,17 +80,19 @@ const redisConfig = createHardenedRedisClient(redisUrl, {
     rateLimitDb: parseInt(process.env["REDIS_DB_RATELIMIT"] ?? "2"),
     auditDb: parseInt(process.env["REDIS_DB_AUDIT"] ?? "3"),
   },
-});
+};
 
-const redis = createClient(redisConfig);
+const redis = createClient(createHardenedRedisClient(redisUrl, redisHardeningConfig));
 
 const redisAuthUrl = process.env["REDIS_AUTH_URL"] ?? redisUrl;
 const redisRateLimitUrl = process.env["REDIS_RATELIMIT_URL"] ?? redisUrl;
 const redisAuditUrl = process.env["REDIS_AUDIT_URL"] ?? redisUrl;
 
-const redisAuth = createClient(createHardenedRedisClient(redisAuthUrl, redisConfig));
-const redisRateLimit = createClient(createHardenedRedisClient(redisRateLimitUrl, redisConfig));
-const redisAudit = createClient(createHardenedRedisClient(redisAuditUrl, redisConfig));
+const redisAuth = createClient(createHardenedRedisClient(redisAuthUrl, redisHardeningConfig));
+const redisRateLimit = createClient(
+  createHardenedRedisClient(redisRateLimitUrl, redisHardeningConfig),
+);
+const redisAudit = createClient(createHardenedRedisClient(redisAuditUrl, redisHardeningConfig));
 
 [redis, redisAuth, redisRateLimit, redisAudit].forEach((client, idx) => {
   client.on("error", (err) => {
@@ -90,7 +110,7 @@ try {
   ]);
   console.log("[BOOTSTRAP] All Redis clusters connected: OK");
 
-  const auditor = new RedisSecurityAuditor(redis);
+  const auditor = new RedisSecurityAuditor(redis as RedisClientType);
   const audit = await auditor.auditSecurity();
 
   if (audit.status === "critical") {
@@ -105,9 +125,9 @@ try {
   if (process.env["NODE_ENV"] === "production") {
     await Promise.all([
       auditor.applySecurityHardening(),
-      new RedisSecurityAuditor(redisAuth).applySecurityHardening(),
-      new RedisSecurityAuditor(redisRateLimit).applySecurityHardening(),
-      new RedisSecurityAuditor(redisAudit).applySecurityHardening(),
+      new RedisSecurityAuditor(redisAuth as RedisClientType).applySecurityHardening(),
+      new RedisSecurityAuditor(redisRateLimit as RedisClientType).applySecurityHardening(),
+      new RedisSecurityAuditor(redisAudit as RedisClientType).applySecurityHardening(),
     ]);
   }
 } catch (err) {
@@ -119,21 +139,28 @@ const metrics = new PrometheusMetrics();
 const incidentResponse = new IncidentResponseManager();
 const rateLimiter = new AdaptiveRateLimiter(redisRateLimit as any, DEFAULT_ADAPTIVE_CONFIG);
 
-async function broadcastSecurityEvent(
-  event: Omit<any, "id" | "timestamp" | "metadata"> & {
-    ip?: string;
-    wallet?: string;
-    sessionId?: string;
-  },
-) {
+interface SecurityEventInput {
+  type: SecurityEventType;
+  severity: SecuritySeverity;
+  source: string;
+  details?: Record<string, any>;
+  ip?: string;
+  wallet?: string;
+  sessionId?: string;
+}
+
+async function broadcastSecurityEvent(event: SecurityEventInput) {
   const fullEvent = {
     id: crypto.randomUUID(),
     timestamp: Date.now(),
-    ...event,
+    type: event.type,
+    severity: event.severity,
+    source: event.source,
+    details: event.details ?? {},
     metadata: {
-      ip: event.ip,
-      wallet: event.wallet,
-      sessionId: event.sessionId,
+      ...(event.ip !== undefined && { ip: event.ip }),
+      ...(event.wallet !== undefined && { wallet: event.wallet }),
+      ...(event.sessionId !== undefined && { sessionId: event.sessionId }),
       environment: process.env["NODE_ENV"] ?? "development",
     },
   };
@@ -160,13 +187,15 @@ async function broadcastSecurityEvent(
   }
 }
 
-const securityEventSinks = [];
+const securityEventSinks: SecurityEventSink[] = [];
 if (process.env["ELASTICSEARCH_URL"]) {
   securityEventSinks.push(
     new ElasticsearchSink({
       url: process.env["ELASTICSEARCH_URL"]!,
       index: process.env["ELASTICSEARCH_INDEX"] ?? "security-events",
-      apiKey: process.env["ELASTICSEARCH_API_KEY"],
+      ...(process.env["ELASTICSEARCH_API_KEY"] !== undefined && {
+        apiKey: process.env["ELASTICSEARCH_API_KEY"]!,
+      }),
     }),
   );
 }
@@ -179,23 +208,26 @@ if (process.env["SPLUNK_URL"]) {
   );
 }
 
-const storage = new RedisAuthStorage(redisAuth as any, true);
+const storage = new RedisAuthStorage(redisAuth as RedisClientType, true);
+const revocationStore = new RedisRevocationStore(redisAuth as RedisClientType, {
+  keyPrefix: "talak:jti:",
+});
 
-const keyProviderType = (process.env["KEY_PROVIDER_TYPE"] ?? "environment") as any;
+const keyProviderType = process.env["KEY_PROVIDER_TYPE"] ?? ("environment" as KeyProviderType);
 const keyProviderOptions = {
-  keyId: process.env["AWS_KMS_KEY_ID"],
-  region: process.env["AWS_REGION"],
-  vaultUrl: process.env["VAULT_URL"],
-  secretPath: process.env["VAULT_SECRET_PATH"],
-  token: process.env["VAULT_TOKEN"],
+  keyId: process.env["AWS_KMS_KEY_ID"] ?? undefined,
+  region: process.env["AWS_REGION"] ?? undefined,
+  vaultUrl: process.env["VAULT_URL"] ?? undefined,
+  secretPath: process.env["VAULT_SECRET_PATH"] ?? undefined,
+  token: process.env["VAULT_TOKEN"] ?? undefined,
 };
 
 const auth = new TalakWeb3Auth({
   expectedDomain: process.env["SIWE_DOMAIN"]!,
   nonceStore: storage.nonceStore,
   refreshStore: storage.refreshStore,
-  revocationStore: storage.revocationStore,
-  keyProviderType,
+  revocationStore,
+  keyProviderType: keyProviderType as KeyProviderType,
   keyProviderOptions,
   keyRotationConfig: {
     maxKeys: parseInt(process.env["JWT_MAX_KEYS"] ?? "5"),
@@ -239,10 +271,11 @@ app.use("*", async (c, next) => {
   if (path.includes("/rpc")) type = "rpc";
   if (path.includes("/nonce")) type = "nonce";
 
+  const ua = c.req.header("User-Agent");
   const result = await rateLimiter.checkRateLimit({
     type,
     ip,
-    userAgent: c.req.header("User-Agent"),
+    ...(ua !== undefined && { userAgent: ua }),
   });
 
   if (!result.allowed) {
@@ -290,14 +323,10 @@ app.use(
 
     xXssProtection: "0",
 
-    removeServer: true,
-
     contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'none'"],
-        baseUri: ["'none'"],
-        frameAncestors: ["'none'"],
-      },
+      defaultSrc: ["'none'"],
+      baseUri: ["'none'"],
+      frameAncestors: ["'none'"],
     },
   }),
 );
@@ -328,7 +357,7 @@ app.use("*", policyEngine.createMiddleware());
 const auditLogger = new ImmutableAuditLogger({
   storage: {
     type: "redis",
-    redis: redisAudit,
+    redis: redisAudit as RedisClientType,
   },
 });
 app.use("*", auditLogger.createMiddleware());
@@ -381,7 +410,10 @@ function isIpInRange(ip: string, range: string): boolean {
     return ip === range;
   }
 
-  const [baseIp, maskBits] = range.split("/");
+  const parts = range.split("/");
+  if (parts.length !== 2) return false;
+  const baseIp = parts[0]!;
+  const maskBits = parts[1]!;
   const mask = parseInt(maskBits, 10);
 
   if (ip.includes(".") && baseIp.includes(".")) {
@@ -469,9 +501,11 @@ app.post("/auth/nonce", async (c) => {
   const address = bodyResult.data.address;
 
   try {
-    const ua = c.req.header("user-agent") ?? undefined;
-
-    const nonce = await auth.createNonce(address, { ip, ua });
+    const ua = c.req.header("user-agent");
+    const nonce = await auth.createNonce(address, {
+      ip,
+      ...(ua ? { ua } : {}),
+    });
     log.info({ address, ip }, "nonce created");
 
     metrics.recordSecurityEvent("nonce_created", "low");
@@ -519,7 +553,7 @@ app.post("/rpc/:chainId", authMiddleware(auth), async (c) => {
     const result = await rateLimiter.checkRateLimit({
       type: "rpc",
       ip,
-      wallet,
+      ...(wallet !== undefined && { wallet }),
     });
 
     if (!result.allowed) {
@@ -538,9 +572,7 @@ app.post("/rpc/:chainId", authMiddleware(auth), async (c) => {
     const instance = c.get("talak") as TalakWeb3Instance;
     const ctx: TalakWeb3Context = instance.context;
 
-    const result = await ctx.rpc.request(bodyResult.data.method, bodyResult.data.params ?? [], {
-      chainId,
-    });
+    const result = await ctx.rpc.request(bodyResult.data.method, bodyResult.data.params ?? [], {});
 
     metrics.recordRpcRequest(
       String(chainId),
@@ -648,7 +680,7 @@ app.post("/auth/login", async (c) => {
       source: "auth/login",
       details: { address, error: (err as any).message },
       ip,
-      wallet: address,
+      ...(address !== undefined ? { wallet: address } : {}),
     });
 
     if (err instanceof TalakWeb3Error) {

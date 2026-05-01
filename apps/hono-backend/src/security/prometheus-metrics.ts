@@ -3,26 +3,26 @@ import { register, Counter, Histogram, Gauge, Registry } from "prom-client";
 export class PrometheusMetrics {
   private registry: Registry;
 
-  private authSuccessCounter: Counter<string>;
-  private authFailureCounter: Counter<string>;
-  private authDurationHistogram: Histogram<string>;
-  private authActiveSessionsGauge: Gauge<string>;
+  private authSuccessCounter!: Counter<string>;
+  private authFailureCounter!: Counter<string>;
+  private authDurationHistogram!: Histogram<string>;
+  private authActiveSessionsGauge!: Gauge<string>;
 
-  private rateLimitHitCounter: Counter<string>;
-  private rateLimitPenaltyCounter: Counter<string>;
-  private rateLimitActiveBucketsGauge: Gauge<string>;
+  private rateLimitHitCounter!: Counter<string>;
+  private rateLimitPenaltyCounter!: Counter<string>;
+  private rateLimitActiveBucketsGauge!: Gauge<string>;
 
-  private securityEventCounter: Counter<string>;
-  private suspiciousActivityCounter: Counter<string>;
-  private securityRiskScoreGauge: Gauge<string>;
+  private securityEventCounter!: Counter<string>;
+  private suspiciousActivityCounter!: Counter<string>;
+  private securityRiskScoreGauge!: Gauge<string>;
 
-  private redisConnectionGauge: Gauge<string>;
-  private jwtSigningDurationHistogram: Histogram<string>;
-  private jwtVerificationDurationHistogram: Histogram<string>;
+  private redisConnectionGauge!: Gauge<string>;
+  private jwtSigningDurationHistogram!: Histogram<string>;
+  private jwtVerificationDurationHistogram!: Histogram<string>;
 
-  private rpcRequestCounter: Counter<string>;
-  private rpcErrorCounter: Counter<string>;
-  private rpcDurationHistogram: Histogram<string>;
+  private rpcRequestCounter!: Counter<string>;
+  private rpcErrorCounter!: Counter<string>;
+  private rpcDurationHistogram!: Histogram<string>;
 
   constructor() {
     this.registry = new Registry();
@@ -236,7 +236,7 @@ export class PrometheusMetrics {
     });
   }
 
-  getMetrics(): string {
+  async getMetrics(): Promise<string> {
     return this.registry.metrics();
   }
 
@@ -296,7 +296,7 @@ export class MetricsHealthChecker {
 
     try {
       const registry = this.metrics.getRegistry();
-      const metricNames = registry.getMetricsAsJSON().map((m: any) => m.name);
+      const metricNames = (await registry.getMetricsAsJSON()).map((m: any) => m.name);
 
       metricsData.total_metrics = metricNames.length;
       metricsData.metric_names = metricNames;
@@ -317,8 +317,9 @@ export class MetricsHealthChecker {
       const redisMetric = registry.getSingleMetric("talak_redis_connection_status");
       if (redisMetric) {
         const redisStatus = await redisMetric.get();
-        if (redisStatus.values && redisStatus.values.length > 0) {
-          const isConnected = redisStatus.values[0].value === 1;
+        const firstValue = redisStatus.values?.[0];
+        if (firstValue) {
+          const isConnected = firstValue.value === 1;
           metricsData.redis_connected = isConnected;
           if (!isConnected) {
             issues.push("Redis connection is down");

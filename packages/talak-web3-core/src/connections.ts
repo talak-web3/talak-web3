@@ -1,10 +1,9 @@
 import Redis, { type RedisOptions } from "ioredis";
-import { TalakWeb3Error } from "@talak-web3/errors";
 
 export const HARDENED_REDIS_OPTS: RedisOptions = {
   maxRetriesPerRequest: 3,
-  retryStrategy: (times) => Math.min(times * 100, 3000),
-  reconnectOnError: (err) => {
+  retryStrategy: (times: number) => Math.min(times * 100, 3000),
+  reconnectOnError: (err: Error) => {
     const targetError = "READONLY";
     if (err.message.includes(targetError)) return true;
     return false;
@@ -44,7 +43,7 @@ export class ConnectionManager {
 
     const client = new Redis(baseUrl, options);
 
-    client.on("error", (err) => {
+    client.on("error", (err: Error) => {
       console.error(`[ConnectionManager] Redis Error (${purpose}):`, err.message);
     });
 

@@ -1,4 +1,4 @@
-import type { RedisClientType } from "redis";
+import type { RedisClientType, RedisClientOptions } from "redis";
 import { TalakWeb3Error } from "@talak-web3/errors";
 
 export interface RedisHardeningConfig {
@@ -78,7 +78,7 @@ export const DEFAULT_REDIS_HARDENING: RedisHardeningConfig = {
 export function createHardenedRedisClient(
   redisUrl: string,
   config: Partial<RedisHardeningConfig> = {},
-): RedisClientType {
+): RedisClientOptions {
   const finalConfig = { ...DEFAULT_REDIS_HARDENING, ...config };
 
   if (!finalConfig.auth.enabled) {
@@ -142,7 +142,7 @@ export function createHardenedRedisClient(
     clientOptions.password = password;
   }
 
-  return clientOptions as RedisClientType;
+  return clientOptions as RedisClientOptions;
 }
 
 export class RedisSecurityAuditor {
@@ -318,7 +318,8 @@ export class RedisDatabaseSelector {
   ): Promise<T> {
     const originalDb = await this.redis.info("server").then((info) => {
       const match = info.match(/db(\d+):/);
-      return match ? parseInt(match[1]) : 0;
+      if (!match) return 0;
+      return parseInt(match[1]!, 10);
     });
 
     const dbNumber = this.config[db];

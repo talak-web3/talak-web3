@@ -32,8 +32,7 @@ export class PinataStorageAdapter implements StorageAdapter {
   async put(path: string, data: Uint8Array): Promise<{ uri: string }> {
     const form = new FormData();
     const name = path.replace(/^\/+/, "") || "file.bin";
-    const blobPart: any = data;
-    form.append("file", new Blob([blobPart], { type: "application/octet-stream" }), name);
+    form.append("file", new Blob([data], { type: "application/octet-stream" }), name);
 
     const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
       method: "POST",

@@ -30,7 +30,7 @@ export class CeramicPlugin implements CeramicAdapter {
   }
 
   async createProfile(input: { did: string }): Promise<{ id: string }> {
-    const ceramic = await this.ensureInit();
+    await this.ensureInit();
 
     this.ctx.hooks.emit("identity:profile-create", input);
 
