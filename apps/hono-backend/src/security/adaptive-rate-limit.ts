@@ -146,24 +146,24 @@ export class AdaptiveRateLimiter {
     );
 
     const result: {
-    allowed: boolean;
-    remaining: number;
-    resetTime?: number;
-    penalties?: string[];
-    riskScore?: number;
-  } = {
-    allowed,
-    remaining,
-  };
+      allowed: boolean;
+      remaining: number;
+      resetTime?: number;
+      penalties?: string[];
+      riskScore?: number;
+    } = {
+      allowed,
+      remaining,
+    };
 
-  if (penalties.length > 0) {
-    result.penalties = penalties;
-  }
-  if (totalRiskScore > 0) {
-    result.riskScore = totalRiskScore;
-  }
+    if (penalties.length > 0) {
+      result.penalties = penalties;
+    }
+    if (totalRiskScore > 0) {
+      result.riskScore = totalRiskScore;
+    }
 
-  return result;
+    return result;
   }
 
   async applyAuthFailurePenalty(ip: string, wallet?: string): Promise<void> {

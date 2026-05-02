@@ -6,7 +6,10 @@ const DEFAULT_PREFIX = "talak:jti:";
 export class RedisRevocationStore implements RevocationStore {
   private prefix: string;
 
-  constructor(private redis: RedisClientType, options?: { keyPrefix?: string }) {
+  constructor(
+    private redis: RedisClientType,
+    options?: { keyPrefix?: string },
+  ) {
     this.prefix = options?.keyPrefix ?? DEFAULT_PREFIX;
   }
 

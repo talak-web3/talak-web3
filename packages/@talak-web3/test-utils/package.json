@@ -1,7 +1,8 @@
 {
-  "name": "@talak-web3/cli",
-  "version": "1.0.10",
-  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/@talak-web3/cli#readme",
+  "name": "@talak-web3/test-utils",
+  "version": "1.0.11",
+  "description": "Testing utilities for talak-web3 packages",
+  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/@talak-web3/test-utils#readme",
   "bugs": {
     "url": "https://github.com/dagimabebe/talak-web3/issues"
   },
@@ -10,16 +11,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dagimabebe/talak-web3.git",
-    "directory": "packages/@talak-web3/cli"
-  },
-  "bin": {
-    "create-talak-web3": "./dist/bin.js",
-    "talak": "./dist/bin.js",
-    "talak-web3": "./dist/bin.js"
+    "directory": "packages/@talak-web3/test-utils"
   },
   "files": [
-    "dist",
-    "README.md"
+    "dist"
   ],
   "type": "module",
   "main": "./dist/index.cjs",
@@ -28,6 +23,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
       "default": "./dist/index.js"
     }
   },
@@ -35,18 +32,23 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsx src/bin.ts",
+    "build": "tsup src/index.ts --format esm,cjs --dts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@talak-web3/templates": "workspace:*",
-    "cac": "7.0.0"
+    "@talak-web3/auth": "workspace:*",
+    "@talak-web3/core": "workspace:*",
+    "@talak-web3/errors": "workspace:*",
+    "@talak-web3/types": "workspace:*",
+    "viem": "2.48.1"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0"
+    "@types/node": "25.6.0",
+    "jose": "^6.2.2",
+    "typescript": "6.0.3",
+    "vitest": "4.1.4"
   }
 }

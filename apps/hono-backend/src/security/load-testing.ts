@@ -191,7 +191,13 @@ export const redisFailureTest: LoadTestScenario = {
           request = executeNonceRequest(target, startTime, endTime, results);
           break;
         case 1:
-          request = executeLoginAttemptWithNonce(target, generateTestWalletWithKeys(i), startTime, endTime, results);
+          request = executeLoginAttemptWithNonce(
+            target,
+            generateTestWalletWithKeys(i),
+            startTime,
+            endTime,
+            results,
+          );
           break;
         case 2:
           request = executeRpcRequest(target, startTime, endTime, results);

@@ -50,7 +50,7 @@
     "docs:test": "turbo run test --filter=@talak-web3/docs"
   },
   "dependencies": {
-    "talak-web3": "workspace:*"
+    "@talak-web3/sdk": "workspace:*"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",

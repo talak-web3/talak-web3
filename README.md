@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/talak-web3?logo=npm&label=npm%20package)](https://www.npmjs.com/package/talak-web3)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm Downloads](https://img.shields.io/npm/dt/talak-web3?label=downloads)](https://www.npmjs.com/package/talak-web3)
+[![CI](https://github.com/talak-web3/talak-web3/actions/workflows/ci.yml/badge.svg)](https://github.com/talak-web3/talak-web3/actions/workflows/ci.yml)
 
 > Web3 backend toolkit for server-side SIWE sessions, RPC failover, and account-abstraction helpers. See [CHANGELOG.md](./CHANGELOG.md) for release notes.
 
@@ -100,7 +101,7 @@ pnpm typecheck
 - [API Reference](https://docs.talak.dev/api) - Complete API documentation
 - [Contributing](./CONTRIBUTING.md) - Contribution guidelines and troubleshooting (for example `npm warn Unknown env config "_dagimabebe-registry"`)
 
-## Releases 
+## Releases
 
 See [CHANGELOG.md](./CHANGELOG.md) and [GitHub Releases](https://github.com/dagimabebe/talak-web3/releases).
 

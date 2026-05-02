@@ -1,7 +1,7 @@
 {
-  "name": "@talak-web3/cli",
-  "version": "1.0.10",
-  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/@talak-web3/cli#readme",
+  "name": "@talak-web3/ai",
+  "version": "1.0.12",
+  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/@talak-web3/ai#readme",
   "bugs": {
     "url": "https://github.com/dagimabebe/talak-web3/issues"
   },
@@ -10,12 +10,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dagimabebe/talak-web3.git",
-    "directory": "packages/@talak-web3/cli"
-  },
-  "bin": {
-    "create-talak-web3": "./dist/bin.js",
-    "talak": "./dist/bin.js",
-    "talak-web3": "./dist/bin.js"
+    "directory": "packages/@talak-web3/ai"
   },
   "files": [
     "dist",
@@ -28,25 +23,32 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "import": "./dist/plugin.js",
+      "require": "./dist/plugin.cjs"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsx src/bin.ts",
+    "build": "tsup src/index.ts src/plugin.ts --format esm,cjs --dts --clean",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@talak-web3/templates": "workspace:*",
-    "cac": "7.0.0"
+    "@talak-web3/errors": "workspace:*",
+    "@talak-web3/types": "workspace:*",
+    "openai": "^6.34.0"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "vitest": "4.1.4"
   }
 }

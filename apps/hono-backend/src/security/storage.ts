@@ -51,10 +51,15 @@ export class RedisAuthStorage implements AuthStorage {
       if (!this.redis.isOpen) {
         throw new Error("Redis connection not open");
       }
-      return await rateLimitRedis(this.redis, key, {
-        capacity,
-        refillPerSecond: refillsPerSecond,
-      }, cost);
+      return await rateLimitRedis(
+        this.redis,
+        key,
+        {
+          capacity,
+          refillPerSecond: refillsPerSecond,
+        },
+        cost,
+      );
     } catch (err) {
       if (this.strictRateLimit) {
         throw new TalakWeb3Error("INFRA_UNAVAILABLE: Storage for rate limiter failed", {
