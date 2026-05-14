@@ -31,11 +31,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist"
+    "clean": "pnpm rimraf dist"
   },
   "dependencies": {
     "@talak-web3/errors": "workspace:*",

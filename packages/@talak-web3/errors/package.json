@@ -30,7 +30,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc --declaration --emitDeclarationOnly --rootDir src --outDir dist src/index.ts --ignoreConfig",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
   },

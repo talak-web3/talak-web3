@@ -1,7 +1,4 @@
-const path = require("path");
-
-const bundlePath = path.join(__dirname, "..", "packages", "talak-web3", "dist", "index.cjs");
-const talakWeb3 = require(bundlePath);
+const talakWeb3 = require("talak-web3");
 
 console.log("=== CJS Bundle Smoke Test ===\n");
 

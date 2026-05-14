@@ -30,8 +30,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node build-simple.cjs",
-    "typecheck": "echo 'Typecheck skipped - using simple build'",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {

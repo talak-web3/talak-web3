@@ -22,13 +22,13 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
     "./stores": {
-      "types": "./dist/stores/index.d.ts",
-      "import": "./dist/stores/index.js",
+      "types": "./dist/stores/index.d.mts",
+      "import": "./dist/stores/index.mjs",
       "require": "./dist/stores/index.cjs"
     }
   },
@@ -36,11 +36,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist"
+    "clean": "pnpm rimraf dist"
   },
   "dependencies": {
     "@talak-web3/errors": "workspace:*",

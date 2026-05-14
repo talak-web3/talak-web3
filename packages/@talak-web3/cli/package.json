@@ -35,12 +35,12 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "dev": "tsx src/bin.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist"
+    "clean": "pnpm rimraf dist"
   },
   "dependencies": {
     "@talak-web3/templates": "workspace:*",

@@ -5,7 +5,7 @@ import {
   MainnetPreset,
   ConfigManager,
   estimateEip1559Fees,
-} from "../packages/talak-web3/dist/index.js";
+} from "talak-web3";
 
 console.log("=== ESM Bundle Smoke Test ===\n");
 

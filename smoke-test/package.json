@@ -11,7 +11,7 @@
     "test": "node test-esm.mjs && node test-cjs.cjs && npx tsx test-ts.ts"
   },
   "dependencies": {
-    "talak-web3": "file:../packages/talak-web3"
+    "talak-web3": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.21.0",

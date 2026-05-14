@@ -21,7 +21,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
@@ -30,11 +30,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist"
+    "clean": "pnpm rimraf dist"
   },
   "dependencies": {
     "@talak-web3/auth": "workspace:*",
