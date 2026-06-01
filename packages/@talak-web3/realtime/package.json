@@ -39,6 +39,6 @@
     "@talak-web3/types": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0"
+    "@types/node": "catalog:"
   }
 }

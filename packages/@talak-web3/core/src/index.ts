@@ -6,7 +6,7 @@ import {
 } from "@talak-web3/auth";
 import { validateConfig } from "@talak-web3/config";
 import { TalakWeb3Error } from "@talak-web3/errors";
-import { HookRegistry } from "@talak-web3/hooks";
+import { HookRegistry } from "@talak-web3/hooks/hook-registry";
 import { UnifiedRpc } from "@talak-web3/rpc";
 import type {
   TalakWeb3BaseConfig,

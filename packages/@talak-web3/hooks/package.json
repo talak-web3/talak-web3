@@ -24,6 +24,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./hook-registry": {
+      "types": "./dist/hook-registry.d.ts",
+      "default": "./dist/hook-registry.js"
     }
   },
   "publishConfig": {

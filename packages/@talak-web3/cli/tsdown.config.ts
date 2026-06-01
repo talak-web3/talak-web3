@@ -6,6 +6,5 @@ export default defineConfig(
   talakWeb3Config({
     entry: ["src/index.ts", "src/bin.ts"],
     format: ["esm"],
-    dts: false,
   }),
 );
