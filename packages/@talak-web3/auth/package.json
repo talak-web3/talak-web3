@@ -22,13 +22,13 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./stores": {
-      "types": "./dist/stores/index.d.mts",
-      "import": "./dist/stores/index.mjs",
+      "types": "./dist/stores/index.d.ts",
+      "import": "./dist/stores/index.js",
       "require": "./dist/stores/index.cjs"
     }
   },

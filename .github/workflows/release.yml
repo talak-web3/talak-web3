@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: "20.12.0"
+  NODE_VERSION: "24"
   PNPM_VERSION: "9.0.0"
 
 jobs:
@@ -69,16 +69,8 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      - name: Sync dist into talak-web3-publish
-        run: |
-          rm -rf talak-web3-publish/dist
-          cp -r packages/talak-web3/dist talak-web3-publish/dist
-          cp -f packages/talak-web3/README.md talak-web3-publish/README.md
-          cp -f LICENSE talak-web3-publish/LICENSE
-
       - name: Verify dist contains bundled artifacts
         run: |
-
           INDEX_SIZE=$(stat -f%z packages/talak-web3/dist/index.js 2>/dev/null || stat -c%s packages/talak-web3/dist/index.js 2>/dev/null)
           if [ "$INDEX_SIZE" -lt 10000 ]; then
             echo "ERROR: index.js is only $INDEX_SIZE bytes - expected bundled output (>10KB)"
@@ -92,15 +84,8 @@ jobs:
           fi
           echo "✓ Type declarations verified (no 'any' types)"
 
-      - name: Prepare package for npm
-        working-directory: talak-web3-publish
-        run: |
-          npm pkg set name="talak-web3"
-          npm pkg set publishConfig.registry="https://registry.npmjs.org"
-          npm pkg set publishConfig.access="public"
-
       - name: Publish to npm
-        working-directory: talak-web3-publish
+        working-directory: packages/talak-web3
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -138,23 +123,12 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Sync dist into talak-web3-publish
-        run: |
-          rm -rf talak-web3-publish/dist
-          cp -r packages/talak-web3/dist talak-web3-publish/dist
-          cp -f packages/talak-web3/README.md talak-web3-publish/README.md
-          cp -f LICENSE talak-web3-publish/LICENSE
-
-      - name: Prepare package for GitHub Packages
-        working-directory: talak-web3-publish
+      - name: Publish to GitHub Packages
+        working-directory: packages/talak-web3
         run: |
           npm pkg set name="@dagimabebe/talak-web3"
           npm pkg set publishConfig.registry="https://npm.pkg.github.com"
-          npm pkg set publishConfig.access="public"
-
-      - name: Publish to GitHub Packages
-        working-directory: talak-web3-publish
-        run: npm publish
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

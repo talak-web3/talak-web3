@@ -5,6 +5,9 @@ import { talakWeb3Config } from "../../../tsdown.base.ts";
 export default defineConfig(
   talakWeb3Config({
     entry: ["src/index.tsx"],
-    external: ["react", "react-dom"],
+    platform: "neutral",
+    deps: {
+      neverBundle: ["react", "react-dom"],
+    },
   }),
 );

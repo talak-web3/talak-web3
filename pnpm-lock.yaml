@@ -421,6 +421,9 @@ importers:
       '@talak-web3/types':
         specifier: workspace:*
         version: link:../types
+      jose:
+        specifier: ^6.2.2
+        version: 6.2.2
       viem:
         specifier: 2.48.1
         version: 2.48.1(typescript@6.0.3)(zod@4.3.6)
@@ -428,9 +431,6 @@ importers:
       '@types/node':
         specifier: 25.6.0
         version: 25.6.0
-      jose:
-        specifier: ^6.2.2
-        version: 6.2.2
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -463,24 +463,6 @@ importers:
 
   packages/talak-web3:
     dependencies:
-      '@talak-web3/client':
-        specifier: workspace:*
-        version: link:../@talak-web3/client
-      '@talak-web3/config':
-        specifier: workspace:*
-        version: link:../@talak-web3/config
-      '@talak-web3/core':
-        specifier: workspace:*
-        version: link:../@talak-web3/core
-      '@talak-web3/hooks':
-        specifier: workspace:*
-        version: link:../@talak-web3/hooks
-      '@talak-web3/rpc':
-        specifier: workspace:*
-        version: link:../@talak-web3/rpc
-      '@talak-web3/types':
-        specifier: workspace:*
-        version: link:../@talak-web3/types
       ioredis:
         specifier: 5.10.1
         version: 5.10.1
@@ -499,6 +481,25 @@ importers:
       zod:
         specifier: 4.3.6
         version: 4.3.6
+    devDependencies:
+      '@talak-web3/client':
+        specifier: workspace:*
+        version: link:../@talak-web3/client
+      '@talak-web3/config':
+        specifier: workspace:*
+        version: link:../@talak-web3/config
+      '@talak-web3/core':
+        specifier: workspace:*
+        version: link:../@talak-web3/core
+      '@talak-web3/hooks':
+        specifier: workspace:*
+        version: link:../@talak-web3/hooks
+      '@talak-web3/rpc':
+        specifier: workspace:*
+        version: link:../@talak-web3/rpc
+      '@talak-web3/types':
+        specifier: workspace:*
+        version: link:../@talak-web3/types
 
 packages:
 
