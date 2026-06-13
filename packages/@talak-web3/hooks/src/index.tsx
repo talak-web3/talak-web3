@@ -1,41 +1,7 @@
-import type { TalakWeb3Instance, IHookRegistry } from "@talak-web3/types";
+import type { TalakWeb3Instance } from "@talak-web3/types";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-type AnyHandler = (data: unknown) => void;
-
-export class HookRegistry<Events extends Record<string, unknown>> implements IHookRegistry<Events> {
-  private readonly map = new Map<keyof Events, Set<AnyHandler>>();
-
-  on<K extends keyof Events>(event: K, handler: (data: Events[K]) => void): () => void {
-    let handlers = this.map.get(event);
-    if (!handlers) {
-      handlers = new Set<AnyHandler>();
-      this.map.set(event, handlers);
-    }
-    handlers.add(handler as AnyHandler);
-    return () => this.off(event, handler);
-  }
-
-  off<K extends keyof Events>(event: K, handler: (data: Events[K]) => void): void {
-    this.map.get(event)?.delete(handler as AnyHandler);
-  }
-
-  emit<K extends keyof Events>(event: K, data: Events[K]): void {
-    const handlers = this.map.get(event);
-    if (!handlers) return;
-    for (const h of handlers) {
-      try {
-        h(data as unknown);
-      } catch (err) {
-        console.error(`[HookRegistry] Error in handler for "${String(event)}":`, err);
-      }
-    }
-  }
-
-  clear(): void {
-    this.map.clear();
-  }
-}
+export { HookRegistry } from "./hook-registry.js";
 
 const TalakWeb3ReactContext = createContext<TalakWeb3Instance | null>(null);
 
