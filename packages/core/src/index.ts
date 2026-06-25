@@ -18,6 +18,7 @@ import type {
   RpcCache,
 } from "@talak-web3/types";
 
+export { MiddlewareChain, errorHandlingMiddleware } from "./middleware.js";
 import { MiddlewareChain } from "./middleware.js";
 import { SecurityInvariant, securityMiddleware } from "./security.js";
 
@@ -129,7 +130,7 @@ class TtlCache implements RpcCache {
   }
 }
 
-export type { TalakWeb3Instance } from "@talak-web3/types";
+export type { TalakWeb3Instance, MiddlewareHandler, IMiddlewareChain } from "@talak-web3/types";
 
 export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
   const normalizedInput = normalizeConfigInput(input);

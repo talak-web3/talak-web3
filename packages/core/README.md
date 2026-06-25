@@ -98,19 +98,23 @@ interface TalakWeb3Context {
 
 ## Middleware
 
-Middleware follows the onion pattern:
+Middleware follows the onion pattern with access to the full context:
 
 ```typescript
-app.context.requestChain.use(async (request, next) => {
-  console.log("Before:", request);
+import type { MiddlewareHandler } from "@talak-web3/core";
 
-  const response = await next();
+const myMiddleware: MiddlewareHandler = async (req, next, ctx) => {
+  ctx.logger.info("Before request");
+  const result = await next();
+  ctx.logger.info("After request");
+  return result;
+};
 
-  console.log("After:", response);
-
-  return response;
-});
+app.context.requestChain.use(myMiddleware);
 ```
+
+- `requestChain` — intercepts outgoing RPC calls (security, caching, logging)
+- `responseChain` — intercepts responses before returning to caller
 
 ## License
 
