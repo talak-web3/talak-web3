@@ -42,13 +42,18 @@
     "docs:start": "turbo run start --filter=@talak-web3/docs",
     "docs:typecheck": "turbo run typecheck --filter=@talak-web3/docs",
     "docs:lint": "turbo run lint --filter=@talak-web3/docs",
-    "docs:test": "turbo run test --filter=@talak-web3/docs"
+    "docs:test": "turbo run test --filter=@talak-web3/docs",
+    "bump": "bumpp --recursive --no-push --execute \"pnpm install --force\"",
+    "release:prepare": "bumpp --recursive --no-commit --no-push --no-tag --execute \"pnpm install --force\"",
+    "release": "bumpp --recursive --no-push --all --execute \"pnpm install --force\"",
+    "release:beta": "bumpp prerelease --preid beta --recursive --no-push --execute \"pnpm install --force\""
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.3",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "^4.1.5",
+    "bumpp": "^10.4.1",
     "husky": "^9.1.7",
     "oxfmt": "^0.47.0",
     "oxlint": "^1.62.0",
