@@ -283,9 +283,6 @@ importers:
       '@talak-web3/errors':
         specifier: workspace:*
         version: link:../errors
-      '@talak-web3/hooks':
-        specifier: workspace:*
-        version: link:../hooks
       '@talak-web3/rpc':
         specifier: workspace:*
         version: link:../rpc

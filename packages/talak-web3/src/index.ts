@@ -1,4 +1,4 @@
-export { talakWeb3, __resetTalakWeb3 } from "@talak-web3/core";
+export { talakWeb3 } from "@talak-web3/core";
 
 export { TalakWeb3Client, InMemoryTokenStorage, CookieTokenStorage } from "@talak-web3/client";
 

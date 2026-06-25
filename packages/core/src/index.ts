@@ -6,7 +6,6 @@ import {
 } from "@talak-web3/auth";
 import { validateConfig } from "@talak-web3/config";
 import { TalakWeb3Error } from "@talak-web3/errors";
-import { HookRegistry } from "@talak-web3/hooks/hook-registry";
 import { UnifiedRpc } from "@talak-web3/rpc";
 import type {
   TalakWeb3BaseConfig,
@@ -17,6 +16,8 @@ import type {
   Logger,
   RpcCache,
 } from "@talak-web3/types";
+
+import { HookRegistry } from "./hook-registry.js";
 
 export { MiddlewareChain, errorHandlingMiddleware } from "./middleware.js";
 import { MiddlewareChain } from "./middleware.js";
@@ -275,8 +276,6 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
 export function talakWeb3(input: unknown = {}): TalakWeb3Instance {
   return createTalakWeb3(input);
 }
-
-export function __resetTalakWeb3(): void {}
 
 function isTalakWeb3Plugin(input: unknown): input is TalakWeb3Plugin {
   if (!input || typeof input !== "object") return false;

@@ -13,6 +13,15 @@ import type { RedisClientType } from "redis"; // @ts-ignore: redis types optiona
 
 import { JwksManager, type JwksResponse, type KeyRotationConfig } from "./jwks.js";
 
+/**
+ * Signing/verification seam for JWT operations.
+ * Currently only `environment` provider is implemented (reads keys from env vars).
+ *
+ * To add a new provider:
+ * 1. Implement this interface
+ * 2. Add the type to `KeyProviderType`
+ * 3. Add the case in `createKeyProvider()`
+ */
 export interface KeyProvider {
   getCurrentSigningKeyInfo(): Promise<{ kid: string; publicKey: KeyLike }>;
   sign(data: Uint8Array): Promise<Uint8Array>;
@@ -164,130 +173,16 @@ export class EnvironmentKeyProvider implements KeyProvider {
   }
 }
 
-export class AWSKmsKeyProvider implements KeyProvider {
-  private jwksManager: JwksManager;
-  private keyId: string;
-  private region: string;
-
-  constructor(keyId: string, region: string, config?: Partial<KeyRotationConfig>) {
-    this.keyId = keyId;
-    this.region = region;
-    this.jwksManager = new JwksManager(config);
-  }
-
-  async getCurrentSigningKeyInfo(): Promise<{ kid: string; publicKey: KeyLike }> {
-    throw new TalakWeb3Error("AWS KMS provider not yet implemented", {
-      code: "AUTH_KMS_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-
-  async sign(data: Uint8Array): Promise<Uint8Array> {
-    throw new TalakWeb3Error("AWS KMS provider not yet implemented", {
-      code: "AUTH_KMS_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-
-  async getVerificationKeys(): Promise<{ kid: string; publicKey: KeyLike }[]> {
-    throw new TalakWeb3Error("AWS KMS provider not yet implemented", {
-      code: "AUTH_KMS_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-
-  async rotateKey(): Promise<{ kid: string; publicKey: KeyLike }> {
-    throw new TalakWeb3Error("AWS KMS provider not yet implemented", {
-      code: "AUTH_KMS_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-
-  async revokeKey(kid: string): Promise<void> {
-    throw new TalakWeb3Error("AWS KMS provider not yet implemented", {
-      code: "AUTH_KMS_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-}
-
-export class VaultKeyProvider implements KeyProvider {
-  private jwksManager: JwksManager;
-  private vaultUrl: string;
-  private secretPath: string;
-  private token: string;
-
-  constructor(
-    vaultUrl: string,
-    secretPath: string,
-    token: string,
-    config?: Partial<KeyRotationConfig>,
-  ) {
-    this.vaultUrl = vaultUrl;
-    this.secretPath = secretPath;
-    this.token = token;
-    this.jwksManager = new JwksManager(config);
-  }
-
-  async getCurrentSigningKeyInfo(): Promise<{ kid: string; publicKey: KeyLike }> {
-    throw new TalakWeb3Error("Vault provider not yet implemented", {
-      code: "AUTH_VAULT_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-
-  async sign(data: Uint8Array): Promise<Uint8Array> {
-    throw new TalakWeb3Error("Vault provider not yet implemented", {
-      code: "AUTH_VAULT_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-
-  async getVerificationKeys(): Promise<{ kid: string; publicKey: KeyLike }[]> {
-    throw new TalakWeb3Error("Vault provider not yet implemented", {
-      code: "AUTH_VAULT_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-
-  async rotateKey(): Promise<{ kid: string; publicKey: KeyLike }> {
-    throw new TalakWeb3Error("Vault provider not yet implemented", {
-      code: "AUTH_VAULT_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-
-  async revokeKey(kid: string): Promise<void> {
-    throw new TalakWeb3Error("Vault provider not yet implemented", {
-      code: "AUTH_VAULT_NOT_IMPLEMENTED",
-      status: 501,
-    });
-  }
-}
-
-export type KeyProviderType = "environment" | "aws-kms" | "vault";
+export type KeyProviderType = "environment";
 
 export function createKeyProvider(
   type: KeyProviderType,
-  options: unknown,
+  _options: unknown,
   config?: Partial<KeyRotationConfig>,
 ): KeyProvider {
   switch (type) {
     case "environment":
       return new EnvironmentKeyProvider(config);
-    case "aws-kms":
-      return new AWSKmsKeyProvider(
-        (options as { keyId: string; region: string }).keyId,
-        (options as { keyId: string; region: string }).region,
-        config,
-      );
-    case "vault":
-      return new VaultKeyProvider(
-        (options as { vaultUrl: string; secretPath: string; token: string }).vaultUrl,
-        (options as { vaultUrl: string; secretPath: string; token: string }).secretPath,
-        (options as { vaultUrl: string; secretPath: string; token: string }).token,
-        config,
-      );
     default:
       throw new TalakWeb3Error(`Unsupported key provider type: ${type}`, {
         code: "AUTH_INVALID_KEY_PROVIDER",
