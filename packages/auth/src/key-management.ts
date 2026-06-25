@@ -15,15 +15,10 @@ import { JwksManager, type JwksResponse, type KeyRotationConfig } from "./jwks.j
 
 export interface KeyProvider {
   getCurrentSigningKeyInfo(): Promise<{ kid: string; publicKey: KeyLike }>;
-
   sign(data: Uint8Array): Promise<Uint8Array>;
-
   getVerificationKeys(): Promise<{ kid: string; publicKey: KeyLike }[]>;
-
   rotateKey(): Promise<{ kid: string; publicKey: KeyLike }>;
-
   revokeKey(kid: string): Promise<void>;
-
   publishKeyRevocation?(kid: string): Promise<void>;
 }
 

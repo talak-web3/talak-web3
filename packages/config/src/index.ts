@@ -12,9 +12,7 @@ export function validateConfig(input: unknown): TalakWeb3Config {
   if (!result.success) {
     throw new TalakWeb3Error("Invalid config", {
       code: "CONFIG_INVALID",
-
       status: 400,
-
       cause: result.error,
     });
   }

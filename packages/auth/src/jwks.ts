@@ -23,9 +23,7 @@ export interface JwksResponse {
 
 export interface KeyRotationConfig {
   maxKeys: number;
-
   gracePeriodMs: number;
-
   rotationIntervalMs: number;
 }
 
@@ -134,9 +132,7 @@ export class JwksManager {
 
   async rotateKeys(newPrivateKey: KeyLike, newPublicKey: KeyLike): Promise<string> {
     const newKid = this.generateKid();
-
     await this.addKey(newKid, newPublicKey, newPrivateKey, true);
-
     return newKid;
   }
 

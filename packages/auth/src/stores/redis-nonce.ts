@@ -38,13 +38,9 @@ return 1
 
 export interface RedisNonceStoreOptions {
   redis: Redis;
-
   ttlMs?: number;
-
   keyPrefix?: string;
-
   waitReplicas?: number;
-
   waitTimeoutMs?: number;
 }
 
@@ -81,7 +77,6 @@ export class RedisNonceStore implements NonceStore {
     const now = Date.now();
 
     await this.redis.zadd(this.pendingKey(addr), now, nonce);
-
     await this.redis.pexpire(this.pendingKey(addr), this.ttlMs);
 
     return nonce;

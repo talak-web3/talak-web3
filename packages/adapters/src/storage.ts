@@ -5,7 +5,6 @@ import type { StorageAdapter } from "./index.js";
 
 export interface PinataStorageOptions {
   jwt?: string;
-
   gatewayBaseUrl?: string;
 }
 
@@ -77,6 +76,7 @@ export class PinataStorageAdapter implements StorageAdapter {
         status: 502,
       });
     }
+
     const buf = new Uint8Array(await res.arrayBuffer());
     return buf;
   }

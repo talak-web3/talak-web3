@@ -8,7 +8,6 @@ export const HARDENED_REDIS_OPTS: RedisOptions = {
     if (err.message.includes(targetError)) return true;
     return false;
   },
-
   enableReadyCheck: true,
   maxLoadingRetryTime: 10000,
   connectTimeout: 5000,

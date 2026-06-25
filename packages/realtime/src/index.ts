@@ -38,9 +38,7 @@ type OutboundEnvelope =
 
 export interface WebSocketMessagingOptions {
   serverUrl: string;
-
   from: string;
-
   maxBackoffMs?: number;
 }
 

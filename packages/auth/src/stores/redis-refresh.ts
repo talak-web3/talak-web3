@@ -7,7 +7,6 @@ import { randomId, randomToken, sha256Hex } from "./crypto.js";
 export interface RedisRefreshStoreOptions {
   redis: Redis;
   keyPrefix?: string;
-
   maxRotateAttempts?: number;
 }
 

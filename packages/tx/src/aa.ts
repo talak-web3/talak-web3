@@ -15,25 +15,23 @@ class BundlerRpc {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
     });
+
     if (!res.ok) throw new Error(`Bundler HTTP ${res.status}`);
     const data = (await res.json()) as { result?: T; error?: { message: string } };
+
     if (data.error) throw new Error(data.error.message);
     if (data.result === undefined) throw new Error("No result from bundler");
+
     return data.result;
   }
 }
 
 export interface AaClientOptions {
   bundlerUrl: string;
-
   paymasterUrl?: string;
-
   sign: (hash: Hex) => Promise<Hex>;
-
   sender: Address;
-
   chainId: number;
-
   entryPoint?: Address;
 }
 

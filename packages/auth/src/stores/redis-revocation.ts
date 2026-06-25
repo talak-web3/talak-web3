@@ -13,21 +13,13 @@ export interface RevocationMessage {
 
 export interface RedisRevocationStoreOptions {
   redis: Redis;
-
   keyPrefix?: string;
-
   enablePubSub?: boolean;
-
   cacheMaxSize?: number;
-
   pubSubDisconnectTimeoutMs?: number;
-
   strictMode?: boolean;
-
   waitReplicas?: number;
-
   waitTimeoutMs?: number;
-
   readFromPrimary?: boolean;
 }
 

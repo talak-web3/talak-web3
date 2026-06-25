@@ -8,17 +8,11 @@ export interface RedisLike {
 
 export interface CircuitBreakerConfig {
   redis: RedisLike;
-
   failureThreshold: number;
-
   successThreshold: number;
-
   halfOpenTimeout: number;
-
   windowSize: number;
-
   latencyThreshold?: number;
-
   minRequestsForLatency?: number;
 }
 
