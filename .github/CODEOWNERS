@@ -2,9 +2,9 @@
 * @dagimabebe
 
 # Security-critical packages
-/packages/talak-web3-auth/ @dagimabebe
-/packages/talak-web3-core/ @dagimabebe
-/packages/talak-web3-middleware/ @dagimabebe
+/packages/auth/ @dagimabebe
+/packages/core/ @dagimabebe
+/packages/middleware/ @dagimabebe
 
 # Documentation
 /docs/ @dagimabebe

@@ -12,7 +12,7 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "9.0.0"
+  PNPM_VERSION: "9.15.0"
 
 jobs:
   install:
@@ -52,6 +52,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build npm package target
-        run: pnpm --filter talak-web3 build
+        run: pnpm turbo run build --filter=talak-web3
       - name: Dry-run package content
         run: pnpm --filter talak-web3 pack:check

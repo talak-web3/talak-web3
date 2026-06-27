@@ -10,7 +10,7 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "9.0.0"
+  PNPM_VERSION: "9.15.0"
 
 jobs:
   release:

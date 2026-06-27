@@ -51,7 +51,7 @@ Every request is automatically enriched with:
 To trace a specific request across multiple components:
 
 1. Search your log aggregator (e.g., ELK, Datadog, CloudWatch) for the `reqId`.
-2. This ID is propagated through the `talak-web3-core` context and will appear in all logs generated during that request's lifecycle.
+2. This ID is propagated through the `@talak-web3/core` context and will appear in all logs generated during that request's lifecycle.
 
 ---
 

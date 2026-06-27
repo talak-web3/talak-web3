@@ -27,7 +27,7 @@ This document certifies that the talak-web3 authentication system has achieved *
 
 ### Implementation
 
-**File**: `packages/talak-web3-auth/src/stores/redis-nonce.ts`
+**File**: `packages/auth/src/stores/redis-nonce.ts`
 
 **Key Changes**:
 
@@ -76,7 +76,7 @@ Without these settings, the invariant is strong but not formally closed under ma
 
 ### Adversarial Test
 
-**File**: `packages/talak-web3-auth/src/__tests__/adversarial/nonce-crash-replay.test.ts`
+**File**: `packages/auth/src/__tests__/adversarial/nonce-crash-replay.test.ts`
 
 Test validates:
 
@@ -94,7 +94,7 @@ Test validates:
 
 ### Implementation
 
-**File**: `packages/talak-web3-auth/src/stores/redis-revocation.ts`
+**File**: `packages/auth/src/stores/redis-revocation.ts`
 
 **Key Changes**:
 
@@ -138,7 +138,7 @@ PROOF:
 
 ### Adversarial Test
 
-**File**: `packages/talak-web3-auth/src/__tests__/adversarial/revocation-race.test.ts`
+**File**: `packages/auth/src/__tests__/adversarial/revocation-race.test.ts`
 
 Test validates:
 
@@ -157,7 +157,7 @@ Test validates:
 
 ### Implementation
 
-**File**: `packages/talak-web3-auth/src/time.ts`
+**File**: `packages/auth/src/time.ts`
 
 **Key Changes**:
 
@@ -274,7 +274,7 @@ PROOF:
 
 ### Adversarial Test
 
-**File**: `packages/talak-web3-auth/src/__tests__/adversarial/dependency-tamper.test.ts`
+**File**: `packages/auth/src/__tests__/adversarial/dependency-tamper.test.ts`
 
 Test validates:
 

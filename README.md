@@ -38,7 +38,7 @@ npm run dev
 
 ### Manual Setup
 
-Consult [`docs/MINIMAL_SETUP.md`](./docs/MINIMAL_SETUP.md) and the [`@talak-web3/core`](./packages/talak-web3-core/README.md) README — `talakWeb3()` is configured via `@talak-web3/config` presets and plugins; JWT/session secrets are enforced by `@talak-web3/auth` (**`JWT_SECRET` is required when `NODE_ENV=production`**).
+Consult [`docs/MINIMAL_SETUP.md`](./docs/MINIMAL_SETUP.md) and the [`@talak-web3/core`](./packages/core/README.md) README — `talakWeb3()` is configured via `@talak-web3/config` presets and plugins; JWT/session secrets are enforced by `@talak-web3/auth` (**`JWT_SECRET` is required when `NODE_ENV=production`**).
 
 ### React integration
 

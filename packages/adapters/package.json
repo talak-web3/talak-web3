@@ -1,0 +1,44 @@
+{
+  "name": "@talak-web3/adapters",
+  "version": "1.0.11",
+  "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/adapters#readme",
+  "bugs": {
+    "url": "https://github.com/dagimabebe/talak-web3/issues"
+  },
+  "license": "MIT",
+  "author": "Dagim Abebe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dagimabebe/talak-web3.git",
+    "directory": "packages/adapters"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@ceramicnetwork/http-client": "6.4.0",
+    "@ceramicnetwork/stream-tile": "6.4.0",
+    "@tableland/sdk": "7.2.1",
+    "@talak-web3/errors": "workspace:*",
+    "@talak-web3/types": "workspace:*"
+  }
+}

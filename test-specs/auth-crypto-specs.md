@@ -376,8 +376,8 @@ const auth = new TalakWeb3Auth({
 
 **Files to Update**:
 
-- `packages/talak-web3-auth/src/__tests__/auth-core.test.ts`
-- `packages/talak-web3-auth/src/__tests__/replay-attack-prevention.test.ts`
+- `packages/auth/src/__tests__/unit/auth-core.test.ts`
+- `packages/auth/src/__tests__/integration/replay-attack-prevention.test.ts`
 - All other auth test files
 
 ---
