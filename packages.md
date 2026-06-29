@@ -21,8 +21,8 @@ For a short overview of the `packages/` directory, see [`packages/README.md`](pa
 | [`packages/config`](packages/config/)                     | `@talak-web3/config`           | [README](packages/config/README.md)           | Configuration loading and validation.                   |
 | [`packages/core`](packages/core/)                         | `@talak-web3/core`             | [README](packages/core/README.md)             | Core orchestrator, plugins, middleware chains, context. |
 | [`packages/errors`](packages/errors/)                     | `@talak-web3/errors`           | [README](packages/errors/README.md)           | Shared error types and helpers.                         |
-| [`packages/handlers`](packages/handlers/)                 | `@talak-web3/handlers`         | [README](packages/handlers/README.md)         | Route and protocol handlers.                            |
 | [`packages/hooks`](packages/hooks/)                       | `@talak-web3/hooks`            | [README](packages/hooks/README.md)            | React hooks and providers.                              |
+| [`packages/talak-web3`](packages/talak-web3/)             | `talak-web3`                   | [README](packages/talak-web3/README.md)       | Unified SDK; includes `talak-web3/nextjs` integration.  |
 | [`packages/identity`](packages/identity/)                 | `@talak-web3/identity`         | [README](packages/identity/README.md)         | Identity and account abstractions.                      |
 | [`packages/realtime`](packages/realtime/)                 | `@talak-web3/realtime`         | [README](packages/realtime/README.md)         | Realtime channels and messaging.                        |
 | [`packages/rpc`](packages/rpc/)                           | `@talak-web3/rpc`              | [README](packages/rpc/README.md)              | Multi-provider RPC routing and resilience.              |

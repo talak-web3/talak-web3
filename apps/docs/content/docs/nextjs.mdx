@@ -1,0 +1,145 @@
+---
+title: Next.js Integration
+icon: Boxes
+description: App Router integration with toNextJsHandler, nextCookies, and getSession.
+---
+
+talak-web3 ships App Router integration via `talak-web3/nextjs`. Auth routes are served by `app.handler` on every `talakWeb3()` instance, wrapped for Next.js with `toNextJsHandler`.
+
+## Install
+
+```package-install
+talak-web3 next
+```
+
+`next` is a peer dependency of `talak-web3`.
+
+## Server setup
+
+### 1. Configure the instance
+
+```ts title="talak.config.ts"
+import { talakWeb3 } from "talak-web3";
+import { nextCookies } from "talak-web3/nextjs";
+import {
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
+} from "@talak-web3/auth";
+
+export const app = talakWeb3({
+  chains: [
+    {
+      id: 1,
+      name: "Ethereum",
+      rpcUrls: ["https://cloudflare-eth.com"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    },
+  ],
+  auth: {
+    nonceStore: new InMemoryNonceStore(),
+    refreshStore: new InMemoryRefreshStore(),
+    revocationStore: new InMemoryRevocationStore(),
+    accessTtlSeconds: 900,
+    refreshTtlSeconds: 604_800,
+  },
+  plugins: [nextCookies()],
+});
+```
+
+Place `nextCookies()` **last** in the `plugins` array so later plugins do not set cookies this integration cannot forward.
+
+### 2. Mount the route handler
+
+```ts title="app/api/auth/[...talak]/route.ts"
+import { toNextJsHandler } from "talak-web3/nextjs";
+import { app } from "@/talak.config";
+
+const handler = toNextJsHandler(app);
+
+export const GET = handler.GET;
+export const POST = handler.POST;
+export const PUT = handler.PUT;
+export const PATCH = handler.PATCH;
+export const DELETE = handler.DELETE;
+```
+
+`toNextJsHandler` accepts either a `talakWeb3()` instance (uses `app.handler`) or any object with a `handler` property.
+
+## Server Components
+
+```tsx title="app/dashboard/page.tsx"
+import { redirect } from "next/navigation";
+import { getSession } from "talak-web3/nextjs";
+import { app } from "@/talak.config";
+
+export default async function DashboardPage() {
+  const session = await getSession(app);
+
+  if (!session.isAuthenticated) {
+    redirect("/login");
+  }
+
+  return <p>Welcome, {session.address}</p>;
+}
+```
+
+Helpers: `getSession`, `requireSession`, `tryGetSession`.
+
+## Middleware
+
+```ts title="middleware.ts"
+import { createMiddleware } from "talak-web3/nextjs";
+
+export const middleware = createMiddleware({
+  publicPaths: ["/", "/login"],
+  redirectTo: "/login",
+});
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};
+```
+
+## Client usage
+
+There is no `useSIWE` hook. Use `TalakWeb3Client` or `fetch` from client components.
+
+`TalakWeb3Client` calls paths under `/auth/*`, so set `baseUrl: "/api"` when the handler is mounted at `/api/auth`:
+
+```tsx title="components/sign-in.tsx"
+"use client";
+
+import { TalakWeb3Client } from "talak-web3";
+
+const authClient = new TalakWeb3Client({ baseUrl: "/api" });
+
+// 1. authClient.getNonce(address)
+// 2. sign SIWE message with wallet
+// 3. authClient.loginWithSiwe(message, signature)
+```
+
+With `nextCookies()`, use `credentials: "include"` on fetch calls:
+
+```ts
+await fetch("/api/auth/login", {
+  method: "POST",
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ message, signature }),
+});
+```
+
+## Exports
+
+From `talak-web3/nextjs`:
+
+- `toNextJsHandler` — App Router adapter
+- `nextCookies` — cookie plugin with RSC detection
+- `getSession`, `requireSession`, `tryGetSession` — server session helpers
+- `createMiddleware` — route protection middleware
+- `createAuthHandler` — standalone handler factory (also on `app.handler`)
+
+## RSC and cookies
+
+The `nextCookies` plugin detects React Server Component requests (`RSC: 1` without `next-action`) and skips session refresh when cookies cannot be written, avoiding cookie/database mismatches.

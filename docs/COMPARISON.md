@@ -196,9 +196,11 @@ import { generateNonce } from "siwe";
 
 const nonce = generateNonce();
 
-import { useSIWE } from "talak-web3/react";
+import { TalakWeb3Client } from "talak-web3";
 
-const { signIn, signOut, isAuthenticated } = useSIWE();
+const client = new TalakWeb3Client({ baseUrl: "/api" });
+const { nonce } = await client.getNonce(address);
+// sign message, then: await client.loginWithSiwe(message, signature);
 ```
 
 ## Conclusion

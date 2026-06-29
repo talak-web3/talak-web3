@@ -1,7 +1,11 @@
-import { createAuthHandler } from "@talak-web3/handlers/nextjs";
+import { toNextJsHandler } from "talak-web3/nextjs";
 
-import { app } from "../../../../talak.config";
+import { app } from "../../../talak.config";
 
-const handler = createAuthHandler(app);
+const handler = toNextJsHandler(app);
 
-export { handler as GET, handler as POST };
+export const GET = handler.GET;
+export const POST = handler.POST;
+export const PUT = handler.PUT;
+export const PATCH = handler.PATCH;
+export const DELETE = handler.DELETE;

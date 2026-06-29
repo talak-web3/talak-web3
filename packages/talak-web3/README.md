@@ -54,6 +54,35 @@ const nonce = await app.auth.createNonce("0x...");
 const result = await app.rpc.request("eth_blockNumber");
 ```
 
+### Next.js Integration
+
+See [`docs/NEXTJS.md`](https://github.com/dagimabebe/talak-web3/blob/main/docs/NEXTJS.md) for the full guide.
+
+```typescript
+// talak.config.ts
+import { talakWeb3 } from "talak-web3";
+import { nextCookies } from "talak-web3/nextjs";
+
+export const app = talakWeb3({ chains: [...], plugins: [nextCookies()] });
+```
+
+```typescript
+// app/api/auth/[...talak]/route.ts
+import { toNextJsHandler } from "talak-web3/nextjs";
+import { app } from "@/talak.config";
+
+const handler = toNextJsHandler(app);
+export const { GET, POST, PUT, PATCH, DELETE } = handler;
+```
+
+```tsx
+// Server Component
+import { getSession } from "talak-web3/nextjs";
+const session = await getSession(app);
+```
+
+Client-side SIWE: `TalakWeb3Client({ baseUrl: "/api" })` or `fetch("/api/auth/...", { credentials: "include" })`.
+
 ### React Integration
 
 ```tsx
@@ -194,6 +223,8 @@ import type {
 import { MultiChainRouter } from "talak-web3/multichain";
 
 import { TalakWeb3Provider, useTalakWeb3, useAccount, useChain } from "talak-web3/react";
+
+import { toNextJsHandler, nextCookies, getSession } from "talak-web3/nextjs";
 ```
 
 ## Ecosystem Packages
@@ -330,6 +361,7 @@ pnpm typecheck
 ## Documentation
 
 - [Getting Started](https://github.com/dagimabebe/talak-web3/blob/main/docs/MINIMAL_SETUP.md) — First steps with talak-web3
+- [Next.js Integration](https://github.com/dagimabebe/talak-web3/blob/main/docs/NEXTJS.md) — App Router handler and server session
 - [Architecture](https://github.com/dagimabebe/talak-web3/blob/main/docs/ARCHITECTURE.md) — System design and patterns
 - [Security](https://github.com/dagimabebe/talak-web3/blob/main/docs/SECURITY_ARCHITECTURE.md) — Security architecture and threat model
 - [API Reference](https://docs.talak.dev/api) — Complete API documentation

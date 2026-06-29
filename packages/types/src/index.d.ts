@@ -146,8 +146,8 @@ export interface TalakWeb3Plugin {
   version: string;
   dependencies?: string[];
   setup(ctx: TalakWeb3Context): void | Promise<void>;
-  onBeforeRequest?(req: unknown): Promise<void>;
-  onAfterResponse?(res: unknown): Promise<void>;
+  onBeforeRequest?(req: unknown, ctx: TalakWeb3Context): Promise<void>;
+  onAfterResponse?(res: unknown, ctx: TalakWeb3Context): Promise<void>;
   onChainChanged?(chainId: number): void;
   onAccountChanged?(address: string | null): void;
   teardown?(): void | Promise<void>;
@@ -178,6 +178,7 @@ export interface TalakWeb3Instance {
   readonly config: TalakWeb3BaseConfig;
   readonly hooks: IHookRegistry<TalakWeb3EventsMap>;
   readonly context: TalakWeb3Context;
+  readonly handler: (request: Request) => Promise<Response>;
   init(): Promise<void>;
   destroy(): Promise<void>;
 }

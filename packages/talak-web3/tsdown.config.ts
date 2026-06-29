@@ -4,7 +4,7 @@ import { talakWeb3Config } from "../../tsdown.base.ts";
 
 export default defineConfig(
   talakWeb3Config({
-    entry: ["src/index.ts", "src/multichain.ts", "src/react.ts"],
+    entry: ["src/index.ts", "src/multichain.ts", "src/react.ts", "src/nextjs.ts"],
     unbundle: false,
     deps: {
       alwaysBundle: [/@talak-web3\//],

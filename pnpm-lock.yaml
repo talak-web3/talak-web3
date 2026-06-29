@@ -379,6 +379,9 @@ importers:
       jose:
         specifier: 6.2.2
         version: 6.2.2
+      next:
+        specifier: '>=14.0.0'
+        version: 16.2.4(@opentelemetry/api@1.9.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       react:
         specifier: '>=18.0.0'
         version: 19.2.5

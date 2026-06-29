@@ -186,15 +186,20 @@ This document compares Talak Web3 with alternative Web3 authentication and backe
 import NextAuth from "next-auth";
 import { SiweMessage } from "siwe";
 
-import { createTalak, MainnetPreset } from "talak-web3";
+import { talakWeb3, MainnetPreset } from "talak-web3";
+import { toNextJsHandler } from "talak-web3/nextjs";
 
-const app = createTalak({
+const app = talakWeb3({
   ...MainnetPreset,
   auth: {
     domain: "myapp.com",
-    secret: process.env.TALAK_SECRET!,
+    secret: process.env.JWT_SECRET!,
   },
 });
+
+// app/api/auth/[...talak]/route.ts
+const handler = toNextJsHandler(app);
+export const { GET, POST } = handler;
 ```
 
 ### From Custom SIWE
@@ -205,9 +210,11 @@ import { generateNonce } from "siwe";
 
 const nonce = generateNonce();
 
-import { useSIWE } from "talak-web3/react";
+import { TalakWeb3Client } from "talak-web3";
 
-const { signIn, signOut, isAuthenticated } = useSIWE();
+const client = new TalakWeb3Client({ baseUrl: "/api" });
+const { nonce } = await client.getNonce(address);
+// sign message, then: await client.loginWithSiwe(message, signature);
 ```
 
 ---

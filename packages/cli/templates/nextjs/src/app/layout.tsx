@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { TalakProvider } from "talak-web3/react";
+
+import { Providers } from "./providers";
 
 import "./globals.css";
 
@@ -12,13 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <TalakProvider
-          config={{
-            apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
-          }}
-        >
-          {children}
-        </TalakProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
