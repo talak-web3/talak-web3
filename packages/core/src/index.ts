@@ -20,8 +20,26 @@ import type {
 import { HookRegistry } from "./hook-registry.js";
 
 export { MiddlewareChain, errorHandlingMiddleware } from "./middleware.js";
+import { createAuthHandler } from "./auth-handler.js";
 import { MiddlewareChain } from "./middleware.js";
 import { SecurityInvariant, securityMiddleware } from "./security.js";
+
+export { createAuthHandler, type AuthHandlerOptions } from "./auth-handler.js";
+export {
+  TALAK_ACCESS_COOKIE,
+  TALAK_REFRESH_COOKIE,
+  getAccessTokenFromRequest,
+  getRefreshTokenFromRequest,
+  createSetCookieString,
+  appendAuthCookies,
+  appendClearAuthCookies,
+} from "./auth-cookies.js";
+export {
+  getShouldSkipSessionRefresh,
+  setShouldSkipSessionRefresh,
+  resetShouldSkipSessionRefresh,
+} from "./should-session-refresh.js";
+export { runWithRequestState, runWithRequestStateAsync } from "./request-state.js";
 
 class ConsoleLogger implements Logger {
   private readonly structured: boolean;
@@ -133,8 +151,52 @@ class TtlCache implements RpcCache {
 
 export type { TalakWeb3Instance, MiddlewareHandler, IMiddlewareChain } from "@talak-web3/types";
 
+function extractAuthFromInput(input: unknown): TalakWeb3Auth | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const auth = (input as Record<string, unknown>)["auth"];
+  return auth instanceof TalakWeb3Auth ? auth : undefined;
+}
+
+function extractAuthStoresFromInput(input: unknown): {
+  nonceStore?: NonceStore;
+  refreshStore?: RefreshStore;
+  revocationStore?: RevocationStore;
+  accessTtlSeconds?: number;
+  refreshTtlSeconds?: number;
+  expectedDomain?: string;
+  keyProviderType?: import("@talak-web3/auth").KeyProviderType;
+  keyProviderOptions?: unknown;
+  keyRotationConfig?: unknown;
+  timeSource?: import("@talak-web3/auth").AuthoritativeTime;
+  contextEnforcementDate?: Date;
+} {
+  if (!input || typeof input !== "object") return {};
+  const auth = (input as Record<string, unknown>)["auth"];
+  if (!auth || typeof auth !== "object" || auth instanceof TalakWeb3Auth) return {};
+
+  const authConfig = auth as Record<string, unknown>;
+  const options: ReturnType<typeof extractAuthStoresFromInput> = {};
+
+  if (authConfig["nonceStore"]) options.nonceStore = authConfig["nonceStore"] as NonceStore;
+  if (authConfig["refreshStore"]) options.refreshStore = authConfig["refreshStore"] as RefreshStore;
+  if (authConfig["revocationStore"]) {
+    options.revocationStore = authConfig["revocationStore"] as RevocationStore;
+  }
+  if (authConfig["accessTtlSeconds"] !== undefined) {
+    options.accessTtlSeconds = authConfig["accessTtlSeconds"] as number;
+  }
+  if (authConfig["refreshTtlSeconds"] !== undefined) {
+    options.refreshTtlSeconds = authConfig["refreshTtlSeconds"] as number;
+  }
+  if (authConfig["domain"]) options.expectedDomain = authConfig["domain"] as string;
+
+  return options;
+}
+
 export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
   const normalizedInput = normalizeConfigInput(input);
+  const injectedAuth = extractAuthFromInput(normalizedInput);
+  const injectedAuthStores = extractAuthStoresFromInput(normalizedInput);
   SecurityInvariant.checkSecrets(normalizedInput);
   const config = validateConfig(normalizedInput) as TalakWeb3BaseConfig;
   const logger = new ConsoleLogger();
@@ -147,32 +209,17 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
 
   let auth: TalakWeb3Auth;
 
-  if (config.auth instanceof TalakWeb3Auth) {
-    auth = config.auth;
+  if (injectedAuth) {
+    auth = injectedAuth;
   } else {
     const authConfig = config.auth ?? {};
-    const authOptions: {
-      nonceStore?: NonceStore;
-      refreshStore?: RefreshStore;
-      revocationStore?: RevocationStore;
-      accessTtlSeconds?: number;
-      refreshTtlSeconds?: number;
-      expectedDomain?: string;
-      keyProviderType?: import("@talak-web3/auth").KeyProviderType;
-      keyProviderOptions?: unknown;
-      keyRotationConfig?: unknown;
-      timeSource?: import("@talak-web3/auth").AuthoritativeTime;
-      contextEnforcementDate?: Date;
-    } = {};
+    const authOptions = {
+      ...injectedAuthStores,
+    };
 
-    if (authConfig.nonceStore) authOptions.nonceStore = authConfig.nonceStore;
-    if (authConfig.refreshStore) authOptions.refreshStore = authConfig.refreshStore;
-    if (authConfig.revocationStore) authOptions.revocationStore = authConfig.revocationStore;
-    if (authConfig.accessTtlSeconds !== undefined)
-      authOptions.accessTtlSeconds = authConfig.accessTtlSeconds;
-    if (authConfig.refreshTtlSeconds !== undefined)
-      authOptions.refreshTtlSeconds = authConfig.refreshTtlSeconds;
-    if (authConfig.domain) authOptions.expectedDomain = authConfig.domain;
+    if (!authOptions.expectedDomain && authConfig.domain) {
+      authOptions.expectedDomain = authConfig.domain;
+    }
 
     auth = new TalakWeb3Auth(
       authOptions as {
@@ -240,7 +287,7 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
   rpc.ctx = context;
   requestChain.use(securityMiddleware);
 
-  const instance: TalakWeb3Instance = {
+  const instanceBase = {
     config: context.config,
     hooks,
     context,
@@ -277,6 +324,14 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
       plugins.clear();
       hooks.clear();
     },
+  };
+
+  const instance: TalakWeb3Instance = {
+    ...instanceBase,
+    handler: createAuthHandler({
+      ...instanceBase,
+      handler: async () => new Response(null, { status: 500 }),
+    }),
   };
 
   return instance;

@@ -8,18 +8,18 @@ This document provides the complete API reference for Talak Web3.
 
 ## Core API
 
-### `createTalak(config)`
+### `talakWeb3(config)`
 
-Creates a new Talak Web3 application instance.
+Creates a new talak-web3 application instance. Every instance exposes `app.handler` for HTTP auth routes.
 
 ```typescript
-import { createTalak, MainnetPreset } from "talak-web3";
+import { talakWeb3, MainnetPreset } from "talak-web3";
 
-const app = createTalak({
+const app = talakWeb3({
   ...MainnetPreset,
   auth: {
     domain: "myapp.com",
-    secret: process.env.TALAK_SECRET!,
+    secret: process.env.JWT_SECRET!,
     sessionDuration: 900,
   },
   rpc: {
@@ -122,41 +122,48 @@ const balance = await app.context.rpc.request(1, "eth_getBalance", [
 ]);
 ```
 
-## React Hooks
+## Next.js (`talak-web3/nextjs`)
 
-### `useSIWE(options)`
+See the [Next.js integration guide](/docs/nextjs).
 
-Hook for Sign-In with Ethereum.
+### `toNextJsHandler(app)`
+
+Wraps `app.handler` for App Router route exports.
 
 ```typescript
-import { useSIWE } from "talak-web3/react";
+import { toNextJsHandler } from "talak-web3/nextjs";
+import { app } from "@/talak.config";
 
-const { signIn, signOut, isAuthenticated, isLoading, user, error } = useSIWE({
-  domain: "myapp.com",
-  uri: "https://myapp.com/login",
-  onSuccess: (user) => console.log("Logged in:", user),
-  onError: (error) => console.error("Login failed:", error),
-});
+const handler = toNextJsHandler(app);
+export const { GET, POST, PUT, PATCH, DELETE } = handler;
 ```
 
-### `useSession()`
+### `nextCookies()`
 
-Hook for accessing session state.
+Plugin that forwards `Set-Cookie` via `next/headers` and skips session refresh in pure RSC contexts. Place **last** in the `plugins` array.
+
+### `getSession(app)` / `createMiddleware()`
+
+Read sessions in Server Components and protect routes in `middleware.ts`.
+
+## React Hooks (`talak-web3/react`)
+
+There is **no** `useSIWE` hook. Use `TalakWeb3Client` or `fetch("/api/auth/...")` from client components.
+
+### `TalakWeb3Provider`, `useAccount`, `useChain`, `useRpc`
 
 ```typescript
-import { useSession } from "talak-web3/react";
-
-const { session, isAuthenticated, isLoading } = useSession();
+import { TalakWeb3Provider, useAccount, useChain, useRpc } from "talak-web3/react";
 ```
 
-### `useWallet()`
-
-Hook for wallet interactions.
+## Client
 
 ```typescript
-import { useWallet } from "talak-web3/react";
+import { TalakWeb3Client } from "talak-web3";
 
-const { connect, disconnect, address, chainId, isConnected, isConnecting } = useWallet();
+const client = new TalakWeb3Client({ baseUrl: "/api" });
+await client.getNonce(address);
+await client.loginWithSiwe(message, signature);
 ```
 
 ## Error Handling

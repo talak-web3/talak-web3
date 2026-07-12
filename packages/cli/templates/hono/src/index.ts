@@ -1,4 +1,3 @@
-import { createAuthApp } from "@talak-web3/handlers/hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -16,7 +15,7 @@ app.use(
 
 app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 
-app.route("/auth", createAuthApp(talakApp));
+app.all("/api/auth/*", async (c) => talakApp.handler(c.req.raw));
 
 app.get("/api/protected", async (c) => {
   const authHeader = c.req.header("authorization");

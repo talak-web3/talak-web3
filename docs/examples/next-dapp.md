@@ -246,6 +246,7 @@ pnpm dev
 
 - Uses Next.js 16 with App Router
 - Uses @talak-web3/hooks for React context provider
+- For SIWE auth, mount `toNextJsHandler(app)` at `/api/auth/*` — see [NEXTJS.md](../NEXTJS.md)
 - Demonstrates: wallet connect, chain switcher, RPC tester, gasless txs
 - Mock connect button uses hardcoded address `0x000000000000000000000000000000000000dEaD`
 - For gasless txs, need to attach AccountAbstractionPlugin

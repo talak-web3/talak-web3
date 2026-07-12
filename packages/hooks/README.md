@@ -32,26 +32,21 @@ function WalletButton() {
 }
 ```
 
-### useSIWE
+### Sign-In with Ethereum (Next.js)
 
-Sign-In with Ethereum authentication.
+There is no `useSIWE` hook. In Next.js client components, use `TalakWeb3Client` against `/api/auth/*`:
 
 ```typescript
-import { useSIWE } from '@talak-web3/hooks';
+import { TalakWeb3Client } from "talak-web3";
 
-function LoginButton() {
-  const { signIn, signOut, isAuthenticated, user } = useSIWE({
-    domain: 'myapp.com',
-    uri: 'https://myapp.com/login',
-  });
+const client = new TalakWeb3Client({ baseUrl: "/api" });
 
-  return (
-    <button onClick={isAuthenticated ? signOut : signIn}>
-      {isAuthenticated ? `Welcome ${user.address}` : 'Sign In'}
-    </button>
-  );
-}
+// 1. client.getNonce(address)
+// 2. sign SIWE message with wallet
+// 3. client.loginWithSiwe(message, signature)
 ```
+
+See [docs/NEXTJS.md](../../docs/NEXTJS.md) for the full App Router setup (`toNextJsHandler`, `nextCookies`, `getSession`).
 
 ### useContract
 

@@ -76,7 +76,10 @@ export interface TalakWeb3Auth extends IAuth {
     signature: string,
   ): Promise<{ accessToken: string; refreshToken: string }>;
   createSession(address: string, chainId: number): Promise<string>;
-  verifySession(token: string): Promise<{ address: string; chainId: number }>;
+  verifySession(
+    token: string,
+    context?: { ip: string; userAgent: string },
+  ): Promise<{ address: string; chainId: number }>;
   revokeSession(token: string): Promise<void>;
   generateNonce(): string;
 }
@@ -147,8 +150,8 @@ export interface TalakWeb3Plugin {
   version: string;
   dependencies?: string[];
   setup(ctx: TalakWeb3Context): void | Promise<void>;
-  onBeforeRequest?(req: unknown): Promise<void>;
-  onAfterResponse?(res: unknown): Promise<void>;
+  onBeforeRequest?(req: unknown, ctx: TalakWeb3Context): Promise<void>;
+  onAfterResponse?(res: unknown, ctx: TalakWeb3Context): Promise<void>;
   onChainChanged?(chainId: number): void;
   onAccountChanged?(address: string | null): void;
   teardown?(): void | Promise<void>;
@@ -183,6 +186,7 @@ export interface TalakWeb3Instance {
   readonly config: TalakWeb3BaseConfig;
   readonly hooks: IHookRegistry<TalakWeb3EventsMap>;
   readonly context: TalakWeb3Context;
+  readonly handler: (request: Request) => Promise<Response>;
   init(): Promise<void>;
   destroy(): Promise<void>;
 }

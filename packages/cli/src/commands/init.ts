@@ -55,7 +55,7 @@ export async function initCommand(name: string = ".", options: InitOptions = {})
 
   fs.writeFileSync(path.join(targetDir, "package.json"), JSON.stringify(packageJson, null, 2));
 
-  const configContent = generateConfig(template);
+  const configContent = generateConfig(template as (typeof templates)[number]);
   fs.writeFileSync(path.join(targetDir, "talak.config.ts"), configContent);
 
   const envContent = generateEnv();
@@ -115,7 +115,7 @@ function getScripts(template: string): Record<string, string> {
 function getTemplateDependencies(template: string): Record<string, string> {
   switch (template) {
     case "nextjs":
-      return { next: "^14.0.0", react: "^18.0.0", "react-dom": "^18.0.0" };
+      return { next: "^14.0.0", react: "^18.0.0", "react-dom": "^18.0.0", viem: "^2.0.0" };
     case "react":
       return { react: "^18.0.0", "react-dom": "^18.0.0" };
     case "hono":
@@ -154,24 +154,52 @@ function getTemplateDevDependencies(template: string): Record<string, string> {
   }
 }
 
-function generateConfig(template: string): string {
-  return `import { createTalakWeb3 } from 'talak-web3';
-import { MainnetPreset } from 'talak-web3/presets';
+function generateConfig(template: (typeof templates)[number]): string {
+  if (template === "nextjs") {
+    return `import { talakWeb3 } from "talak-web3";
+import { nextCookies } from "talak-web3/nextjs";
+import {
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
+} from "@talak-web3/auth";
 
-// Application configuration
-export const app = createTalakWeb3({
+export const app = talakWeb3({
+  chains: [
+    {
+      id: 1,
+      name: "Ethereum",
+      rpcUrls: ["https://cloudflare-eth.com"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    },
+  ],
+  auth: {
+    domain: process.env.SIWE_DOMAIN || "localhost:3000",
+    nonceStore: new InMemoryNonceStore(),
+    refreshStore: new InMemoryRefreshStore(),
+    revocationStore: new InMemoryRevocationStore(),
+  },
+  plugins: [nextCookies()],
+});
+`;
+  }
+
+  return `import { talakWeb3, MainnetPreset } from "talak-web3";
+import {
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
+} from "@talak-web3/auth";
+
+export const app = talakWeb3({
   ...MainnetPreset,
   auth: {
-    domain: process.env.SIWE_DOMAIN || 'localhost:3000',
-    // Stores are mandatory
-    nonceStore: undefined, // Provide Redis-backed store
-    refreshStore: undefined, // Provide Redis-backed store
-    revocationStore: undefined, // Provide Redis-backed store
+    domain: process.env.SIWE_DOMAIN || "localhost:3000",
+    nonceStore: new InMemoryNonceStore(),
+    refreshStore: new InMemoryRefreshStore(),
+    revocationStore: new InMemoryRevocationStore(),
   },
 });
-
-// Initialize on startup (Mandatory)
-await app.init();
 `;
 }
 
@@ -238,6 +266,7 @@ Generated with talak-web3 CLI using the ${template} template.
 ## Learn More
 
 - [talak-web3 Documentation](https://github.com/dagimabebe/talak-web3)
+- [Next.js integration](https://github.com/dagimabebe/talak-web3/blob/main/docs/NEXTJS.md)
 - [SIWE Specification](https://eips.ethereum.org/EIPS/eip-4361)
 `;
 }
