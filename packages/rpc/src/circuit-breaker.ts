@@ -14,12 +14,14 @@ export interface CircuitBreakerConfig {
   windowSize: number;
   latencyThreshold?: number;
   minRequestsForLatency?: number;
+  halfOpenMaxRequests?: number;
 }
 
 export interface CircuitState {
   state: "closed" | "open" | "half-open";
   failures: number;
   successes: number;
+  halfOpenInFlight?: number;
   lastFailure?: number;
   lastSuccess?: number;
   openedAt?: number;
@@ -37,6 +39,7 @@ export class DistributedCircuitBreaker {
     this.config = {
       latencyThreshold: 2000,
       minRequestsForLatency: 10,
+      halfOpenMaxRequests: 1,
       ...config,
     };
   }
@@ -70,7 +73,21 @@ export class DistributedCircuitBreaker {
         state: "half-open",
         failures: 0,
         successes: 0,
+        halfOpenInFlight: 0,
       });
+    }
+
+    if (state.state === "half-open") {
+      const inFlight = state.halfOpenInFlight ?? 0;
+      if (inFlight >= (this.config.halfOpenMaxRequests ?? 1)) {
+        throw new TalakWeb3Error("Circuit breaker half-open limit reached", {
+          code: CIRCUIT_ERROR_CODES.OPEN,
+          status: 503,
+          data: { providerId, inFlight },
+        });
+      }
+      state.halfOpenInFlight = inFlight + 1;
+      await this.setState(providerId, state);
     }
 
     const startTime = Date.now();
@@ -135,11 +152,13 @@ export class DistributedCircuitBreaker {
 
     if (state.state === "half-open") {
       state.successes++;
+      state.halfOpenInFlight = Math.max(0, (state.halfOpenInFlight ?? 1) - 1);
 
       if (state.successes >= this.config.successThreshold) {
         state.state = "closed";
         state.failures = 0;
         state.successes = 0;
+        state.halfOpenInFlight = 0;
       }
     } else {
       state.failures = Math.max(0, state.failures - 1);
@@ -176,9 +195,11 @@ export class DistributedCircuitBreaker {
       if (state.state === "closed" && state.failures >= effectiveThreshold) {
         state.state = "open";
         state.openedAt = Date.now();
+        state.halfOpenInFlight = 0;
       } else if (state.state === "half-open") {
         state.state = "open";
         state.openedAt = Date.now();
+        state.halfOpenInFlight = 0;
       }
     }
 

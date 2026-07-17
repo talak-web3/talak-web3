@@ -49,9 +49,10 @@ export const TalakWeb3ConfigSchema = z.object({
   allowedOrigins: z.array(z.string()).optional(),
   ai: z
     .object({
-      apiKey: z.string().min(1),
+      apiKey: z.string().min(1).optional(),
       baseUrl: z.string().url().optional(),
       model: z.string().optional(),
+      mockMode: z.boolean().optional(),
     })
     .optional(),
   ceramic: z

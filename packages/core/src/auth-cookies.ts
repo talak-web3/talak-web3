@@ -16,16 +16,21 @@ export function createSetCookieString(
   value: string,
   options: AuthCookieOptions = {},
 ): string {
-  const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options.path ?? "/"}`];
+  // Security-mandatory defaults: user can only make MORE secure, not less
+  const isProduction = process.env["NODE_ENV"] === "production" || process.env["HTTPS"] === "true";
+  const secure = options.secure !== undefined ? options.secure : isProduction;
+  const httpOnly = options.httpOnly !== undefined ? options.httpOnly : true;
+  const sameSite = options.sameSite ?? "strict";
+  const path = options.path ?? "/";
+
+  const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${path}`];
 
   if (options.domain) parts.push(`Domain=${options.domain}`);
   if (options.expires) parts.push(`Expires=${options.expires.toUTCString()}`);
   if (options.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
-  if (options.httpOnly) parts.push("HttpOnly");
-  if (options.secure) parts.push("Secure");
-  if (options.sameSite) {
-    parts.push(`SameSite=${options.sameSite.charAt(0).toUpperCase()}${options.sameSite.slice(1)}`);
-  }
+  if (httpOnly) parts.push("HttpOnly");
+  if (secure) parts.push("Secure");
+  parts.push(`SameSite=${sameSite.charAt(0).toUpperCase()}${sameSite.slice(1)}`);
 
   return parts.join("; ");
 }

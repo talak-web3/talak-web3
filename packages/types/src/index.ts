@@ -1,11 +1,15 @@
 export type ChainId = number;
 
+/** Ethereum hex address (0x-prefixed, 40 hex chars) */
 export type Hex = `0x${string}`;
 
+/** Alias for Hex representing an Ethereum address */
 export type Address = Hex;
 
+/** Unix timestamp in milliseconds */
 export type UnixMs = number;
 
+/** Structured logging interface used by the SDK */
 export interface Logger {
   info(message: string, ...args: unknown[]): void;
   warn(message: string, ...args: unknown[]): void;
@@ -142,6 +146,7 @@ export interface IMiddlewareChain<T = unknown, R = unknown> {
   execute(req: T, ctx: TalakWeb3Context, finalHandler: () => Promise<R>): Promise<R>;
 }
 
+/** SDK configuration validated by Zod schema */
 export interface TalakWeb3BaseConfig {
   readonly chains: ReadonlyArray<{
     readonly id: number;
@@ -169,11 +174,12 @@ export interface TalakWeb3BaseConfig {
     readonly accessTtlSeconds?: number;
     readonly refreshTtlSeconds?: number;
   };
-  readonly ai?: { readonly apiKey: string; readonly baseUrl?: string; readonly model?: string };
+  readonly ai?: { readonly apiKey?: string; readonly baseUrl?: string; readonly model?: string; readonly mockMode?: boolean };
   readonly ceramic?: { readonly nodeUrl: string; readonly seed?: string };
   readonly tableland?: { readonly privateKey?: string; readonly network?: string };
 }
 
+/** Plugin interface for extending TalakWeb3 functionality */
 export interface TalakWeb3Plugin {
   name: string;
   version: string;
@@ -198,6 +204,7 @@ export interface TalakWeb3Middleware {
   onResponse?: MiddlewareHandler;
 }
 
+/** Core context object passed to middlewares, plugins, and hooks */
 export interface TalakWeb3Context {
   readonly config: TalakWeb3BaseConfig;
   readonly hooks: IHookRegistry<TalakWeb3EventsMap>;
@@ -208,9 +215,11 @@ export interface TalakWeb3Context {
   readonly logger: Logger;
   readonly requestChain: IMiddlewareChain<unknown, unknown>;
   readonly responseChain: IMiddlewareChain<unknown, unknown>;
+  readonly requestId?: string;
   adapters?: Record<string, unknown>;
 }
 
+/** Main SDK instance returned by createTalakWeb3 */
 export interface TalakWeb3Instance {
   readonly config: TalakWeb3BaseConfig;
   readonly hooks: IHookRegistry<TalakWeb3EventsMap>;
@@ -218,6 +227,8 @@ export interface TalakWeb3Instance {
   readonly handler: (request: Request) => Promise<Response>;
   init(): Promise<void>;
   destroy(): Promise<void>;
+  shutdown(): Promise<void>;
+  healthCheck(): { status: "ok" | "degraded" | "error"; checks: Record<string, boolean> };
 }
 
 export type ToolDefinition = {

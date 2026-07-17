@@ -27,6 +27,7 @@ export class UnifiedRpc implements IRpc {
   private healthInterval: ReturnType<typeof setInterval> | undefined;
   private requestIdCounter = 0;
   private circuitBreaker?: DistributedCircuitBreaker;
+  private pendingRequests = new Map<string, Promise<unknown>>();
 
   constructor(
     ctx: TalakWeb3Context,
@@ -143,10 +144,19 @@ export class UnifiedRpc implements IRpc {
       const cached = this.ctx.cache.get<T>(cacheKey);
       if (cached !== undefined) return cached;
 
-      const result = await this.executeChain<T>(this.ctx.requestChain, req, run);
-      await this.executeChain(this.ctx.responseChain, { req, result }, async () => result);
-      this.ctx.cache.set(cacheKey, result, 12_000);
-      return result;
+      const existing = this.pendingRequests.get(cacheKey) as Promise<T> | undefined;
+      if (existing) return existing;
+
+      const promise = (async () => {
+        const result = await this.executeChain<T>(this.ctx.requestChain, req, run);
+        await this.executeChain(this.ctx.responseChain, { req, result }, async () => result);
+        this.ctx.cache.set(cacheKey, result, 12_000);
+        return result;
+      })();
+
+      this.pendingRequests.set(cacheKey, promise);
+      promise.finally(() => this.pendingRequests.delete(cacheKey));
+      return promise;
     }
 
     const result = await this.executeChain<T>(this.ctx.requestChain, req, run);

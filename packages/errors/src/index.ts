@@ -1,4 +1,22 @@
-export * from "./codes.js";
+export {
+  AUTH_ERROR_CODES,
+  RPC_ERROR_CODES,
+  CONFIG_ERROR_CODES,
+  SECURITY_ERROR_CODES,
+  PLUGIN_ERROR_CODES,
+  STORAGE_ERROR_CODES,
+  TABLELAND_ERROR_CODES,
+  CERAMIC_ERROR_CODES,
+  AI_ERROR_CODES,
+  CRYPTO_ERROR_CODES,
+  REALTIME_ERROR_CODES,
+  TX_ERROR_CODES,
+  AA_ERROR_CODES,
+  CIRCUIT_ERROR_CODES,
+} from "./codes.js";
+
+/** @internal Only for use by @talak-web3/core — not part of public API */
+export { INTERNAL_ERROR_CODES } from "./codes/internal.js";
 
 export class TalakWeb3Error extends Error {
   readonly code: string;

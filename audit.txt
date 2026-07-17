@@ -1,0 +1,781 @@
+# TALAK-WEB3 ULTIMATE SDK AUDIT & VALIDATION PROMPT
+
+You are a Principal Security Engineer, Staff Backend Engineer, SDK Architect, TypeScript Expert, Cryptography Specialist, DevOps Engineer, Performance Engineer, and Open Source Maintainer.
+
+Your task is to perform an exhaustive, production-grade audit of the Talak-Web3 SDK codebase.
+
+Project Overview
+
+Talak-Web3 is a security-first backend and authentication toolkit for decentralized applications.
+
+The project aims to become an enterprise-grade SDK for Web3 developers.
+
+It focuses on:
+
+• Authentication
+• Wallet connections
+• SIWE
+• Session Management
+• Token Management
+• Security
+• API Development
+• Backend SDK
+• Developer Experience
+• Type Safety
+• Production Reliability
+• Performance
+• Multi-chain Support
+• Extensibility
+
+This is NOT just a code review.
+
+You are performing the same level of engineering review performed inside companies like:
+
+OpenAI
+Cloudflare
+Stripe
+Vercel
+Supabase
+Google
+Meta
+Coinbase
+Alchemy
+Infura
+Microsoft
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUDIT OBJECTIVES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Audit EVERY code file.
+
+Do NOT skip anything.
+
+Review
+
+• architecture
+• implementation
+• folder structure
+• exports
+• imports
+• interfaces
+• types
+• documentation
+• APIs
+• testing
+• security
+• performance
+• maintainability
+• SDK usability
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FOR EVERY FILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Determine:
+
+Purpose
+
+Is it necessary?
+
+Is it duplicated?
+
+Should it exist?
+
+Can it be merged?
+
+Does it violate architecture?
+
+Does it belong somewhere else?
+
+Is it production ready?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARCHITECTURE REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect
+
+SDK architecture
+
+Dependency graph
+
+Circular dependencies
+
+Package boundaries
+
+Public API
+
+Private API
+
+Internal modules
+
+Layer separation
+
+Monorepo organization
+
+Shared utilities
+
+Core modules
+
+Plugin architecture
+
+Tree shaking support
+
+Bundle splitting
+
+Entry points
+
+Side effects
+
+Dead modules
+
+Unused packages
+
+Hidden coupling
+
+Future scalability
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECURITY REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Look for
+
+Authentication bypasses
+
+Authorization flaws
+
+Privilege escalation
+
+Replay attacks
+
+Nonce issues
+
+Signature verification bugs
+
+JWT issues
+
+Session hijacking
+
+Refresh token flaws
+
+Token leakage
+
+Secret exposure
+
+Environment leaks
+
+Unsafe localStorage usage
+
+Cookie vulnerabilities
+
+CSRF
+
+CORS
+
+Rate limit bypass
+
+Input validation
+
+Injection
+
+Prototype pollution
+
+XSS
+
+SSRF
+
+Command Injection
+
+SQL Injection
+
+NoSQL Injection
+
+Timing attacks
+
+Race conditions
+
+Memory disclosure
+
+Sensitive logs
+
+Weak randomness
+
+Improper crypto
+
+Hardcoded secrets
+
+Unsafe defaults
+
+Supply chain risks
+
+Dependency vulnerabilities
+
+Missing validation
+
+Broken permission models
+
+Broken trust assumptions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRYPTOGRAPHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect
+
+Wallet signatures
+
+SIWE
+
+EIP-4361
+
+Nonce generation
+
+Nonce storage
+
+Expiration
+
+Hashing
+
+Secret generation
+
+Encryption
+
+Random values
+
+JWT signing
+
+JWT verification
+
+Token rotation
+
+Key management
+
+Replay protection
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SDK QUALITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Review
+
+API consistency
+
+Developer ergonomics
+
+Naming
+
+Discoverability
+
+Configuration
+
+Default values
+
+Extensibility
+
+Plugin support
+
+Error handling
+
+Logging
+
+Documentation
+
+Examples
+
+Autocomplete
+
+Type inference
+
+Generic types
+
+Interfaces
+
+Public exports
+
+SDK initialization
+
+Backward compatibility
+
+Versioning
+
+Migration readiness
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TYPESCRIPT REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect
+
+any usage
+
+unknown misuse
+
+type assertions
+
+unsafe casting
+
+missing generics
+
+duplicate interfaces
+
+weak typing
+
+type inference
+
+public types
+
+strict mode compatibility
+
+discriminated unions
+
+utility types
+
+type performance
+
+compile-time safety
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PERFORMANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Review
+
+Memory allocations
+
+Garbage creation
+
+Event listeners
+
+Leaks
+
+Repeated computations
+
+Caching
+
+Memoization
+
+Database queries
+
+Network requests
+
+RPC batching
+
+Connection reuse
+
+Object cloning
+
+Serialization
+
+Bundle size
+
+Tree shaking
+
+Cold start
+
+Hot path optimization
+
+Concurrency
+
+Parallel execution
+
+Async bottlenecks
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEB3 REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect
+
+Wallet adapters
+
+RPC handling
+
+Fallback providers
+
+Retry logic
+
+Circuit breakers
+
+Provider health
+
+Transaction confirmation
+
+Chain switching
+
+Network validation
+
+Gas estimation
+
+Nonce management
+
+Multi-chain support
+
+Signer abstraction
+
+Wallet compatibility
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUTHENTICATION REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Audit
+
+Sign-In With Ethereum
+
+Wallet login
+
+Session creation
+
+Session invalidation
+
+Refresh flow
+
+Logout
+
+Passwordless flow
+
+JWT
+
+Cookies
+
+Headers
+
+OAuth compatibility
+
+Middleware
+
+Guards
+
+RBAC
+
+Permission handling
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BACKEND REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect
+
+Express
+
+Fastify
+
+Hono
+
+NestJS compatibility
+
+Middleware
+
+Controllers
+
+Validation
+
+Database layer
+
+Redis
+
+Caching
+
+Connection pools
+
+Error middleware
+
+Request lifecycle
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TESTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Determine
+
+Current test coverage
+
+Missing tests
+
+Edge cases
+
+Security tests
+
+Integration tests
+
+E2E tests
+
+Performance benchmarks
+
+Load testing
+
+Stress testing
+
+Regression testing
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DEPENDENCY REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect
+
+Unused dependencies
+
+Duplicate packages
+
+Outdated packages
+
+Security advisories
+
+Version conflicts
+
+Package weight
+
+Bundle impact
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DOCUMENTATION REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect
+
+README
+
+Examples
+
+API docs
+
+JSDoc
+
+Comments
+
+Generated docs
+
+Developer onboarding
+
+Installation guide
+
+Migration guide
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DX REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Evaluate
+
+How intuitive is the SDK?
+
+Can developers learn it quickly?
+
+Are APIs predictable?
+
+Are errors actionable?
+
+Can configuration be simplified?
+
+Can boilerplate be reduced?
+
+Would Stripe, Supabase, or NextAuth developers immediately understand the API?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXPORT REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Check
+
+Unused exports
+
+Broken exports
+
+Duplicate exports
+
+Missing exports
+
+Circular exports
+
+Tree-shakable exports
+
+Index files
+
+Public surface area
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CODE QUALITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect
+
+Complex functions
+
+Long methods
+
+Magic values
+
+Duplicated logic
+
+Code smells
+
+SOLID principles
+
+DRY violations
+
+KISS violations
+
+YAGNI violations
+
+Readability
+
+Consistency
+
+Maintainability
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRODUCTION READINESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Determine whether the SDK is suitable for
+
+100 developers
+
+10,000 developers
+
+100,000 developers
+
+Enterprise adoption
+
+Mission-critical authentication
+
+Financial systems
+
+Government systems
+
+Healthcare
+
+High-volume Web3 platforms
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FOR EVERY ISSUE FOUND
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide
+
+1. Severity
+
+Critical
+
+High
+
+Medium
+
+Low
+
+Informational
+
+2. File
+
+3. Line number(s)
+
+4. Category
+
+5. Root cause
+
+6. Impact
+
+7. Exploitation scenario (if security)
+
+8. Recommended fix
+
+9. Improved implementation
+
+10. Confidence level
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCORING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Give numerical scores (0–10)
+
+Architecture
+
+Security
+
+Authentication
+
+Cryptography
+
+SDK Design
+
+Developer Experience
+
+Documentation
+
+Testing
+
+Performance
+
+Scalability
+
+Maintainability
+
+Code Quality
+
+TypeScript
+
+Reliability
+
+Production Readiness
+
+Enterprise Readiness
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL VERDICT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Answer
+
+Would you approve this SDK for production?
+
+YES or NO
+
+Would you publish it on npm?
+
+YES or NO
+
+Would you trust it inside a banking platform?
+
+YES or NO
+
+Would you trust it for enterprise authentication?
+
+YES or NO
+
+Would you trust it for Web3 wallets holding millions of dollars?
+
+YES or NO
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Produce
+
+• Executive Summary
+• Architecture Diagram (text)
+• Package Relationship Analysis
+• Security Findings
+• Critical Bugs
+• High-Risk Bugs
+• Performance Bottlenecks
+• API Design Review
+• TypeScript Review
+• Developer Experience Review
+• Documentation Review
+• Missing Features
+• Missing Tests
+• Refactoring Opportunities
+• Technical Debt
+• Quick Wins
+• Long-Term Improvements
+• Release Blockers
+• Recommended Roadmap
+• Final Scorecard
+• Release Recommendation
+
+Do not assume code is correct. Verify every implementation against modern Web3, TypeScript, Node.js, cryptography, and backend engineering best practices. Challenge architectural decisions, identify hidden risks, and prioritize correctness, security, maintainability, and long-term scalability over superficial code style.

@@ -1,4 +1,4 @@
-import { AI_ERROR_CODES } from "@talak-web3/errors";
+import { TalakWeb3Error, AI_ERROR_CODES } from "@talak-web3/errors";
 import type {
   TalakWeb3Context,
   AiAgent,
@@ -8,17 +8,6 @@ import type {
 } from "@talak-web3/types";
 import OpenAI from "openai";
 
-class AiError extends Error {
-  code: string;
-  status: number;
-  constructor(message: string, opts: { code: string; status?: number }) {
-    super(message);
-    this.name = "AiError";
-    this.code = opts.code;
-    this.status = opts.status ?? 500;
-  }
-}
-
 export class TalakWeb3AiPlugin implements AiAgent {
   private readonly client: OpenAI | null;
   private readonly model: string;
@@ -26,9 +15,9 @@ export class TalakWeb3AiPlugin implements AiAgent {
 
   constructor(private ctx: TalakWeb3Context) {
     const cfg = ctx.config.ai;
-    this.mockMode = !cfg?.apiKey && process.env["NODE_ENV"] === "test";
+    this.mockMode = cfg?.mockMode === true;
     if (!cfg?.apiKey && !this.mockMode) {
-      throw new AiError("AI config missing (config.ai.apiKey)", {
+      throw new TalakWeb3Error("AI config missing (config.ai.apiKey or config.ai.mockMode)", {
         code: AI_ERROR_CODES.CONFIG_MISSING,
         status: 500,
       });
@@ -57,7 +46,7 @@ export class TalakWeb3AiPlugin implements AiAgent {
     }
 
     if (!this.client) {
-      throw new AiError("AI client not initialized", {
+      throw new TalakWeb3Error("AI client not initialized", {
         code: AI_ERROR_CODES.CLIENT_NOT_INITIALIZED,
         status: 500,
       });
@@ -110,7 +99,7 @@ export class TalakWeb3AiPlugin implements AiAgent {
         for (const call of toolCalls) {
           const tool = toolMap.get(call.tool);
           if (!tool) {
-            throw new AiError(`Unknown tool: ${call.tool}`, {
+            throw new TalakWeb3Error(`Unknown tool: ${call.tool}`, {
               code: AI_ERROR_CODES.TOOL_UNKNOWN,
               status: 400,
             });
@@ -174,7 +163,13 @@ export class TalakWeb3AiPlugin implements AiAgent {
     }));
 
     let full = "";
-    const stream = await this.client!.chat.completions.create({
+    if (!this.client) {
+      throw new TalakWeb3Error("AI client not initialized", {
+        code: AI_ERROR_CODES.CLIENT_NOT_INITIALIZED,
+        status: 500,
+      });
+    }
+    const stream = await this.client.chat.completions.create({
       model: this.model,
       messages: [{ role: "user", content: input.prompt }],
       tools: tools,

@@ -3,6 +3,9 @@ import {
   type RevocationStore,
   type NonceStore,
   type RefreshStore,
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
 } from "@talak-web3/auth";
 import { validateConfig } from "@talak-web3/config";
 import { TalakWeb3Error, RPC_ERROR_CODES, PLUGIN_ERROR_CODES } from "@talak-web3/errors";
@@ -19,9 +22,9 @@ import type {
 
 import { HookRegistry } from "./hook-registry.js";
 
-export { MiddlewareChain, errorHandlingMiddleware } from "./middleware.js";
+export { MiddlewareChain, errorHandlingMiddleware, requestLoggingMiddleware, requestIdMiddleware } from "./middleware.js";
 import { createAuthHandler } from "./auth-handler.js";
-import { MiddlewareChain } from "./middleware.js";
+import { MiddlewareChain, requestIdMiddleware, requestLoggingMiddleware } from "./middleware.js";
 import { SecurityInvariant, securityMiddleware } from "./security.js";
 
 export { createAuthHandler, type AuthHandlerOptions } from "./auth-handler.js";
@@ -63,7 +66,7 @@ class ConsoleLogger implements Logger {
   info(message: string, ...args: unknown[]): void {
     const output = this.formatMessage("info", message, args);
     if (this.structured) {
-      console.log(output);
+      console.error(output);
     } else {
       console.info("[talak-web3]", message, ...args);
     }
@@ -72,7 +75,7 @@ class ConsoleLogger implements Logger {
   warn(message: string, ...args: unknown[]): void {
     const output = this.formatMessage("warn", message, args);
     if (this.structured) {
-      console.warn(output);
+      console.error(output);
     } else {
       console.warn("[talak-web3]", message, ...args);
     }
@@ -91,7 +94,7 @@ class ConsoleLogger implements Logger {
     if (process.env["NODE_ENV"] !== "production") {
       const output = this.formatMessage("debug", message, args);
       if (this.structured) {
-        console.debug(output);
+        console.error(output);
       } else {
         console.debug("[talak-web3]", message, ...args);
       }
@@ -99,10 +102,14 @@ class ConsoleLogger implements Logger {
   }
 }
 
+/**
+ * In-memory TTL-based cache with O(1) lookup and eviction.
+ * Uses a Set for O(1) insertion-order tracking.
+ */
 class TtlCache implements RpcCache {
   private readonly store = new Map<string, { value: unknown; expiresAt: number }>();
   private readonly maxSize: number;
-  private insertionOrder: string[] = [];
+  private insertionOrder: Set<string> = new Set();
 
   constructor(maxSize = 1000) {
     this.maxSize = maxSize;
@@ -113,6 +120,7 @@ class TtlCache implements RpcCache {
     if (!entry) return undefined;
     if (Date.now() > entry.expiresAt) {
       this.store.delete(key);
+      this.insertionOrder.delete(key);
       return undefined;
     }
     return entry.value as T;
@@ -125,25 +133,25 @@ class TtlCache implements RpcCache {
 
     this.store.set(key, { value, expiresAt: Date.now() + ttlMs });
 
-    if (!this.insertionOrder.includes(key)) {
-      this.insertionOrder.push(key);
+    if (!this.insertionOrder.has(key)) {
+      this.insertionOrder.add(key);
     }
   }
 
   delete(key: string): void {
     this.store.delete(key);
-    const idx = this.insertionOrder.indexOf(key);
-    if (idx > -1) this.insertionOrder.splice(idx, 1);
+    this.insertionOrder.delete(key);
   }
 
   clear(): void {
     this.store.clear();
-    this.insertionOrder = [];
+    this.insertionOrder = new Set();
   }
 
   private evictOldest(): void {
-    const oldestKey = this.insertionOrder.shift();
-    if (oldestKey) {
+    const oldestKey = this.insertionOrder.values().next().value;
+    if (oldestKey !== undefined) {
+      this.insertionOrder.delete(oldestKey);
       this.store.delete(oldestKey);
     }
   }
@@ -193,6 +201,22 @@ function extractAuthStoresFromInput(input: unknown): {
   return options;
 }
 
+/**
+ * Creates a new TalakWeb3 SDK instance.
+ *
+ * @param input - Configuration object or partial config
+ * @returns TalakWeb3Instance with handler, init, destroy, shutdown, and healthCheck methods
+ *
+ * @example
+ * ```typescript
+ * const app = createTalakWeb3({
+ *   chains: [{ id: 1, name: "Ethereum", rpcUrls: ["https://..."], nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, testnet: false }],
+ *   auth: { domain: "app.example.com" }
+ * });
+ * await app.init();
+ * // If no auth stores provided, InMemory stores are auto-created for dev mode
+ * ```
+ */
 export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
   const normalizedInput = normalizeConfigInput(input);
   const injectedAuth = extractAuthFromInput(normalizedInput);
@@ -200,7 +224,7 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
   SecurityInvariant.checkSecrets(normalizedInput);
   const config = validateConfig(normalizedInput) as TalakWeb3BaseConfig;
   const logger = new ConsoleLogger();
-  const hooks = new HookRegistry<TalakWeb3EventsMap>();
+  const hooks = new HookRegistry<TalakWeb3EventsMap>(logger);
   const plugins = new Map<string, TalakWeb3Plugin>();
   const requestChain = new MiddlewareChain();
   const responseChain = new MiddlewareChain();
@@ -216,6 +240,10 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
     const authOptions = {
       ...injectedAuthStores,
     };
+
+    if (!authOptions.nonceStore) authOptions.nonceStore = new InMemoryNonceStore();
+    if (!authOptions.refreshStore) authOptions.refreshStore = new InMemoryRefreshStore();
+    if (!authOptions.revocationStore) authOptions.revocationStore = new InMemoryRevocationStore();
 
     if (!authOptions.expectedDomain && authConfig.domain) {
       authOptions.expectedDomain = authConfig.domain;
@@ -285,12 +313,27 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
   };
 
   rpc.ctx = context;
+  requestChain.use(requestIdMiddleware);
   requestChain.use(securityMiddleware);
+  requestChain.use(requestLoggingMiddleware);
 
   const instanceBase = {
     config: context.config,
     hooks,
     context,
+
+    healthCheck() {
+      const checks: Record<string, boolean> = {
+        auth: !!context.auth,
+        rpc: !!context.rpc,
+        cache: !!context.cache,
+        plugins: context.plugins.size > 0,
+      };
+      const failedCount = Object.values(checks).filter((v) => !v).length;
+      const status: "ok" | "degraded" | "error" =
+        failedCount === 0 ? "ok" : failedCount < Object.keys(checks).length ? "degraded" : "error";
+      return { status, checks };
+    },
 
     async init() {
       await auth.coldStart();
@@ -324,6 +367,12 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
       plugins.clear();
       hooks.clear();
     },
+
+    async shutdown() {
+      await this.destroy();
+      const { ConnectionManager } = await import("./connections.js");
+      await ConnectionManager.shutdown();
+    },
   };
 
   const instance: TalakWeb3Instance = {
@@ -332,11 +381,35 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
       ...instanceBase,
       handler: async () => new Response(null, { status: 500 }),
     }),
+    healthCheck() {
+      const checks: Record<string, boolean> = {
+        auth: !!context.auth,
+        rpc: !!context.rpc,
+        cache: !!context.cache,
+        plugins: context.plugins.size > 0,
+      };
+      const failedCount = Object.values(checks).filter((v) => !v).length;
+      const status: "ok" | "degraded" | "error" =
+        failedCount === 0 ? "ok" : failedCount < Object.keys(checks).length ? "degraded" : "error";
+      return { status, checks };
+    },
   };
+
+  const gracefulShutdown = async () => {
+    await instance.destroy();
+    const { ConnectionManager } = await import("./connections.js");
+    await ConnectionManager.shutdown();
+    process.exit(0);
+  };
+  process.on("SIGTERM", gracefulShutdown);
+  process.on("SIGINT", gracefulShutdown);
 
   return instance;
 }
 
+/**
+ * Alias for {@link createTalakWeb3}.
+ */
 export function talakWeb3(input: unknown = {}): TalakWeb3Instance {
   return createTalakWeb3(input);
 }

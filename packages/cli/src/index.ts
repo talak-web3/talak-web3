@@ -1,4 +1,5 @@
 import { cac } from "cac";
+import { createRequire } from "node:module";
 
 import { addCommand } from "./commands/add.js";
 import { depsCommand } from "./commands/deps.js";
@@ -10,7 +11,8 @@ import { generateCommand } from "./commands/generate.js";
 import { infoCommand } from "./commands/info.js";
 import { initCommand } from "./commands/init.js";
 
-const version = "1.0.0";
+const require = createRequire(import.meta.url);
+const { version } = require("../../package.json") as { version: string };
 
 export const cli = cac("talak").version(version).help();
 

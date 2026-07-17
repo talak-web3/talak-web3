@@ -73,5 +73,21 @@ export function csrfProtection(): MiddlewareHandler {
     }
 
     await next();
+
+    if (isMutating && !isSafePath && c.res.status >= 200 && c.res.status < 300) {
+      const newToken = randomBytes(16).toString("hex");
+      const cookieDomain = process.env["COOKIE_DOMAIN"];
+      const cookieOptions: CookieOptions = {
+        path: "/",
+        secure: true,
+        httpOnly: true,
+        sameSite: "Strict",
+        maxAge: 60 * 60 * 24 * 7,
+      };
+      if (cookieDomain) {
+        cookieOptions.domain = cookieDomain;
+      }
+      setCookie(c, "csrf_token", newToken, cookieOptions);
+    }
   };
 }

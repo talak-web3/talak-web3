@@ -1,5 +1,53 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+vi.hoisted(() => {
+  process.env["REDIS_URL"] = "redis://localhost:6379";
+  process.env["JWT_PRIVATE_KEY"] = "-----BEGIN PRIVATE KEY-----\nMIIBVAIBADANBg...\n-----END PRIVATE KEY-----";
+  process.env["JWT_PUBLIC_KEY"] = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBg...\n-----END PUBLIC KEY-----";
+  process.env["SIWE_DOMAIN"] = "localhost";
+});
+
+vi.mock("./security/env.js", () => ({
+  validateEnv: vi.fn(),
+}));
+
+vi.mock("redis", () => {
+  const mockClient = {
+    isOpen: true,
+    connect: vi.fn().mockResolvedValue(undefined),
+    disconnect: vi.fn().mockResolvedValue(undefined),
+    on: vi.fn(),
+    hSet: vi.fn().mockResolvedValue(1),
+    hGet: vi.fn().mockResolvedValue(null),
+    hGetAll: vi.fn().mockResolvedValue({}),
+    pExpire: vi.fn().mockResolvedValue(true),
+    eval: vi.fn().mockResolvedValue(0),
+    set: vi.fn().mockResolvedValue("OK"),
+    get: vi.fn().mockResolvedValue(null),
+    del: vi.fn().mockResolvedValue(1),
+    multi: vi.fn(() => ({
+      hSet: vi.fn().mockReturnThis(),
+      pExpire: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValue([]),
+    })),
+  };
+  return {
+    createClient: vi.fn(() => mockClient),
+  };
+});
+
+vi.mock("./security/redis-hardening.js", () => ({
+  createHardenedRedisClient: vi.fn((_url: string, config: unknown) => config),
+  RedisSecurityAuditor: class MockRedisSecurityAuditor {
+    async auditSecurity() {
+      return { status: "ok", issues: [], recommendations: [] };
+    }
+    async applySecurityHardening() {
+      return undefined;
+    }
+  },
+}));
+
 import app from "./server.js";
 
 vi.mock("viem", () => ({

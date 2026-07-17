@@ -1,0 +1,24 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "packages/types/src/index.ts",
+    "packages/errors/src/index.ts",
+    "packages/core/src/index.ts",
+    "packages/auth/src/index.ts",
+    "packages/rpc/src/index.ts",
+    "packages/rate-limit/src/index.ts",
+    "packages/utils/src/index.ts",
+    "packages/config/src/index.ts",
+    "packages/client/src/index.ts",
+    "packages/hooks/src/index.tsx"
+  ],
+  "out": "docs/api",
+  "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+  "tsconfig": "tsconfig.json",
+  "name": "TalakWeb3 SDK",
+  "readme": "README.md",
+  "plugin": [],
+  "visibilityFilters": {},
+  "excludePrivate": true,
+  "excludeInternal": true
+}

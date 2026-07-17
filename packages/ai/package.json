@@ -1,6 +1,6 @@
 {
   "name": "@talak-web3/ai",
-  "version": "1.0.12",
+  "version": "1.1.0",
   "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/ai#readme",
   "bugs": {
     "url": "https://github.com/dagimabebe/talak-web3/issues"
@@ -13,8 +13,11 @@
     "directory": "packages/ai"
   },
   "files": [
+    "src",
     "dist",
-    "README.md"
+    "README.md",
+    "tsdown.config.ts",
+    "tsconfig.json"
   ],
   "type": "module",
   "main": "./dist/index.cjs",

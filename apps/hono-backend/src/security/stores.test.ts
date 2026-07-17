@@ -107,6 +107,33 @@ function createRedisMock() {
     on: vi.fn(),
     connect: vi.fn(async () => undefined),
 
+    multi() {
+      const commands: Array<{ method: string; args: unknown[] }> = [];
+      const chain = {
+        hSet(key: string, fields: HMap) {
+          commands.push({ method: "hSet", args: [key, fields] });
+          return chain;
+        },
+        pExpire(key: string, ms: number) {
+          commands.push({ method: "pExpire", args: [key, ms] });
+          return chain;
+        },
+        async exec() {
+          for (const cmd of commands) {
+            if (cmd.method === "hSet") {
+              const [key, fields] = cmd.args as [string, HMap];
+              await mock.hSet(key, fields);
+            } else if (cmd.method === "pExpire") {
+              const [key, ms] = cmd.args as [string, number];
+              await mock.pExpire(key, ms);
+            }
+          }
+          return [];
+        },
+      };
+      return chain;
+    },
+
     _db: db,
     _ttls: ttls,
   };

@@ -228,12 +228,6 @@ NODE_ENV=development
 `;
 }
 
-function generateSecret(): string {
-  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 function generateReadme(template: string, name: string): string {
   return `# ${name}
 

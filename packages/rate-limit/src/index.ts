@@ -12,6 +12,12 @@ export interface RateLimiter {
 }
 
 export function extractSubnet(ip: string): string {
+  // Handle IPv4-mapped IPv6 (::ffff:127.0.0.1 → 127.0.0.1)
+  const ipv4Mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  if (ipv4Mapped?.[1]) {
+    ip = ipv4Mapped[1];
+  }
+
   if (ip.includes(":")) {
     const parts = ip.split(":");
     if (parts.length >= 4) {
@@ -69,13 +75,19 @@ redis.call('PEXPIRE', key, windowMs)
 return { allowed, remaining, now + windowMs }
 `;
 
+export interface InMemoryRateLimiterOptions {
+  capacity: number;
+  refillPerSecond: number;
+  maxBuckets?: number;
+}
+
 export class InMemoryRateLimiter implements RateLimiter {
   private readonly capacity: number;
   private readonly refillPerSecond: number;
   private readonly maxBuckets: number;
   private readonly buckets = new Map<string, { tokens: number; last: number }>();
 
-  constructor(opts: { capacity: number; refillPerSecond: number; maxBuckets?: number }) {
+  constructor(opts: InMemoryRateLimiterOptions) {
     this.capacity = opts.capacity;
     this.refillPerSecond = opts.refillPerSecond;
     this.maxBuckets = opts.maxBuckets ?? 10_000;
@@ -196,4 +208,16 @@ export function createRateLimiter(opts: {
   windowMs: number;
 }): RedisRateLimiter {
   return new RedisRateLimiter(opts.redis, opts);
+}
+
+export function rateLimitHeaders(
+  remaining: number,
+  limit: number,
+  resetMs: number,
+): Record<string, string> {
+  return {
+    "X-RateLimit-Limit": String(limit),
+    "X-RateLimit-Remaining": String(Math.max(0, remaining)),
+    "X-RateLimit-Reset": String(Math.ceil(resetMs / 1000)),
+  };
 }

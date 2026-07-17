@@ -210,6 +210,34 @@ function parseSiweMessage(message: string): SiweFields {
     });
   }
 
+  // EIP-4361: version must be "1"
+  const version = versionMatch?.[1] ?? "1";
+  if (version !== "1") {
+    throw new TalakWeb3Error("Unsupported SIWE version", {
+      code: AUTH_ERROR_CODES.SIWE_PARSE_ERROR,
+      status: 400,
+      data: { version },
+    });
+  }
+
+  // EIP-4361: nonce must be non-empty alphanumeric
+  const nonce = nonceMatch[1];
+  if (!/^[A-Za-z0-9]+$/.test(nonce)) {
+    throw new TalakWeb3Error("SIWE nonce must be alphanumeric", {
+      code: AUTH_ERROR_CODES.SIWE_PARSE_ERROR,
+      status: 400,
+    });
+  }
+
+  // EIP-4361: URI must start with "/" or be a valid URI
+  const uri = uriMatch?.[1] ?? "";
+  if (uri && !uri.startsWith("/") && !uri.startsWith("https://") && !uri.startsWith("http://")) {
+    throw new TalakWeb3Error("Invalid SIWE URI format", {
+      code: AUTH_ERROR_CODES.SIWE_PARSE_ERROR,
+      status: 400,
+    });
+  }
+
   return {
     domain,
     address: addressMatch[1] as `0x${string}`,
@@ -230,6 +258,7 @@ export class InMemoryNonceStore implements NonceStore {
   private readonly ttlMs: number;
 
   private readonly entries = new Map<string, Map<string, number>>();
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(opts: { ttlMs?: number } = {}) {
     this.ttlMs = Math.min(opts.ttlMs ?? 5 * 60_000, 5 * 60_000);
@@ -237,6 +266,33 @@ export class InMemoryNonceStore implements NonceStore {
       "[talak-web3-auth] InMemoryNonceStore is in use. " +
         "This is NOT suitable for production. Use RedisNonceStore from @talak-web3/auth/stores with REDIS_URL.",
     );
+    this.startCleanup();
+  }
+
+  private startCleanup(): void {
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [addr, m] of this.entries.entries()) {
+        for (const [nonce, expiresAt] of m.entries()) {
+          if (now > expiresAt) {
+            m.delete(nonce);
+          }
+        }
+        if (m.size === 0) {
+          this.entries.delete(addr);
+        }
+      }
+    }, 60_000);
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref();
+    }
+  }
+
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
   }
 
   async create(address: string, _meta?: { ip?: string; ua?: string }): Promise<string> {
@@ -274,6 +330,32 @@ function sha256Hex(input: string): string {
 
 export class InMemoryRefreshStore implements RefreshStore {
   private readonly sessions = new Map<string, RefreshSession>();
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    this.startCleanup();
+  }
+
+  private startCleanup(): void {
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [hash, session] of this.sessions.entries()) {
+        if (now > session.expiresAt) {
+          this.sessions.delete(hash);
+        }
+      }
+    }, 60_000);
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref();
+    }
+  }
+
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
 
   async create(
     address: string,
@@ -334,6 +416,32 @@ export class InMemoryRefreshStore implements RefreshStore {
 export class InMemoryRevocationStore implements RevocationStore {
   private readonly entries = new Map<string, number>();
   private globalInvalidationAt = 0;
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    this.startCleanup();
+  }
+
+  private startCleanup(): void {
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [jti, expiresAt] of this.entries.entries()) {
+        if (now > expiresAt) {
+          this.entries.delete(jti);
+        }
+      }
+    }, 60_000);
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref();
+    }
+  }
+
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
 
   async revoke(jti: string, expiresAtMs: number): Promise<void> {
     this.entries.set(jti, expiresAtMs);
@@ -711,5 +819,20 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
 
     const accessToken = await this.issueAccessToken(session.address, session.chainId);
     return { accessToken, refreshToken: newRefreshToken };
+  }
+
+  async introspectToken(
+    token: string,
+  ): Promise<{ valid: boolean; payload?: Record<string, unknown> }> {
+    try {
+      const payload = await this.jwtManager.verify(token, {
+        issuer: "talak:auth",
+        audience: "talak:web3",
+        requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
+      });
+      return { valid: true, payload: payload as unknown as Record<string, unknown> };
+    } catch {
+      return { valid: false };
+    }
   }
 }

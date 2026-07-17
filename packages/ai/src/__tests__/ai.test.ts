@@ -6,7 +6,7 @@ describe("AI Plugin", () => {
   let instance: unknown;
 
   beforeEach(() => {
-    instance = talakWeb3();
+    instance = talakWeb3({ ai: { mockMode: true } });
     TalakWeb3AiPlugin.setup(instance.context);
   });
 

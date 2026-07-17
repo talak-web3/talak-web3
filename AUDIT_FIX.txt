@@ -1,0 +1,1080 @@
+================================================================================
+TALAK-WEB3 SDK — ULTIMATE AUDIT FIX PROMPT
+================================================================================
+
+INSTRUCTIONS:
+  You are a Principal Security Engineer fixing every issue found in the
+  AUDIT_REPORT.md for the Talak-Web3 SDK. Follow each phase sequentially.
+  Complete ALL steps in a phase before moving to the next.
+  After each phase, run the verification commands listed at the end of that phase.
+  Do NOT skip any step. Do NOT assume code is correct — verify everything.
+
+  Working directory: C:\talak-web3-config\talak-web3-main
+
+================================================================================
+PHASE 1: CRITICAL SECURITY FIXES (8 steps)
+================================================================================
+
+These are release blockers. Fix ALL before anything else.
+
+STEP 1: Fix In-Memory Store Memory Leaks (SEC-001 / BUG-001)
+  File: packages/auth/src/index.ts
+  Issue: InMemoryNonceStore, InMemoryRefreshStore, InMemoryRevocationStore use
+         plain Maps with no TTL eviction. Memory grows unboundedly.
+  Fix:
+    a) Add a private `startCleanup()` method to each InMemory store class that
+       runs `setInterval` every 60 seconds to sweep expired entries.
+    b) Add a public `destroy()` method that calls `clearInterval`.
+    c) For InMemoryNonceStore: sweep entries where `Date.now() > entry.expiresAt`.
+    d) For InMemoryRefreshStore: sweep entries where `Date.now() > session.expiresAt`.
+    e) For InMemoryRevocationStore: sweep entries where `Date.now() > entry.expiresAt`.
+    f) Call `startCleanup()` in each constructor.
+
+  Exact implementation for InMemoryNonceStore (apply same pattern to others):
+
+    private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+    constructor() {
+      this.startCleanup();
+    }
+
+    private startCleanup(): void {
+      this.cleanupInterval = setInterval(() => {
+        const now = Date.now();
+        for (const [key, entry] of this.store.entries()) {
+          if (now > entry.expiresAt) {
+            this.store.delete(key);
+          }
+        }
+      }, 60_000);
+      // Allow process to exit even if interval is running
+      if (this.cleanupInterval.unref) {
+        this.cleanupInterval.unref();
+      }
+    }
+
+    destroy(): void {
+      if (this.cleanupInterval) {
+        clearInterval(this.cleanupInterval);
+        this.cleanupInterval = null;
+      }
+    }
+
+  Also export the `destroy()` method from the package so consumers can call it.
+
+  Verify: Run `pnpm --filter @talak-web3/auth build` — must succeed.
+
+STEP 2: Fix Broken requestId (SEC-002)
+  File: packages/core/src/middleware.ts
+  Line: 13
+  Issue: `const requestId = "unknown"` — hardcoded, breaks all observability.
+  Fix: Replace that line with:
+    const requestId = (ctx as Record<string, unknown>)["requestId"] as string ?? "unknown";
+  Better fix — use the typed context:
+    const requestId = "requestId" in ctx ? String((ctx as { requestId?: unknown }).requestId) : "unknown";
+
+  Even better: Add requestId to the TalakWeb3Context type in packages/types/src/index.ts:
+    Add to TalakWeb3Context interface: `readonly requestId?: string;`
+  Then in middleware.ts:
+    const requestId = ctx.requestId ?? "unknown";
+
+  Verify: Run `pnpm --filter @talak-web3/core build` — must succeed.
+
+STEP 3: Fix Secret Leak Detection (SEC-003)
+  File: packages/core/src/security.ts
+  Lines: 25-32
+  Issue: Only matches `/0x[a-fA-F0-9]{64}/g`. Misses PEM keys, mnemonics, base64.
+  Fix: Replace the checkSecrets method with comprehensive detection:
+
+    static checkSecrets(config: unknown): void {
+      if (typeof config !== "object" || config === null) return;
+      const configStr = JSON.stringify(config);
+
+      // 1. 0x-prefixed hex private keys (existing check)
+      if (/0x[0-9a-fA-F]{64}/.test(configStr)) {
+        throw new TalakWeb3Error("Potential private key leak detected in config (hex)", {
+          code: SECURITY_ERROR_CODES.SECRET_LEAK, status: 400,
+        });
+      }
+
+      // 2. PEM-encoded private keys
+      if (/-----BEGIN (RSA |EC )?PRIVATE KEY-----/.test(configStr)) {
+        throw new TalakWeb3Error("Potential private key leak detected in config (PEM)", {
+          code: SECURITY_ERROR_CODES.SECRET_LEAK, status: 400,
+        });
+      }
+
+      // 3. Raw hex strings of 64+ chars (no 0x prefix)
+      if (/(?:^|[^0-9a-fA-F])([0-9a-fA-F]{64})(?:[^0-9a-fA-F]|$)/.test(configStr)) {
+        throw new TalakWeb3Error("Potential secret leak detected in config (raw hex)", {
+          code: SECURITY_ERROR_CODES.SECRET_LEAK, status: 400,
+        });
+      }
+
+      // 4. Base64-encoded keys (44+ chars that look like base64)
+      if (/(?:^|[\s":])([A-Za-z0-9+/]{43}=)(?:[\s",}]|$)/.test(configStr)) {
+        throw new TalakWeb3Error("Potential secret leak detected in config (base64)", {
+          code: SECURITY_ERROR_CODES.SECRET_LEAK, status: 400,
+        });
+      }
+    }
+
+  Verify: Run `pnpm --filter @talak-web3/core build` — must succeed.
+
+STEP 4: Fix Prototype Pollution Check (SEC-004)
+  File: packages/core/src/security.ts
+  Lines: 33-38
+  Issue: Serializes to JSON then checks string — bypassable at object level.
+  Fix: Replace validateRpcParams with deep object scanning:
+
+    static validateRpcParams(params: unknown[]): void {
+      function hasDangerousKeys(obj: unknown, depth = 0): boolean {
+        if (depth > 10) return false;
+        if (obj === null || typeof obj !== "object") return false;
+        if (Array.isArray(obj)) {
+          return obj.some((item) => hasDangerousKeys(item, depth + 1));
+        }
+        for (const key of Object.keys(obj as Record<string, unknown>)) {
+          if (key === "__proto__" || key === "constructor" || key === "prototype") {
+            return true;
+          }
+          if (hasDangerousKeys((obj as Record<string, unknown>)[key], depth + 1)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      if (hasDangerousKeys(params)) {
+        throw new TalakWeb3Error("Disallowed parameter key detected", {
+          code: SECURITY_ERROR_CODES.INVALID_PARAM, status: 400,
+        });
+      }
+    }
+
+  Verify: Run `pnpm --filter @talak-web3/core build` — must succeed.
+
+STEP 5: Fix TtlCache Performance (BUG-004 / PERF-001)
+  File: packages/core/src/index.ts (TtlCache class)
+  Lines: ~215-220
+  Issue: `insertionOrder.includes(key)` is O(n) on every insert.
+  Fix: Replace `insertionOrder: string[]` with `insertionOrder: Set<string>`.
+  In set(): Replace `if (!this.insertionOrder.includes(key))` with `if (!this.insertionOrder.has(key))`.
+  In delete(): Replace `const idx = this.insertionOrder.indexOf(key); if (idx > -1) this.insertionOrder.splice(idx, 1);` with `this.insertionOrder.delete(key);`.
+  In evictOldest(): Replace `const oldestKey = this.insertionOrder.shift();` with:
+    const oldestKey = this.insertionOrder.values().next().value;
+    if (oldestKey !== undefined) this.insertionOrder.delete(oldestKey);
+  In clear(): `this.insertionOrder = new Set<string>();`
+
+  Verify: Run `pnpm --filter @talak-web3/core build` — must succeed.
+
+STEP 6: Fix MiddlewareChain Context Propagation (BUG-002)
+  File: packages/core/src/middleware.ts
+  Lines: 40-53
+  Issue: `ctx` is captured in closure, not passed through dispatch chain.
+  Fix: The current code actually passes `ctx` via the handler signature
+       `handler(req, () => dispatch(i + 1), ctx)` which is correct.
+       The real issue is that if a middleware mutates `ctx`, subsequent middlewares
+       see the mutated version (which is actually correct behavior).
+       However, the error middleware hardcodes requestId. That was fixed in Step 2.
+       No further fix needed — this is a false positive after Step 2.
+
+  Verify: Run `pnpm --filter @talak-web3/core test` — must pass.
+
+STEP 7: Fix ConsoleLogger Stream Routing (BUG-003)
+  File: packages/core/src/index.ts (ConsoleLogger class)
+  Issue: Structured JSON uses console.log (stdout) instead of console.error (stderr).
+  Fix: In the formatMessage method, when structured is true, always use
+       console.error for ALL levels (info, warn, error, debug) so structured
+       JSON goes to stderr for proper log aggregation in containers.
+  Change the info(), warn(), error() methods to all use console.error() when
+       this.structured is true. Keep console.info/warn/error for non-structured mode.
+
+  Verify: Run `pnpm --filter @talak-web3/core build` — must succeed.
+
+STEP 8: Add Graceful Shutdown (FEAT-001)
+  File: packages/core/src/index.ts
+  Add a `shutdown()` method to the TalakWeb3Instance interface and implementation:
+    async shutdown() {
+      await this.destroy();
+      // Close all Redis connections
+      const { ConnectionManager } = await import("./connections.js");
+      await ConnectionManager.shutdown();
+    }
+  Register process signal handlers in createTalakWeb3:
+    const gracefulShutdown = async () => {
+      await instance.destroy();
+      const { ConnectionManager } = await import("./connections.js");
+      await ConnectionManager.shutdown();
+      process.exit(0);
+    };
+    process.on("SIGTERM", gracefulShutdown);
+    process.on("SIGINT", gracefulShutdown);
+
+  Verify: Run `pnpm --filter @talak-web3/core build` — must succeed.
+
+PHASE 1 VERIFICATION:
+  Run these commands and confirm all pass:
+    pnpm --filter @talak-web3/auth build
+    pnpm --filter @talak-web3/core build
+    pnpm --filter @talak-web3/core test
+    pnpm --filter @talak-web3/auth test
+
+================================================================================
+PHASE 2: HIGH-SEVERITY FIXES (8 steps)
+================================================================================
+
+STEP 9: Fix Redis parseInt NaN (SEC-005 / BUG-005)
+  File: packages/core/src/connections.ts
+  Lines: 25-28
+  Issue: parseInt returns NaN for non-numeric env vars.
+  Fix: Add a helper function:
+    function safeDbIndex(envVar: string | undefined, fallback: number): number {
+      if (!envVar) return fallback;
+      const n = Number(envVar);
+      if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0 || n > 15) {
+        throw new Error(`Invalid Redis DB index: ${envVar}. Must be integer 0-15.`);
+      }
+      return n;
+    }
+  Replace the three parseInt calls with:
+    const db = safeDbIndex(process.env["REDIS_DB_SESSIONS"], 0);
+    // and similar for rate-limit and revocation
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 10: Add JWT Key Entropy Validation (SEC-006)
+  File: packages/auth/src/key-management.ts
+  Issue: No validation of key strength.
+  Fix: In the KeyProvider constructor or loadKeys(), add validation:
+    - For RSA keys: check modulus length >= 2048 bits
+    - For EC keys: check crv is P-256 or P-384 (not P-256K for JWT)
+    - Verify that private key and public key are a matching pair
+    - Use jose's `importPKCS8` and `importSPKI` which already validate format
+  Add after key import:
+    if (cryptoKey.type !== "private" && cryptoKey.type !== "public") {
+      throw new TalakWeb3Error("Invalid key type", { code: "AUTH_KEY_INVALID", status: 500 });
+    }
+    // For RSA, check minimum key size
+    if (cryptoKey.algorithm && "modulusLength" in cryptoKey.algorithm) {
+      if ((cryptoKey.algorithm as { modulusLength: number }).modulusLength < 2048) {
+        throw new TalakWeb3Error("RSA key must be at least 2048 bits", {
+          code: "AUTH_KEY_TOO_WEAK", status: 500,
+        });
+      }
+    }
+
+  Verify: `pnpm --filter @talak-web3/auth build`
+
+STEP 11: Fix AI Mock Mode (SEC-007)
+  File: packages/ai/src/plugin.ts
+  Lines: 43-47
+  Issue: Mock mode auto-enabled when NODE_ENV=test — fragile.
+  Fix: Remove the auto-detect. Add `mockMode` to the AI config type in
+       packages/types/src/index.ts:
+        ai?: { apiKey?: string; baseUrl?: string; model?: string; mockMode?: boolean }
+  In plugin.ts constructor:
+    this.mockMode = cfg?.mockMode === true;
+    if (!cfg?.apiKey && !this.mockMode) {
+      throw new AiError("AI config missing (config.ai.apiKey or config.ai.mockMode)", ...);
+    }
+  Remove the `process.env["NODE_ENV"] === "test"` check entirely.
+
+  Verify: `pnpm --filter @talak-web3/ai build && pnpm --filter @talak-web3/ai test`
+
+STEP 12: Fix Tableland Key Validation (SEC-008)
+  File: packages/adapters/src/tableland.ts
+  Lines: 37-42
+  Issue: Private key read from env without format validation.
+  Fix: After reading the key, validate:
+    if (privateKey && !/^[0-9a-fA-F]{64}$/.test(privateKey)) {
+      throw new TalakWeb3Error("TABLELAND_PRIVATE_KEY must be a 64-character hex string", {
+        code: TABLELAND_ERROR_CODES.KEY_MISSING, status: 500,
+      });
+    }
+    if (!privateKey) {
+      throw new TalakWeb3Error("TABLELAND_PRIVATE_KEY env var or config.tableland.privateKey is required", {
+        code: TABLELAND_ERROR_CODES.KEY_MISSING, status: 500,
+      });
+    }
+
+  Verify: `pnpm --filter @talak-web3/adapters build`
+
+STEP 13: Add HMAC Key Rotation Support (SEC-009)
+  File: packages/core/src/internal-auth.ts
+  Issue: Single secret, no rotation.
+  Fix: Extend InternalAuthConfig to support multiple keys:
+    export interface InternalAuthConfig {
+      secret?: string;            // legacy single key
+      secrets?: Record<string, string>;  // keyId -> secret mapping
+      currentKeyId?: string;      // which key to use for signing
+      headerName?: string;
+      timestampHeader?: string;
+      keyIdHeader?: string;       // new: header for key ID
+      maxSkewSeconds?: number;
+    }
+  In signRequest(): If currentKeyId and secrets are set, use secrets[currentKeyId]
+    and include keyIdHeader in the headers.
+  In createMiddleware(): If keyIdHeader is present, look up the secret by key ID.
+    Fall back to the single secret for backward compatibility.
+  Add at least basic key rotation awareness without breaking existing consumers.
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 14: Add Rate Limiter Ceiling (SEC-010)
+  File: packages/rate-limit/src/index.ts
+  Issue: InMemoryRateLimiter has no configurable max.
+  Fix: Add `max` option to InMemoryRateLimiter constructor:
+    export interface InMemoryRateLimiterOptions {
+      max?: number;        // default 10_000
+      windowMs?: number;   // default 60_000
+      maxTokens?: number;  // default 100
+    }
+  When a new bucket is created and store.size >= max, evict the oldest entry
+    (or a random entry) before inserting.
+  Export the options interface.
+
+  Verify: `pnpm --filter @talak-web3/rate-limit build`
+
+STEP 15: Fix Refresh Token Timing Attack (BUG-007)
+  File: packages/auth/src/stores/redis-refresh.ts
+  Issue: Hash comparison uses === instead of constant-time comparison.
+  Fix: Import timingSafeEqual from node:crypto:
+    import { timingSafeEqual } from "node:crypto";
+  Replace any string equality comparison of hashes with:
+    function safeEqual(a: string, b: string): boolean {
+      if (a.length !== b.length) return false;
+      return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+    }
+  Apply this in the lookup/consume methods where token hashes are compared.
+
+  Verify: `pnpm --filter @talak-web3/auth build`
+
+STEP 16: Fix Circuit Breaker Burst Traffic (BUG-008)
+  File: packages/rpc/src/circuit-breaker.ts
+  Issue: Half-open state allows all waiting requests to fire simultaneously.
+  Fix: Add a `halfOpenMaxRequests` config option (default 1).
+  When transitioning to half-open, only allow `halfOpenMaxRequests` requests
+    through. If they succeed, close the circuit. If any fail, re-open it.
+  Use an atomic counter (or Redis INCR) to track in-flight half-open requests.
+
+  Verify: `pnpm --filter @talak-web3/rpc build`
+
+PHASE 2 VERIFICATION:
+  Run:
+    pnpm --filter @talak-web3/core build
+    pnpm --filter @talak-web3/auth build
+    pnpm --filter @talak-web3/ai build
+    pnpm --filter @talak-web3/rpc build
+    pnpm --filter @talak-web3/adapters build
+    pnpm --filter @talak-web3/rate-limit build
+    pnpm --filter @talak-web3/ai test
+    pnpm --filter @talak-web3/auth test
+
+================================================================================
+PHASE 3: MEDIUM-SEVERITY FIXES (12 steps)
+================================================================================
+
+STEP 17: Suppress Stack Traces in Production (SEC-011)
+  File: packages/core/src/middleware.ts
+  Lines: 15-22
+  Issue: error.stack logged in production — information disclosure.
+  Fix: In errorHandlingMiddleware, change the logging call:
+    const shouldLogStack = process.env["NODE_ENV"] !== "production";
+    ctx.logger.error(`[Request ${requestId}] Unhandled error:`, {
+      message: error.message,
+      ...(shouldLogStack ? { stack: error.stack } : {}),
+      code: err instanceof TalakWeb3Error ? err.code : undefined,
+      data: err instanceof TalakWeb3Error ? err.data : undefined,
+    });
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 18: Add Redis Auto-Cleanup on Process Exit (SEC-012)
+  File: packages/core/src/connections.ts
+  Issue: ConnectionManager never called on shutdown.
+  Fix: Add at module level (outside the class):
+    let shutdownRegistered = false;
+    function registerShutdown(): void {
+      if (shutdownRegistered) return;
+      shutdownRegistered = true;
+      const handler = async () => {
+        await ConnectionManager.shutdown();
+        process.exit(0);
+      };
+      process.on("SIGTERM", handler);
+      process.on("SIGINT", handler);
+      process.on("exit", () => { ConnectionManager.shutdown(); });
+    }
+  Call registerShutdown() inside getRedis() on first connection.
+  Also call it from createTalakWeb3 in core/index.ts (already done in Step 8).
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 19: Validate CORS Origins at Startup (SEC-013)
+  File: apps/hono-backend/src/security/cors.ts
+  Issue: Origins not validated for format.
+  Fix: At module initialization, parse ALLOWED_ORIGINS and validate each:
+    const origins = (process.env["ALLOWED_ORIGINS"] || "").split(",").filter(Boolean);
+    for (const origin of origins) {
+      try { new URL(origin); } catch {
+        console.error(`[CORS] Invalid origin format: "${origin}" — must be full URL like https://example.com`);
+        process.exit(1);
+      }
+    }
+  Store validated origins for use in middleware.
+
+  Verify: Manual test — set ALLOWED_ORIGINS=invalid and confirm startup fails.
+
+STEP 20: Split Error Codes into Public/Internal (SEC-015)
+  File: packages/errors/src/codes.ts
+  Issue: Internal error codes (AUTH_KEY_ROTATION_*, etc.) exported in public API.
+  Fix: Split into two files:
+    packages/errors/src/codes/public.ts  — AUTH, CONFIG, PLUGIN, RPC, CERAMIC,
+      TABLELAND, STORAGE, AI, RATE_LIMIT, IDENTITY, TX, SIWE, SESSION,
+      TOKEN, VALIDATION, SECURITY error codes
+    packages/errors/src/codes/internal.ts — AUTH_KEY_ROTATION_*, INTERNAL_*
+    packages/errors/src/codes/index.ts — re-exports public.ts, NOT internal.ts
+  Keep internal.ts importable only within workspace packages (not in main export).
+  Update packages/errors/src/index.ts to only export public codes.
+
+  Verify: `pnpm --filter @talak-web3/errors build`
+
+STEP 21: Add IPv6 Rate Limit Support (SEC-017)
+  File: packages/rate-limit/src/index.ts
+  Issue: extractSubnet() only handles IPv4.
+  Fix: Extend extractSubnet to handle IPv6:
+    function extractSubnet(ip: string): string {
+      // IPv6: extract /64 prefix (first 4 groups of 8 hex digits)
+      if (ip.includes(":")) {
+        const groups = ip.split(":");
+        return groups.slice(0, 4).join(":") + "::";
+      }
+      // IPv4: existing /24 subnet logic
+      const parts = ip.split(".");
+      if (parts.length === 4) {
+        return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+      }
+      return ip;
+    }
+  Also add IPv4-mapped IPv6 handling (::ffff:127.0.0.1 → 127.0.0.1).
+
+  Verify: `pnpm --filter @talak-web3/rate-limit build`
+
+STEP 22: Enforce Secure Cookie Defaults (SEC-018)
+  File: packages/core/src/auth-cookies.ts
+  Issue: Cookie defaults don't enforce Secure/HttpOnly/SameSite in all paths.
+  Fix: In createSetCookieString and appendAuthCookies, always default to:
+    const defaults = {
+      httpOnly: true,
+      secure: process.env["NODE_ENV"] === "production" || process.env["HTTPS"] === "true",
+      sameSite: "strict" as const,
+      path: "/",
+    };
+  Merge user options OVER these defaults (user can only make MORE secure, not less).
+  Add a comment explaining that these are security-mandatory defaults.
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 23: Fix Console.log in HookRegistry (SEC-019)
+  File: packages/core/src/hook-registry.ts
+  Line: 36
+  Issue: Uses console.error instead of SDK logger.
+  Fix: This is tricky because HookRegistry doesn't have access to the logger
+       (it's created before context exists). Options:
+       a) Accept an optional logger in the constructor
+       b) Use a static/global logger reference
+       c) Keep console.error but add a TODO comment for future improvement
+  Recommended: Option (a) — add optional logger parameter to HookRegistry constructor.
+    constructor(private readonly logger?: Logger) {}
+  In emit catch block:
+    if (this.logger) {
+      this.logger.error(`[HookRegistry] Error in handler for "${String(event)}":`, err);
+    } else {
+      console.error(`[HookRegistry] Error in handler for "${String(event)}":`, err);
+    }
+  In createTalakWeb3, pass the logger: `new HookRegistry<TalakWeb3EventsMap>(logger)`
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 24: Fix Auth Request Body Size Limits (SEC-023)
+  File: packages/core/src/auth-handler.ts
+  Issue: No request body size limits on auth endpoints.
+  Fix: Add a body size check at the top of login/refresh/verify handlers:
+    const MAX_BODY_SIZE = 1024; // 1KB is plenty for auth payloads
+    const body = await req.text();
+    if (body.length > MAX_BODY_SIZE) {
+      return new Response(JSON.stringify({ error: "Request body too large" }), {
+        status: 413, headers: { "Content-Type": "application/json" },
+      });
+    }
+  Apply to all POST handlers that read request body.
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 25: Fix PERF-002 — Async Hook Emission
+  File: packages/core/src/hook-registry.ts
+  Issue: emit() iterates handlers synchronously — blocks event loop.
+  Fix: Add an async emit method alongside the sync one:
+    async emitAsync<K extends keyof Events>(event: K, data: Events[K]): Promise<void> {
+      const handlers = this.map.get(event);
+      if (!handlers || handlers.size === 0) return;
+      const promises: Promise<void>[] = [];
+      for (const h of handlers) {
+        promises.push(
+          Promise.resolve().then(() => (h as (data: unknown) => void)(data as unknown)).catch((err) => {
+            if (this.logger) this.logger.error(`[HookRegistry] Async handler error:`, err);
+          })
+        );
+      }
+      await Promise.allSettled(promises);
+    }
+  Keep the sync emit() for backward compatibility. Use emitAsync in auth flow.
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 26: Fix PERF-007 — Redis Connection Pooling
+  File: packages/core/src/connections.ts
+  Issue: New connection per purpose without pooling awareness.
+  Fix: Add connection pool configuration options:
+    static getRedis(purpose: string, options?: { maxConnections?: number }): Redis {
+      // existing logic, but add poolSize tracking
+    }
+  This is a lower priority — document as a known limitation with a TODO for v1.1.0.
+  For now, ensure existing singleton pattern is documented.
+
+  Verify: `pnpm --filter @talak-web3/core build`
+
+STEP 27: Fix PERF-008 — Cache Zod Schema
+  File: packages/config/src/index.ts
+  Issue: Zod schema parsed on every validateConfig call.
+  Fix: Move the safeParse to a pre-compiled check:
+    // At module level:
+    const parseResult = TalakWeb3ConfigSchema.safeParse;
+    // No change needed — Zod already caches internally.
+    // But add a comment explaining this is intentionally called per-request
+    // because configs can change at runtime.
+  Actually, Zod v4 does optimize this. Mark as "no fix needed" but document.
+
+  Verify: `pnpm --filter @talak-web3/config build`
+
+PHASE 3 VERIFICATION:
+  Run:
+    pnpm --filter @talak-web3/core build
+    pnpm --filter @talak-web3/errors build
+    pnpm --filter @talak-web3/rate-limit build
+    pnpm --filter @talak-web3/config build
+
+================================================================================
+PHASE 4: LOW/INFO FIXES & TECHNICAL DEBT (11 steps)
+================================================================================
+
+STEP 28: Wire Up generateSecret() (SEC-020 / DEBT-004)
+  File: packages/cli/src/commands/init.ts
+  Lines: 209-213
+  Issue: generateSecret() defined but never called.
+  Fix: Remove the unused function entirely, OR call it in generateEnv() to
+       generate actual secrets instead of placeholder values.
+  Recommended: Call it in generateEnv():
+    JWT_PRIVATE_KEY="generated-at-init"  // Note: user must generate real keys
+    JWT_SECRET="${generateSecret()}"
+  But since JWT uses asymmetric keys, just remove generateSecret() — it's dead code.
+
+  Verify: `pnpm --filter @talak-web3/cli build`
+
+STEP 29: Delete Stale packages/handlers Reference (DEBT-002)
+  File: tsconfig.json
+  Issue: References non-existent packages/handlers.
+  Fix: Remove the `"references": [{"path": "packages/handlers"}]` entry from
+       the root tsconfig.json references array.
+
+  Verify: `npx tsc --noEmit` from root
+
+STEP 30: Update packages.md (DEBT-001)
+  File: packages.md
+  Issue: References non-existent packages.
+  Fix: Rewrite packages.md to list only actual packages:
+    ## Actual Packages
+    - packages/types
+    - packages/errors
+    - packages/utils
+    - packages/config
+    - packages/hooks
+    - packages/client
+    - packages/rpc
+    - packages/adapters
+    - packages/auth
+    - packages/identity
+    - packages/tx
+    - packages/realtime
+    - packages/ai
+    - packages/rate-limit
+    - packages/core
+    - packages/test-utils
+    - packages/cli
+    - packages/templates
+    - packages/dashboard
+    - packages/talak-web3
+    Remove all phantom references.
+
+  Verify: Manual review
+
+STEP 31: Delete Redundant .d.ts Files (DEBT-003)
+  Files to delete:
+    packages/types/src/index.d.ts
+    packages/errors/src/index.d.ts
+    packages/config/src/index.d.ts
+    packages/client/src/index.d.ts
+  Issue: These are hand-written .d.ts alongside .ts source — redundant and confusing.
+  Fix: Delete all four files. The build tool (tsdown) generates .d.ts from .ts source.
+  Update tsconfig.json if any of these were referenced.
+
+  Verify: `pnpm build` — full build must succeed
+
+STEP 32: Fix Node Version Inconsistency (DEBT-008)
+  File: packages/cli/src/commands/doctor.ts
+  Issue: Doctor checks `>=20` but package.json requires `>=24`.
+  Fix: In doctorCommand, change:
+    if (majorVersion >= 20) {
+  To:
+    if (majorVersion >= 24) {
+  And update the warning message to say "recommended: 24+".
+
+  Also create a root `.nvmrc` file with content: `24`
+
+  Verify: `pnpm --filter @talak-web3/cli build`
+
+STEP 33: Fix TypeScript TS-005 — Non-null Assertion
+  File: packages/ai/src/plugin.ts
+  Line: ~88
+  Issue: `this.client!` non-null assertion without guard.
+  Fix: Replace `this.client!` with a proper null check:
+    if (!this.client) {
+      throw new AiError("AI client not initialized", {
+        code: AI_ERROR_CODES.CLIENT_NOT_INITIALIZED, status: 500,
+      });
+    }
+  Then use `this.client` without the `!`.
+
+  Verify: `pnpm --filter @talak-web3/ai build`
+
+STEP 34: Add CLI Version from package.json (DEBT-007)
+  File: packages/cli/src/index.ts
+  Line: 10
+  Issue: `const version = "1.0.0"` hardcoded.
+  Fix: Read version from package.json:
+    import { createRequire } from "node:module";
+    const require = createRequire(import.meta.url);
+    const { version } = require("../../package.json") as { version: string };
+  Or use a build-time replacement via tsdown define.
+
+  Verify: `pnpm --filter @talak-web3/cli build`
+
+STEP 35: Fix SIWE Domain Validation (SEC-014)
+  File: packages/auth/src/index.ts
+  Issue: Custom SIWE parser doesn't enforce full EIP-4361.
+  Fix (recommended for now, full replacement is Phase 2):
+    Add validation after parsing:
+    - Verify scheme is "https" (or "http" for localhost)
+    - Verify domain matches expectedDomain exactly (case-insensitive)
+    - Verify URI field starts with "/" or is a valid URI
+    - Verify timestamp is valid ISO 8601
+    - Verify nonce is non-empty alphanumeric string
+  Document as TODO: Replace with `siwe` npm package for full spec compliance.
+
+  Verify: `pnpm --filter @talak-web3/auth build && pnpm --filter @talak-web3/auth test`
+
+STEP 36: Fix Adapters Placeholder Tests (SEC-024 / DEBT-005)
+  File: packages/adapters/src/__tests__/adapters.test.ts
+  Issue: Test is `expect(true).toBe(true)` — zero coverage.
+  Fix: Write real tests:
+    - Test CeramicPlugin.createProfile() throws when deps missing (mock)
+    - Test TablelandPlugin.query() throws when deps missing (mock)
+    - Test PinataStorageAdapter constructor throws without JWT
+    - Test PinataStorageAdapter.put() with mocked fetch
+    - Test PinataStorageAdapter.get() with mocked fetch
+    - Test PinataStorageAdapter.ipfsToGatewayUrl() conversion
+
+  Verify: `pnpm --filter @talak-web3/adapters test`
+
+STEP 37: Fix Consistent Error Construction (API-DESIGN)
+  Files: packages/ai/src/plugin.ts (AiError class)
+  Issue: AI plugin defines its own AiError instead of using TalakWeb3Error.
+  Fix: Remove the AiError class. Import and use TalakWeb3Error from
+       @talak-web3/errors. This ensures consistent error handling across
+       the entire SDK.
+
+  Verify: `pnpm --filter @talak-web3/ai build`
+
+PHASE 4 VERIFICATION:
+  Run full build:
+    pnpm build
+  Run full typecheck:
+    pnpm typecheck
+
+================================================================================
+PHASE 5: MISSING TESTS (10 steps)
+================================================================================
+
+STEP 38: Write Tests for @talak-web3/realtime
+  File: packages/realtime/src/__tests__/realtime.test.ts (create)
+  Test: WebSocket client with mocked WebSocket.
+    - Test connection establishment
+    - Test heartbeat ping/pong
+    - Test exponential backoff reconnection
+    - Test message sending and receiving
+    - Test pending request map management
+    - Test backoff reset on successful reconnect
+
+STEP 39: Write Tests for @talak-web3/client
+  File: packages/client/src/__tests__/client.test.ts (create)
+  Test: TalakWeb3Client with mocked fetch.
+    - Test token storage (InMemoryTokenStorage)
+    - Test CookieTokenStorage
+    - Test login flow
+    - Test refresh flow
+    - Test verify flow
+    - Test logout flow
+    - Test error handling
+
+STEP 40: Write Tests for @talak-web3/hooks
+  File: packages/hooks/src/__tests__/hooks.test.tsx (expand existing)
+  Test: React hooks with mocked TalakWeb3Provider.
+    - Test useTalakWeb3 returns context
+    - Test useChain returns current chain
+    - Test useAccount returns current account
+    - Test useRpc returns RPC client
+    - Test provider re-renders on context change
+    - Test React 19 compatibility (createRoot)
+
+STEP 41: Write Tests for @talak-web3/identity
+  File: packages/identity/src/__tests__/identity.test.ts (expand)
+  Test: IdentityService with mocked Ceramic adapter.
+    - Test createProfile delegates to adapter
+    - Test error handling when adapter unavailable
+
+STEP 42: Write Tests for @talak-web3/cli
+  Files: packages/cli/src/__tests__/ (create directory)
+  Tests for each command:
+    - initCommand: test file creation, template selection, error on non-empty dir
+    - doctorCommand: test health check output
+    - infoCommand: test project info display
+    - depsCommand: test dependency listing
+    - envCommand: test env var detection
+    - docsCommand: test link display
+    - addCommand: test integration addition
+    - generateCommand: test code generation
+
+STEP 43: Write Tests for @talak-web3/talak-web3 (main package)
+  File: packages/talak-web3/src/__tests__/index.test.ts (create)
+  Test: Facade package exports and integration.
+    - Test all expected exports exist
+    - Test createTalakWeb3 returns working instance
+    - Test multichain module exports
+    - Test react module re-exports
+    - Test nextjs module integration
+
+STEP 44: Write Tests for @talak-web3/dashboard
+  File: packages/dashboard/src/__tests__/dashboard.test.tsx (create)
+  Test: React component rendering.
+    - Test AdminDashboard renders with mock data
+    - Test status display
+    - Test chain display
+    - Test plugin registry display
+
+STEP 45: Write Tests for @talak-web3/templates
+  File: packages/templates/src/__tests__/templates.test.ts (create)
+  Test: Template generation.
+    - Test Next.js template structure
+    - Test Hono template structure
+    - Test template content validity
+
+STEP 46: Write Tests for @talak-web3/tx
+  File: packages/tx/src/__tests__/tx.test.ts (expand existing aa.test.ts)
+  Test: Account Abstraction client.
+    - Test buildCallData
+    - Test estimateGas
+    - Test fetchNonce
+    - Test buildUserOperation
+    - Test signAndSend
+    - Test receipt waiting
+
+STEP 47: Add rate-limit Test Script to package.json
+  File: packages/rate-limit/package.json
+  Issue: No test script defined.
+  Fix: Add to scripts:
+    "test": "vitest run"
+  Also create packages/rate-limit/src/__tests__/integration/redis-integration.test.ts
+    that tests Redis rate limiter with a real Redis instance (skipped if no Redis).
+
+STEP 48: Write E2E Test Framework
+  Directory: test-specs/e2e/ (create)
+  Create:
+    - test-specs/e2e/auth-flow.test.ts — Full login → refresh → verify → logout flow
+    - test-specs/e2e/rpc-proxy.test.ts — RPC request through middleware chain
+    - test-specs/e2e/plugin-lifecycle.test.ts — Plugin setup/teardown
+  Use vitest with real HTTP server (hono-backend app).
+
+PHASE 5 VERIFICATION:
+  Run:
+    pnpm test:unit
+    pnpm test:integration
+    Confirm all new tests pass and coverage increases.
+
+================================================================================
+PHASE 6: MISSING FEATURES (10 steps)
+================================================================================
+
+STEP 49: Add Health Check to Core (FEAT-002)
+  File: packages/core/src/index.ts
+  Add to TalakWeb3Instance:
+    healthCheck(): { status: "ok" | "degraded" | "error"; checks: Record<string, boolean> } {
+      return {
+        status: "ok",
+        checks: {
+          auth: !!this.context.auth,
+          rpc: !!this.context.rpc,
+          cache: !!this.context.cache,
+          plugins: this.context.plugins.size > 0,
+        },
+      };
+    }
+
+STEP 50: Add Request Logging Middleware (FEAT-004)
+  File: packages/core/src/middleware.ts
+  Add:
+    export const requestLoggingMiddleware: MiddlewareHandler = async (req, next, ctx) => {
+      const start = Date.now();
+      const response = await next();
+      const duration = Date.now() - start;
+      ctx.logger.info(`[${ctx.requestId ?? "unknown"}] ${duration}ms`);
+      return response;
+    };
+  Register it in createTalakWeb3 after securityMiddleware.
+
+STEP 51: Add Rate Limit Headers (FEAT-008)
+  File: packages/rate-limit/src/index.ts
+  Add a helper to generate rate limit headers:
+    export function rateLimitHeaders(remaining: number, limit: number, resetMs: number): Record<string, string> {
+      return {
+        "X-RateLimit-Limit": String(limit),
+        "X-RateLimit-Remaining": String(Math.max(0, remaining)),
+        "X-RateLimit-Reset": String(Math.ceil(resetMs / 1000)),
+      };
+    }
+
+STEP 52: Add Token Introspection (FEAT-005)
+  File: packages/auth/src/index.ts
+  Add method to TalakWeb3Auth:
+    async introspectToken(token: string): Promise<{ valid: boolean; payload?: Record<string, unknown> }> {
+      try {
+        const payload = await this.verifySession(token);
+        return { valid: true, payload: payload as unknown as Record<string, unknown> };
+      } catch {
+        return { valid: false };
+      }
+    }
+
+STEP 53: Add Built-in Request Deduplication (PERF-004)
+  File: packages/rpc/src/index.ts
+  Add request coalescing map:
+    private pendingRequests = new Map<string, Promise<unknown>>();
+  Before making an RPC call, check if an identical request is in-flight:
+    const key = `${method}:${JSON.stringify(params)}`;
+    if (this.pendingRequests.has(key)) {
+      return this.pendingRequests.get(key)!;
+    }
+    const promise = this.executeRequest(method, params);
+    this.pendingRequests.set(key, promise);
+    promise.finally(() => this.pendingRequests.delete(key));
+    return promise;
+
+STEP 54: Add Deprecation Warning Utility
+  File: packages/utils/src/index.ts
+  Add:
+    const warned = new Set<string>();
+    export function deprecated(message: string, alternative?: string): void {
+      if (warned.has(message)) return;
+      warned.add(message);
+      console.warn(`[talak-web3] DEPRECATED: ${message}${alternative ? ` — Use ${alternative} instead` : ""}`);
+    }
+
+STEP 55: Add Zero-Config Development Mode
+  File: packages/core/src/index.ts
+  In createTalakWeb3, if no auth stores provided, auto-create InMemory stores:
+    if (!authOptions.nonceStore) authOptions.nonceStore = new InMemoryNonceStore();
+    if (!authOptions.refreshStore) authOptions.refreshStore = new InMemoryRefreshStore();
+    if (!authOptions.revocationStore) authOptions.revocationStore = new InMemoryRevocationStore();
+  This enables: `const app = talakWeb3({ chains: [...] })` with zero auth config for dev.
+
+PHASE 6 VERIFICATION:
+  Run:
+    pnpm build
+    pnpm typecheck
+    pnpm test:unit
+
+================================================================================
+PHASE 7: DOCUMENTATION & DX (7 steps)
+================================================================================
+
+STEP 56: Add JSDoc to Core Exports
+  File: packages/core/src/index.ts
+  Add JSDoc to every exported function and class:
+    /**
+     * Creates a new TalakWeb3 SDK instance.
+     *
+     * @param input - Configuration object or partial config
+     * @returns TalakWeb3Instance with handler, init, and destroy methods
+     *
+     * @example
+     * ```typescript
+     * const app = talakWeb3({
+     *   chains: [{ id: 1, name: "Ethereum", rpcUrls: ["..."], nativeCurrency: {...} }],
+     *   auth: { domain: "app.example.com" }
+     * });
+     * await app.init();
+     * ```
+     */
+    export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance { ... }
+
+  Apply similar JSDoc to: createAuthHandler, MiddlewareChain, errorHandlingMiddleware,
+    securityMiddleware, HookRegistry, ContextFactory, SecurityInvariant, ConnectionManager,
+    ConsoleLogger, TtlCache.
+
+STEP 57: Add JSDoc to Auth Exports
+  File: packages/auth/src/index.ts
+  Add JSDoc to TalakWeb3Auth class and all public methods.
+
+STEP 58: Add JSDoc to Type Definitions
+  File: packages/types/src/index.ts
+  Add JSDoc to all exported interfaces and types:
+    /** Configuration for a single blockchain chain */
+    export interface ChainConfig { ... }
+    /** Plugin interface for extending TalakWeb3 functionality */
+    export interface TalakWeb3Plugin { ... }
+
+STEP 59: Fix README Accuracy
+  File: README.md
+  Verify all code examples compile. Remove references to non-existent packages.
+  Ensure getting-started guide works with current API.
+
+STEP 60: Add CHANGELOG to Each Package
+  Files: packages/*/CHANGELOG.md (create for each)
+  Start with v1.1.0 entry documenting the audit fixes.
+
+STEP 61: Add TypeDoc Configuration
+  File: typedoc.json (create at root)
+  {
+    "entryPoints": ["packages/*/src/index.ts"],
+    "out": "docs/api",
+    "exclude": ["**/__tests__/**", "**/*.test.ts"],
+    "tsconfig": "tsconfig.json"
+  }
+  Add script to package.json: "docs:api": "typedoc"
+
+STEP 62: Update CONTRIBUTING.md
+  File: CONTRIBUTING.md
+  Add sections on:
+    - How to run tests for a single package
+    - How to add a new package to the monorepo
+    - Security issue reporting process
+    - Code review requirements
+
+PHASE 7 VERIFICATION:
+  Run:
+    pnpm docs:build
+    Confirm documentation site builds without errors.
+
+================================================================================
+PHASE 8: FINAL VERIFICATION
+================================================================================
+
+After completing ALL phases, run this complete verification:
+
+STEP 63: Full Build
+  Run: pnpm build
+  Must complete with zero errors.
+
+STEP 64: Full Typecheck
+  Run: pnpm typecheck
+  Must complete with zero errors.
+
+STEP 65: Full Lint
+  Run: pnpm lint
+  Must complete with zero errors.
+
+STEP 66: Full Test Suite
+  Run: pnpm test:unit
+  Must pass all tests. Coverage should be >= 85% for all packages.
+
+STEP 67: Integration Tests
+  Run: pnpm test:integration
+  Must pass. If Redis is not available, integration tests should skip gracefully.
+
+STEP 68: Smoke Tests
+  Run: pnpm test:smoke
+  Must pass CJS and ESM import tests.
+
+STEP 69: Verify No Memory Leaks
+  Write a quick script that creates 100,000 InMemoryNonceStore entries,
+  calls destroy(), and verifies memory is released.
+  Run it and confirm memory stays bounded.
+
+STEP 70: Security Self-Check
+  Verify each fix against its original audit finding:
+    [ ] SEC-001 — InMemory stores have TTL eviction
+    [ ] SEC-002 — requestId is dynamic, not hardcoded
+    [ ] SEC-003 — Secret detection covers PEM, hex, base64
+    [ ] SEC-004 — Prototype pollution uses deep object scan
+    [ ] SEC-005 — Redis parseInt has NaN guard
+    [ ] SEC-006 — JWT keys validated for strength
+    [ ] SEC-007 — AI mock mode requires explicit opt-in
+    [ ] SEC-008 — Tableland key format validated
+    [ ] SEC-009 — HMAC supports key rotation
+    [ ] SEC-010 — Rate limiter has configurable ceiling
+    [ ] SEC-011 — Stack traces suppressed in production
+    [ ] SEC-012 — Redis connections auto-cleanup on exit
+    [ ] SEC-013 — CORS origins validated at startup
+    [ ] SEC-014 — SIWE validation tightened
+    [ ] SEC-015 — Internal error codes not exported
+    [ ] SEC-016 — CSRF tokens rotated (hono-backend)
+    [ ] SEC-017 — IPv6 rate limiting supported
+    [ ] SEC-018 — Cookie defaults are secure
+    [ ] SEC-019 — HookRegistry uses SDK logger
+    [ ] SEC-020 — generateSecret() removed (dead code)
+    [ ] SEC-021 — Doctor validates env format
+    [ ] SEC-022 — Private keys not in heap dumps (documented)
+    [ ] SEC-023 — Auth endpoints have body size limits
+    [ ] SEC-024 — Adapter tests are real, not placeholders
+    [ ] BUG-001 — InMemory stores cleaned up
+    [ ] BUG-002 — MiddlewareChain context propagation verified
+    [ ] BUG-003 — Structured logs go to stderr
+    [ ] BUG-004 — TtlCache uses Set for O(1) operations
+    [ ] BUG-005 — Redis parseInt NaN fixed
+    [ ] BUG-006 — SIWE format validation added
+    [ ] BUG-007 — Refresh token uses timingSafeEqual
+    [ ] BUG-008 — Circuit breaker half-open throttled
+    [ ] BUG-009 — RPC has timeout via AbortController
+    [ ] BUG-010 — WebSocket backoff resets on reconnect
+    [ ] PERF-001 through PERF-008 — All addressed
+    [ ] DEBT-001 through DEBT-008 — All cleaned
+    [ ] TS-001 through TS-007 — All improved
+    [ ] FEAT-001 through FEAT-010 — All implemented or documented
+
+================================================================================
+EXPECTED OUTCOME
+================================================================================
+
+After following ALL 70 steps:
+  - Overall score improves from 6.7/10 to 8.5+/10
+  - Security score: 6 → 9
+  - Testing score: 7 → 9
+  - Reliability score: 6 → 8
+  - Production readiness: 6 → 8
+  - Enterprise readiness: 5 → 7
+  - All release blockers resolved
+  - SDK approved for npm publication as v1.0.0
+
+================================================================================
+END OF AUDIT FIX PROMPT
+================================================================================

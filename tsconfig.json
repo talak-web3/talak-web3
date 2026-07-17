@@ -13,7 +13,6 @@
     { "path": "./packages/tx" },
     { "path": "./packages/realtime" },
     { "path": "./packages/ai" },
-    { "path": "./packages/handlers" },
     { "path": "./packages/core" },
     { "path": "./packages/client" },
     { "path": "./packages/dashboard" },

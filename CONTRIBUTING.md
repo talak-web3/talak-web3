@@ -6,8 +6,8 @@ This project prioritizes deterministic behavior, security, and clear operational
 ## Getting Started
 
 1. Fork the repository and create a feature branch.
-2. Use Node.js `>=20.12.0`.
-3. Use `pnpm` `>=9`.
+2. Use Node.js `>=24`.
+3. Use `pnpm` `>=9.15`.
 4. Review `.env.example`.
 
 ## Building the Monorepo
@@ -26,6 +26,38 @@ pnpm typecheck
 pnpm lint
 pnpm test
 ```
+
+## Running Tests for a Single Package
+
+```bash
+# Run tests for a specific package
+pnpm --filter @talak-web3/core test
+
+# Run typecheck for a single package
+pnpm --filter @talak-web3/auth typecheck
+
+# Run a specific test file
+pnpm vitest run packages/core/src/__tests__/middleware.test.ts
+```
+
+## Adding a New Package
+
+1. Create the package directory under `packages/`:
+   ```bash
+   mkdir -p packages/my-package/src
+   ```
+2. Create `packages/my-package/package.json` with the `@talak-web3/` scope.
+3. Create `packages/my-package/tsconfig.json` extending the root config.
+4. Create `packages/my-package/tsdown.config.ts` with entry `src/index.ts`.
+5. Add the package to the root `turbo.json` pipeline if needed.
+6. Add internal dependencies via `workspace:*` in `package.json`.
+
+## Security Issue Reporting
+
+If you discover a security vulnerability, **do not** open a public GitHub issue.
+
+Instead, email the maintainers directly or use GitHub's private vulnerability reporting feature.
+We will respond within 48 hours and coordinate a fix before any public disclosure.
 
 ## Pull Request Checklist
 

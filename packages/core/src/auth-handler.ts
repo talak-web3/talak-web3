@@ -31,6 +31,7 @@ type AuthRouteHandler = (
 ) => Promise<Response>;
 
 const SESSION_REFRESH_THRESHOLD_SECONDS = 5 * 60;
+const MAX_AUTH_BODY_SIZE = 1024; // 1KB is plenty for auth payloads
 
 function jsonResponse(body: unknown, status = 200, headers?: HeadersInit): Response {
   const responseHeaders = new Headers(headers);
@@ -94,8 +95,12 @@ async function readJsonBody<T extends Record<string, unknown>>(
   request: Request,
 ): Promise<T | null> {
   try {
-    const body = (await request.json()) as T;
-    return body && typeof body === "object" ? body : null;
+    const body = await request.text();
+    if (body.length > MAX_AUTH_BODY_SIZE) {
+      return null;
+    }
+    const parsed = JSON.parse(body) as T;
+    return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
     return null;
   }

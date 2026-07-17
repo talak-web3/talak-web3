@@ -1,5 +1,15 @@
 import type { Hex } from "@talak-web3/types";
 
+const warned = new Set<string>();
+
+export function deprecated(message: string, alternative?: string): void {
+  if (warned.has(message)) return;
+  warned.add(message);
+  console.warn(
+    `[talak-web3] DEPRECATED: ${message}${alternative ? ` — Use ${alternative} instead` : ""}`,
+  );
+}
+
 export function assertUnreachable(x: never): never {
   throw new Error(`Unreachable: ${String(x)}`);
 }

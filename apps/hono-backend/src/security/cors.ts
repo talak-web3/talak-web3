@@ -7,6 +7,17 @@ export type CorsPolicy = {
   maxAgeSeconds?: number;
 };
 
+function validateOrigins(origins: readonly string[]): void {
+  for (const origin of origins) {
+    try {
+      new URL(origin);
+    } catch {
+      console.error(`[CORS] Invalid origin format: "${origin}" — must be full URL like https://example.com`);
+      process.exit(1);
+    }
+  }
+}
+
 function setCorsHeaders(c: Context, origin: string, policy: CorsPolicy): void {
   c.header("Access-Control-Allow-Origin", origin);
   c.header("Vary", "Origin");
@@ -26,6 +37,7 @@ function setCorsHeaders(c: Context, origin: string, policy: CorsPolicy): void {
 }
 
 export function strictCors(policy: CorsPolicy): MiddlewareHandler {
+  validateOrigins(policy.allowedOrigins);
   const allowed = new Set(policy.allowedOrigins);
 
   return async (c, next) => {

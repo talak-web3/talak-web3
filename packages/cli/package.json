@@ -1,6 +1,6 @@
 {
   "name": "@talak-web3/cli",
-  "version": "1.0.10",
+  "version": "1.1.0",
   "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/cli#readme",
   "bugs": {
     "url": "https://github.com/dagimabebe/talak-web3/issues"
@@ -18,8 +18,11 @@
     "talak-web3": "./dist/bin.js"
   },
   "files": [
+    "src",
     "dist",
-    "README.md"
+    "README.md",
+    "tsdown.config.ts",
+    "tsconfig.json"
   ],
   "type": "module",
   "main": "./dist/index.cjs",

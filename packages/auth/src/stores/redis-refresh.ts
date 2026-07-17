@@ -1,8 +1,15 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { TalakWeb3Error, AUTH_ERROR_CODES } from "@talak-web3/errors";
 import type Redis from "ioredis";
 
 import type { RefreshSession, RefreshStore } from "../contracts.js";
 import { randomId, randomToken, sha256Hex } from "./crypto.js";
+
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
+}
 
 export interface RedisRefreshStoreOptions {
   redis: Redis;

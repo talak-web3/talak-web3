@@ -13,15 +13,39 @@ export const HARDENED_REDIS_OPTS: RedisOptions = {
   connectTimeout: 5000,
 };
 
+function safeDbIndex(envVar: string | undefined, fallback: number): number {
+  if (!envVar) return fallback;
+  const n = Number(envVar);
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0 || n > 15) {
+    throw new Error(`Invalid Redis DB index: ${envVar}. Must be integer 0-15.`);
+  }
+  return n;
+}
+
+let shutdownRegistered = false;
+function registerShutdown(): void {
+  if (shutdownRegistered) return;
+  shutdownRegistered = true;
+  const handler = async () => {
+    await ConnectionManager.shutdown();
+    process.exit(0);
+  };
+  process.on("SIGTERM", handler);
+  process.on("SIGINT", handler);
+  process.on("exit", () => {
+    ConnectionManager.shutdown();
+  });
+}
+
 export class ConnectionManager {
   private static redisInstances = new Map<string, Redis>();
 
   static getRedis(purpose: "sessions" | "rate-limit" | "revocation" = "sessions"): Redis {
     const baseUrl = process.env["REDIS_URL"] || "redis://localhost:6379";
     const dbMap: Record<string, number> = {
-      sessions: parseInt(process.env["REDIS_DB_SESSIONS"] || "0"),
-      "rate-limit": parseInt(process.env["REDIS_DB_RATE_LIMIT"] || "1"),
-      revocation: parseInt(process.env["REDIS_DB_REVOCATION"] || "2"),
+      sessions: safeDbIndex(process.env["REDIS_DB_SESSIONS"], 0),
+      "rate-limit": safeDbIndex(process.env["REDIS_DB_RATE_LIMIT"], 1),
+      revocation: safeDbIndex(process.env["REDIS_DB_REVOCATION"], 2),
     };
 
     const db = dbMap[purpose] ?? 0;
@@ -30,6 +54,8 @@ export class ConnectionManager {
     if (this.redisInstances.has(instanceKey)) {
       return this.redisInstances.get(instanceKey)!;
     }
+
+    registerShutdown();
 
     const options: RedisOptions = {
       ...HARDENED_REDIS_OPTS,

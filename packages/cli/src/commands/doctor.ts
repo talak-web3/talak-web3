@@ -114,14 +114,14 @@ export async function doctorCommand(options: DoctorOptions = {}) {
 
   const nodeVersion = process.version;
   const majorVersion = parseInt(nodeVersion.slice(1).split(".")[0] ?? "0");
-  if (majorVersion >= 20) {
+  if (majorVersion >= 24) {
     results.push({ name: "Node.js version", status: "pass", message: `Version: ${nodeVersion}` });
   } else {
     results.push({
       name: "Node.js version",
       status: "warn",
-      message: `Version: ${nodeVersion} (recommended: 20+)`,
-      fix: "Upgrade to Node.js 20 or later",
+      message: `Version: ${nodeVersion} (recommended: 24+)`,
+      fix: "Upgrade to Node.js 24 or later",
     });
   }
 

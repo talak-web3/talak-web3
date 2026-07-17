@@ -1,4 +1,25 @@
+import { createPublicKey } from "node:crypto";
+
 import { TalakWeb3Error } from "@talak-web3/errors";
+
+function validateKeyStrength(pem: string, label: string): void {
+  try {
+    const keyObj = createPublicKey(pem);
+    const details = keyObj.asymmetricKeyDetails;
+    if (details?.modulusLength !== undefined && details.modulusLength < 2048) {
+      throw new TalakWeb3Error(
+        `INVALID CONFIGURATION: ${label} RSA key must be at least 2048 bits (got ${details.modulusLength})`,
+        { code: "ENV_JWT_KEY_TOO_WEAK", status: 500 },
+      );
+    }
+  } catch (err) {
+    if (err instanceof TalakWeb3Error) throw err;
+    throw new TalakWeb3Error(
+      `INVALID CONFIGURATION: ${label} could not be parsed as a valid key`,
+      { code: "ENV_JWT_KEY_INVALID", status: 500 },
+    );
+  }
+}
 
 export function validateEnv(): void {
   const required = ["JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "REDIS_URL", "SIWE_DOMAIN"];
@@ -27,6 +48,9 @@ export function validateEnv(): void {
       { code: "ENV_JWT_KEY_INVALID", status: 500 },
     );
   }
+
+  validateKeyStrength(priv, "JWT_PRIVATE_KEY");
+  validateKeyStrength(pub, "JWT_PUBLIC_KEY");
 
   if (
     !process.env["REDIS_URL"]?.startsWith("redis://") &&

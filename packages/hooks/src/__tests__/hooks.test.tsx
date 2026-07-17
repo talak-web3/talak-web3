@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { HookRegistry } from "../hook-registry.js";
-import { TalakWeb3Provider, useTalakWeb3, useChain, useAccount, useRpc } from "../index.js";
+import { TalakWeb3Provider, useTalakWeb3, useChain, useAccount, useRpc, useGasless, useIdentity } from "../index.js";
 
 type Events = {
   "chain-changed": number;
@@ -217,5 +217,96 @@ describe("useRpc", () => {
     });
 
     expect(mockRequest).toHaveBeenCalledWith("eth_getBalance", ["0xABC", "latest"]);
+  });
+});
+
+describe("useGasless", () => {
+  it("starts with idle state", () => {
+    const instance = createMockInstance();
+    const wrapper = createWrapper(instance);
+
+    const { result } = renderHook(() => useGasless(), { wrapper });
+    expect(result.current.loading).toBe(false);
+    expect(result.current.lastHash).toBeNull();
+    expect(result.current.error).toBeNull();
+  });
+
+  it("sets error when AA plugin not loaded", async () => {
+    const instance = createMockInstance();
+    const wrapper = createWrapper(instance);
+
+    const { result } = renderHook(() => useGasless(), { wrapper });
+
+    await act(async () => {
+      try {
+        await result.current.sendGasless("0xtarget", "0xdata");
+      } catch {
+        // expected
+      }
+    });
+    expect(result.current.error).toBe("AccountAbstraction plugin not loaded");
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("calls aa.sendGasless and returns hash on success", async () => {
+    const instance = createMockInstance();
+    const sendGasless = vi.fn().mockResolvedValue("0xhash123");
+    (instance.context as unknown as Record<string, unknown>)["aa"] = { sendGasless };
+    const wrapper = createWrapper(instance);
+
+    const { result } = renderHook(() => useGasless(), { wrapper });
+
+    let hash: string | undefined;
+    await act(async () => {
+      hash = await result.current.sendGasless("0xtarget", "0xdata");
+    });
+
+    expect(hash).toBe("0xhash123");
+    expect(result.current.lastHash).toBe("0xhash123");
+    expect(result.current.loading).toBe(false);
+    expect(sendGasless).toHaveBeenCalledWith("0xtarget", "0xdata");
+  });
+});
+
+describe("useIdentity", () => {
+  it("starts with null profile", () => {
+    const instance = createMockInstance();
+    const wrapper = createWrapper(instance);
+
+    const { result } = renderHook(() => useIdentity(), { wrapper });
+    expect(result.current.profile).toBeNull();
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("returns address as fallback when identity plugin not loaded", async () => {
+    const instance = createMockInstance();
+    const wrapper = createWrapper(instance);
+
+    const { result } = renderHook(() => useIdentity(), { wrapper });
+
+    await act(async () => {
+      await result.current.resolve("0xABC");
+    });
+
+    expect(result.current.profile).toEqual({ address: "0xABC" });
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("calls identity.resolve and sets profile", async () => {
+    const instance = createMockInstance();
+    const mockProfile = { did: "did:key:z123", ens: "alice.eth", address: "0xDEF" };
+    const resolve = vi.fn().mockResolvedValue(mockProfile);
+    (instance.context as unknown as Record<string, unknown>)["identity"] = { resolve };
+    const wrapper = createWrapper(instance);
+
+    const { result } = renderHook(() => useIdentity(), { wrapper });
+
+    await act(async () => {
+      await result.current.resolve("0xDEF");
+    });
+
+    expect(resolve).toHaveBeenCalledWith("0xDEF");
+    expect(result.current.profile).toEqual(mockProfile);
+    expect(result.current.loading).toBe(false);
   });
 });

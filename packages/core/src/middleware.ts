@@ -1,5 +1,13 @@
+import { randomBytes } from "node:crypto";
+
 import { TalakWeb3Error, INTERNAL_ERROR_CODES } from "@talak-web3/errors";
 import type { TalakWeb3Context, IMiddlewareChain, MiddlewareHandler } from "@talak-web3/types";
+
+export const requestIdMiddleware: MiddlewareHandler = async (req, next, ctx) => {
+  const id = randomBytes(16).toString("hex");
+  (ctx as { requestId: string }).requestId = id;
+  return next();
+};
 
 export const errorHandlingMiddleware: MiddlewareHandler = async (req, next, ctx) => {
   try {
@@ -7,11 +15,12 @@ export const errorHandlingMiddleware: MiddlewareHandler = async (req, next, ctx)
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
     const isPublicError = err instanceof TalakWeb3Error;
-    const requestId = "unknown";
+    const requestId = ctx.requestId ?? "unknown";
+    const shouldLogStack = process.env["NODE_ENV"] !== "production";
 
     ctx.logger.error(`[Request ${requestId}] Unhandled error:`, {
       message: error.message,
-      stack: error.stack,
+      ...(shouldLogStack ? { stack: error.stack } : {}),
       code: err instanceof TalakWeb3Error ? err.code : undefined,
       data: err instanceof TalakWeb3Error ? err.data : undefined,
     });
@@ -25,6 +34,14 @@ export const errorHandlingMiddleware: MiddlewareHandler = async (req, next, ctx)
       status: 500,
     });
   }
+};
+
+export const requestLoggingMiddleware: MiddlewareHandler = async (req, next, ctx) => {
+  const start = Date.now();
+  const response = await next();
+  const duration = Date.now() - start;
+  ctx.logger.info(`[${ctx.requestId ?? "unknown"}] ${duration}ms`);
+  return response;
 };
 
 export class MiddlewareChain<T = unknown, R = unknown> implements IMiddlewareChain<T, R> {

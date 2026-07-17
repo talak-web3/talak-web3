@@ -135,6 +135,39 @@ export class EnvironmentKeyProvider implements KeyProvider {
     try {
       const priv = await importPKCS8(primaryPrivPem, "RS256");
       const pub = await importSPKI(primaryPubPem, "RS256");
+
+      if (priv.type !== "private" && priv.type !== "public") {
+        throw new TalakWeb3Error("Invalid private key type", {
+          code: AUTH_ERROR_CODES.JWT_KEYS_INVALID,
+          status: 500,
+        });
+      }
+
+      if (pub.type !== "public") {
+        throw new TalakWeb3Error("Invalid public key type", {
+          code: AUTH_ERROR_CODES.JWT_KEYS_INVALID,
+          status: 500,
+        });
+      }
+
+      if (priv.algorithm && "modulusLength" in priv.algorithm) {
+        if ((priv.algorithm as { modulusLength: number }).modulusLength < 2048) {
+          throw new TalakWeb3Error("RSA private key must be at least 2048 bits", {
+            code: AUTH_ERROR_CODES.JWT_KEYS_INVALID,
+            status: 500,
+          });
+        }
+      }
+
+      if (pub.algorithm && "modulusLength" in pub.algorithm) {
+        if ((pub.algorithm as { modulusLength: number }).modulusLength < 2048) {
+          throw new TalakWeb3Error("RSA public key must be at least 2048 bits", {
+            code: AUTH_ERROR_CODES.JWT_KEYS_INVALID,
+            status: 500,
+          });
+        }
+      }
+
       await this.jwksManager.addKey(primaryKidEnv, pub, priv, true);
     } catch (err) {
       throw new TalakWeb3Error("Failed to import primary JWT keys", {
