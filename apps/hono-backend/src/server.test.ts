@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.hoisted(() => {
+  const { generateKeyPairSync } = require("node:crypto") as typeof import("node:crypto");
+  const { publicKey, privateKey } = generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: "spki", format: "pem" },
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+  });
   process.env["REDIS_URL"] = "redis://localhost:6379";
-  process.env["JWT_PRIVATE_KEY"] = "-----BEGIN PRIVATE KEY-----\nMIIBVAIBADANBg...\n-----END PRIVATE KEY-----";
-  process.env["JWT_PUBLIC_KEY"] = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBg...\n-----END PUBLIC KEY-----";
+  process.env["JWT_PRIVATE_KEY"] = privateKey;
+  process.env["JWT_PUBLIC_KEY"] = publicKey;
   process.env["SIWE_DOMAIN"] = "localhost";
 });
 
@@ -12,24 +18,177 @@ vi.mock("./security/env.js", () => ({
 }));
 
 vi.mock("redis", () => {
+  const store = new Map<string, string>();
+  const hashStores = new Map<string, Map<string, string>>();
+  const consumedNonces = new Set<string>();
+  const pendingNonces = new Map<string, Set<string>>();
+  const sortedSets = new Map<string, { score: number; value: string }[]>();
+  let globalVersion = 0;
+  const watchVersions = new Map<string, number>();
+  const modVersions = new Map<string, number>();
+
+  function getHashMap(key: string) {
+    if (!hashStores.has(key)) hashStores.set(key, new Map());
+    return hashStores.get(key)!;
+  }
+
+  function updateModVersion(key: string) {
+    modVersions.set(key, globalVersion++);
+  }
+
   const mockClient = {
     isOpen: true,
     connect: vi.fn().mockResolvedValue(undefined),
     disconnect: vi.fn().mockResolvedValue(undefined),
     on: vi.fn(),
-    hSet: vi.fn().mockResolvedValue(1),
-    hGet: vi.fn().mockResolvedValue(null),
-    hGetAll: vi.fn().mockResolvedValue({}),
+    hSet: vi.fn().mockImplementation((key: string, ...args: unknown[]) => {
+      const map = getHashMap(key);
+      if (args.length === 1 && typeof args[0] === "object" && args[0] !== null) {
+        const entries = args[0] as Record<string, string>;
+        for (const [f, v] of Object.entries(entries)) map.set(f, v);
+      } else if (args.length >= 2) {
+        map.set(String(args[0]), String(args[1]));
+      }
+      return Promise.resolve(1);
+    }),
+    hGet: vi.fn().mockImplementation((key: string, field: string) => {
+      const map = getHashMap(key);
+      return Promise.resolve(map.get(field) ?? null);
+    }),
+    hGetAll: vi.fn().mockImplementation((key: string) => {
+      const map = getHashMap(key);
+      return Promise.resolve(Object.fromEntries(map));
+    }),
     pExpire: vi.fn().mockResolvedValue(true),
-    eval: vi.fn().mockResolvedValue(0),
-    set: vi.fn().mockResolvedValue("OK"),
-    get: vi.fn().mockResolvedValue(null),
-    del: vi.fn().mockResolvedValue(1),
-    multi: vi.fn(() => ({
-      hSet: vi.fn().mockReturnThis(),
-      pExpire: vi.fn().mockReturnThis(),
-      exec: vi.fn().mockResolvedValue([]),
-    })),
+    sismember: vi.fn().mockImplementation((_key: string, member: string) => {
+      return Promise.resolve(consumedNonces.has(member) ? 1 : 0);
+    }),
+    eval: vi.fn().mockImplementation((script: string, ...callArgs: unknown[]) => {
+      const s = String(script);
+      const firstArg = callArgs[0] as Record<string, unknown> | undefined;
+      const keys: string[] = Array.isArray(firstArg?.keys) ? firstArg!.keys as string[] : [];
+      const scriptArgs: string[] = Array.isArray(firstArg?.arguments) ? (firstArg!.arguments as string[]).map(String) : callArgs.slice(1).map(String);
+
+      if (s.includes("consumed") && s.includes("HGETALL") && keys.length === 1) {
+        const key = keys[0];
+        const map = hashStores.get(key);
+        if (!map || map.size === 0) return Promise.resolve(0);
+        if (map.get("consumed") === "1") return Promise.resolve(0);
+        const expiresAt = Number(map.get("expiresAt") ?? "0");
+        if (expiresAt < Date.now()) { hashStores.delete(key); return Promise.resolve(0); }
+        map.set("consumed", "1");
+        return Promise.resolve(1);
+      }
+
+      if (s.includes("HMSET") && s.includes("revoked") && keys.length === 2) {
+        const [oldKey, newKey] = keys;
+        const [ttlMs, newId, newHash] = scriptArgs;
+        const oldMap = hashStores.get(oldKey);
+        if (!oldMap || oldMap.size === 0) return Promise.resolve(0);
+        if (oldMap.get("revoked") === "1") return Promise.resolve(0);
+        const expiresAt = Number(oldMap.get("expiresAt") ?? "0");
+        if (expiresAt < Date.now()) return Promise.resolve(0);
+        const address = oldMap.get("address") ?? "";
+        const chainId = oldMap.get("chainId") ?? "1";
+        oldMap.set("revoked", "1");
+        const newExpiresAt = Date.now() + Number(ttlMs);
+        const newMap = getHashMap(newKey);
+        for (const [f, v] of [["id", newId], ["address", address], ["chainId", chainId], ["hash", newHash], ["expiresAt", String(newExpiresAt)], ["revoked", "0"]] as [string, string][]) newMap.set(f, v);
+        return Promise.resolve([String(newExpiresAt), address, chainId]);
+      }
+
+      if (s.includes("SISMEMBER") && keys.length === 2) {
+        const pendingKey = keys[1];
+        const nonce = scriptArgs[0];
+        if (consumedNonces.has(nonce)) return Promise.resolve(0);
+        const addr = pendingKey.split(":").pop()!;
+        const pending = pendingNonces.get(addr);
+        if (!pending || !pending.has(nonce)) return Promise.resolve(0);
+        consumedNonces.add(nonce);
+        pending.delete(nonce);
+        return Promise.resolve(1);
+      }
+
+      return Promise.resolve([1, 999]);
+    }),
+    watch: vi.fn().mockImplementation((key: string) => {
+      watchVersions.set(key, globalVersion);
+      return Promise.resolve();
+    }),
+    unwatch: vi.fn().mockImplementation(() => {
+      watchVersions.clear();
+      return Promise.resolve();
+    }),
+    wait: vi.fn().mockResolvedValue(1),
+    zAdd: vi.fn().mockImplementation((key: string, ...args: unknown[]) => {
+      if (!sortedSets.has(key)) sortedSets.set(key, []);
+      const set = sortedSets.get(key)!;
+      if (args.length >= 2) {
+        const score = Number(args[0]);
+        const member = String(args[1]);
+        set.push({ score, value: member });
+        if (key.includes("nonce:pending:")) {
+          const addr = key.split(":").pop()!;
+          if (!pendingNonces.has(addr)) pendingNonces.set(addr, new Set());
+          pendingNonces.get(addr)!.add(member);
+        }
+      } else if (args.length === 1 && typeof args[0] === "object" && args[0] !== null) {
+        const entry = args[0] as { score: number; value: string };
+        set.push(entry);
+      }
+      return Promise.resolve(1);
+    }),
+    zRange: vi.fn().mockImplementation(() => Promise.resolve([])),
+    zRemRangeByScore: vi.fn().mockResolvedValue(0),
+    expire: vi.fn().mockResolvedValue(true),
+    set: vi.fn().mockImplementation((key: string, value: string, ..._args: unknown[]) => {
+      store.set(key, value);
+      updateModVersion(key);
+      return Promise.resolve("OK");
+    }),
+    get: vi.fn().mockImplementation((key: string) => {
+      return Promise.resolve(store.get(key) ?? null);
+    }),
+    del: vi.fn().mockImplementation((key: string) => {
+      store.delete(key);
+      updateModVersion(key);
+      return Promise.resolve(1);
+    }),
+    multi: vi.fn(() => {
+      const hSetOps: Array<{ key: string; data: Record<string, string> }> = [];
+      const setOps: Array<{ key: string; value: string }> = [];
+      const self: Record<string, unknown> = {};
+      self.hSet = vi.fn().mockImplementation((key: string, data: Record<string, string>) => {
+        hSetOps.push({ key, data });
+        return self;
+      });
+      self.pExpire = vi.fn().mockImplementation((_key: string, _ttl: number) => {
+        return self;
+      });
+      self.set = vi.fn().mockImplementation((key: string, value: string, ..._args: unknown[]) => {
+        setOps.push({ key, value });
+        return self;
+      });
+      self.exec = vi.fn().mockImplementation(() => {
+        for (const op of setOps) {
+          const wv = watchVersions.get(op.key);
+          const mv = modVersions.get(op.key);
+          if (wv !== undefined && mv !== undefined && mv > wv) {
+            return Promise.resolve(null);
+          }
+        }
+        for (const op of hSetOps) {
+          const map = getHashMap(op.key);
+          for (const [f, v] of Object.entries(op.data)) map.set(f, v);
+        }
+        for (const op of setOps) {
+          store.set(op.key, op.value);
+          updateModVersion(op.key);
+        }
+        return Promise.resolve(hSetOps.concat(setOps).map(() => ["ok", "OK"]));
+      });
+      return self;
+    }),
   };
   return {
     createClient: vi.fn(() => mockClient),
@@ -82,8 +241,6 @@ function buildSiweMessage(nonce: string): string {
 
 describe("Auth Edge Concurrency & Adversarial Tests", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-    vi.advanceTimersByTime(200_000);
     mockVerify.mockResolvedValue(true);
 
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -91,7 +248,6 @@ describe("Auth Edge Concurrency & Adversarial Tests", () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -201,7 +357,7 @@ describe("Auth Edge Concurrency & Adversarial Tests", () => {
         Cookie: `csrf_token=${csrfToken}`,
         "x-csrf-token": csrfToken!,
       },
-      body: JSON.stringify({ message: buildSiweMessage("any"), signature: "0x123" }),
+      body: JSON.stringify({ message: buildSiweMessage("testnonce123"), signature: "0x123" }),
     });
 
     expect(res.status).toBe(401);

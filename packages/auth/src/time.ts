@@ -67,7 +67,7 @@ export class AuthoritativeTime {
   private timeSource: TimeSource;
   private syncInProgress: boolean = false;
 
-  private lastObservedTime: number = 0;
+  private lastObservedTime: number = Date.now();
   private maxForwardJumpMs: number;
 
   private redisClient: Redis | null = null;

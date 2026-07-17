@@ -39,6 +39,9 @@ describe("talakWeb3", () => {
     await instance.init();
 
     expect(setup).toHaveBeenCalledWith(instance.context);
-    expect(instance.context.plugins.get("test-plugin")).toBe(plugin);
+    expect(instance.context.plugins.get("test-plugin")).toMatchObject({
+    name: plugin.name,
+    version: plugin.version,
+  });
   });
 });

@@ -94,6 +94,7 @@ export class WebSocketMessagingClient implements MessagingClient {
 
   disconnect(): void {
     this.destroyed = true;
+    this.connected = false;
     this.stopHeartbeat();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
