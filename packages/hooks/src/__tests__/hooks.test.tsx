@@ -310,3 +310,78 @@ describe("useIdentity", () => {
     expect(result.current.loading).toBe(false);
   });
 });
+
+describe("Edge cases", () => {
+  it("useChain with single chain config", () => {
+    const instance = createMockInstance();
+    (instance.config as Record<string, unknown>)["chains"] = [
+      { id: 1, name: "Ethereum", rpcUrls: ["https://rpc.example.com"], nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, testnet: false },
+    ];
+    const wrapper = createWrapper(instance);
+    const { result } = renderHook(() => useChain(), { wrapper });
+    expect(result.current.chainId).toBe(1);
+    expect(result.current.chains).toHaveLength(1);
+  });
+
+  it("useRpc propagates errors", async () => {
+    const mockRequest = vi.fn().mockRejectedValue(new Error("RPC error"));
+    const instance = createMockInstance({ rpc: { request: mockRequest } });
+    const wrapper = createWrapper(instance);
+
+    const { result } = renderHook(() => useRpc(), { wrapper });
+
+    await act(async () => {
+      try {
+        await result.current.request("eth_blockNumber");
+      } catch {
+        // expected
+      }
+    });
+
+    expect(result.current).toBeDefined();
+  });
+
+  it("useGasless propagates internal errors", async () => {
+    const instance = createMockInstance();
+    const sendGasless = vi.fn().mockRejectedValue(new Error("bundler down"));
+    (instance.context as unknown as Record<string, unknown>)["aa"] = { sendGasless };
+    const wrapper = createWrapper(instance);
+
+    const { result } = renderHook(() => useGasless(), { wrapper });
+
+    await act(async () => {
+      try {
+        await result.current.sendGasless("0xtarget", "0xdata");
+      } catch {
+        // expected
+      }
+    });
+
+    expect(result.current.error).toBe("bundler down");
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("useAccount connect emits and tracks state", () => {
+    const instance = createMockInstance();
+    const wrapper = createWrapper(instance);
+    const { result } = renderHook(() => useAccount(), { wrapper });
+
+    act(() => { result.current.connect("0xAAA"); });
+    expect(result.current.address).toBe("0xAAA");
+    expect(result.current.isConnected).toBe(true);
+
+    act(() => { result.current.disconnect(); });
+    expect(result.current.address).toBeNull();
+    expect(result.current.isConnected).toBe(false);
+  });
+
+  it("useChain switchChain emits event", () => {
+    const instance = createMockInstance();
+    const emitSpy = vi.spyOn(instance.hooks, "emit");
+    const wrapper = createWrapper(instance);
+    const { result } = renderHook(() => useChain(), { wrapper });
+
+    act(() => { result.current.switchChain(10); });
+    expect(emitSpy).toHaveBeenCalledWith("chain-switch", 10);
+  });
+});

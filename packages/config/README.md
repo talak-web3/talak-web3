@@ -1,48 +1,41 @@
 # @talak-web3/config
 
-Configuration management for talak-web3 applications.
+Configuration validation and presets for talak-web3 applications.
 
 ## Installation
 
 ```bash
 npm install @talak-web3/config
-
-yarn add @talak-web3/config
-
-pnpm add @talak-web3/config
+pnpm add @talak-web3/config`
 ```
 
 ## Usage
 
 ```typescript
-import { createConfig, defineConfig } from "@talak-web3/config";
+import { validateConfig, TalakWeb3ConfigSchema, ConfigManager } from "@talak-web3/config";
 
-export default defineConfig({
-  chains: ["ethereum", "polygon", "arbitrum"],
-  rpc: {
-    ethereum: {
-      http: ["https://eth-mainnet.g.alchemy.com/v2/demo_api_key"],
-    },
-  },
-  auth: {
-    domain: "myapp.com",
-    sessionDuration: 86400,
-  },
+// Validate at runtime with Zod
+const config = validateConfig({
+  chains: [{ id: 1, name: "Ethereum", rpcUrls: ["https://rpc.example.com"], nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 } }],
+  rpc: { retries: 7, timeout: 10000 },
 });
 
-const config = createConfig({
-  configFile: "./talak.config.ts",
-});
+// Use presets
+import { MainnetPreset, PolygonPreset } from "@talak-web3/config";
+const merged = ConfigManager.merge(MainnetPreset, { auth: { domain: "myapp.com" } });
 ```
 
-## Environment Variables
+## Exports
 
-```env
-TALAK_CHAINS=ethereum,polygon
-TALAK_RPC_ETHEREUM=https://example.com/resource
-TALAK_AUTH_DOMAIN=myapp.com
-TALAK_AUTH_SECRET=...
-```
+| Export | Description |
+|--------|-------------|
+| `TalakWeb3ConfigSchema` | Zod schema for config validation |
+| `ChainSchema` | Zod schema for chain definitions |
+| `PluginSchema` | Zod schema for plugin objects |
+| `validateConfig(input)` | Validate and return typed config |
+| `ConfigManager` | Static merge/validate utility |
+| `MainnetPreset` | Default mainnet chain config |
+| `PolygonPreset` | Polygon PoS chain config |
 
 ## License
 

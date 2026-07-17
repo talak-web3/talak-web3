@@ -35,20 +35,16 @@ This file lists every **npm workspace member** in this repo (see [`pnpm-workspac
 
 Private applications used to exercise the SDK.
 
-| Path                                                | `package.json` name     | Summary                                   |
-| --------------------------------------------------- | ----------------------- | ----------------------------------------- |
-| [`apps/example-next-dapp`](apps/example-next-dapp/) | `example-next-dapp`     | Next.js sample using core, hooks, and tx. |
-| [`apps/gasless-tx-app`](apps/gasless-tx-app/)       | `example-gasless-tx`    | Gasless transaction demo.                 |
-| [`apps/hono-backend`](apps/hono-backend/)           | `hono-backend`          | Hono reference backend for talak-web3.    |
-| [`apps/minimal-auth-app`](apps/minimal-auth-app/)   | `example-minimal-auth`  | Minimal auth + client example.            |
-| [`apps/react-native-dapp`](apps/react-native-dapp/) | `react-native-dapp`     | Expo / React Native sample with hooks.    |
-| [`apps/rpc-dashboard-app`](apps/rpc-dashboard-app/) | `example-rpc-dashboard` | RPC dashboard demo.                       |
+| Path                                    | `package.json` name     | Summary                                   |
+| --------------------------------------- | ----------------------- | ----------------------------------------- |
+| [`apps/hono-backend`](apps/hono-backend/) | `hono-backend`      | Hono reference backend for talak-web3.    |
+| [`apps/docs`](apps/docs/)               | `@talak-web3/docs`      | Fumadocs MDX documentation site.          |
 
 ---
 
 ## Counts
 
 - **Libraries:** 20 packages under `packages/`
-- **Apps:** 6 packages under `apps/` (with `package.json`)
+- **Apps:** 2 packages under `apps/`
 
 Run `pnpm -r list --depth -1` from the repo root to list workspace packages as resolved by pnpm.

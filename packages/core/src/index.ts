@@ -395,14 +395,17 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
     },
   };
 
-  const gracefulShutdown = async () => {
-    await instance.destroy();
-    const { ConnectionManager } = await import("./connections.js");
-    await ConnectionManager.shutdown();
-    process.exit(0);
-  };
-  process.on("SIGTERM", gracefulShutdown);
-  process.on("SIGINT", gracefulShutdown);
+  if (!(globalThis as Record<string, unknown>)["__talak_shutdown_registered"]) {
+    (globalThis as Record<string, unknown>)["__talak_shutdown_registered"] = true;
+    const gracefulShutdown = async () => {
+      await instance.destroy();
+      const { ConnectionManager } = await import("./connections.js");
+      await ConnectionManager.shutdown();
+      process.exit(0);
+    };
+    process.on("SIGTERM", gracefulShutdown);
+    process.on("SIGINT", gracefulShutdown);
+  }
 
   return instance;
 }

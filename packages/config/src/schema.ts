@@ -31,7 +31,7 @@ export const PluginSchema = z
 
 export const TalakWeb3ConfigSchema = z.object({
   chains: z.array(ChainSchema).default([]),
-  plugins: z.array(z.any()).default([]),
+  plugins: z.array(PluginSchema).default([]),
   auth: z
     .object({
       domain: z.string().optional(),

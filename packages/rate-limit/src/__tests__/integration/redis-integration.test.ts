@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
-import { RedisRateLimiter } from "../index.js";
+import { RedisRateLimiter } from "../../index.js";
 
 describe("RedisRateLimiter Integration", () => {
   let redis: Redis;

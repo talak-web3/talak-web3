@@ -13,7 +13,7 @@ export {
   TX_ERROR_CODES,
   AA_ERROR_CODES,
   CIRCUIT_ERROR_CODES,
-} from "./codes.js";
+} from "./codes/public.js";
 
 /** @internal Only for use by @talak-web3/core — not part of public API */
 export { INTERNAL_ERROR_CODES } from "./codes/internal.js";

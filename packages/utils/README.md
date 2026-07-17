@@ -6,50 +6,43 @@ Utility functions for talak-web3.
 
 ```bash
 npm install @talak-web3/utils
-
-yarn add @talak-web3/utils
-
 pnpm add @talak-web3/utils
 ```
 
 ## Utilities
 
-### Address Utilities
-
-```typescript
-import { isAddress, getAddress, shortenAddress, checksumAddress } from "@talak-web3/utils";
-
-isAddress("0x1111111111111111111111111111111111111111");
-getAddress("0x1111111111111111111111111111111111111111");
-shortenAddress("0x1234567890abcdef...");
-checksumAddress("0x1111111111111111111111111111111111111111");
-```
-
-### Hex Utilities
-
-```typescript
-import { hexToString, stringToHex, hexToNumber, numberToHex } from "@talak-web3/utils";
-
-hexToString("0x68656c6c6f");
-stringToHex("hello");
-```
-
-### Formatting
-
-```typescript
-import { formatEther, parseEther, formatUnits, parseUnits } from "@talak-web3/utils";
-
-formatEther(1000000000000000000n);
-parseEther("1.0");
-```
-
 ### Validation
 
 ```typescript
-import { isValidSignature, isValidNonce, isExpired } from "@talak-web3/utils";
+import { isHex, validateAddress, isValidHash, shortenAddress } from "@talak-web3/utils";
 
-isValidSignature(message, signature, address);
-isExpired(timestamp);
+isHex("0xdeadbeef");                          // true
+validateAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"); // true
+isValidHash("0x" + "a".repeat(64));            // true
+shortenAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"); // "0x742...0bEb"
+```
+
+### Deprecation
+
+```typescript
+import { deprecated } from "@talak-web3/utils";
+
+deprecated("oldMethod()", "newMethod()"); // warns once per message
+```
+
+### Migration
+
+```typescript
+import { MigrationTool, SDKType } from "@talak-web3/utils";
+```
+
+### Other
+
+```typescript
+import { assertUnreachable, nowMs } from "@talak-web3/utils";
+
+assertUnreachable(x); // compile-time exhaustiveness check
+nowMs();              // Date.now() wrapper
 ```
 
 ## License

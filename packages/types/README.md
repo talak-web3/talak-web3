@@ -6,9 +6,6 @@ Shared TypeScript types for talak-web3 packages.
 
 ```bash
 npm install @talak-web3/types
-
-yarn add @talak-web3/types
-
 pnpm add @talak-web3/types
 ```
 
@@ -16,65 +13,64 @@ pnpm add @talak-web3/types
 
 ```typescript
 import type {
-  Chain,
-  WalletConfig,
-  SIWEMessage,
-  Session,
-  TransactionRequest,
+  Hex,
+  Address,
+  ChainId,
+  Logger,
+  NonceStore,
+  RefreshStore,
+  RefreshSession,
+  RevocationStore,
+  TalakWeb3BaseConfig,
+  TalakWeb3Plugin,
+  TalakWeb3Instance,
+  TalakWeb3Context,
+  IRpc,
+  RequestChain,
+  ResponseChain,
 } from "@talak-web3/types";
 ```
 
 ## Core Types
 
-### Chain
+### Primitives
 
 ```typescript
-interface Chain {
-  id: number;
+type ChainId = number;
+type Hex = `0x${string}`;
+type Address = Hex;
+type UnixMs = number;
+```
+
+### Stores
+
+```typescript
+interface NonceStore {
+  create(address: string, meta?: { ip?: string; ua?: string }): Promise<string>;
+  consume(address: string, nonce: string): Promise<boolean>;
+}
+
+interface RefreshStore {
+  create(address: string, chainId: number, ttlMs: number): Promise<{ token: string; session: RefreshSession }>;
+  rotate(token: string, ttlMs: number): Promise<{ token: string; session: RefreshSession }>;
+  revoke(token: string): Promise<void>;
+  lookup(token: string): Promise<RefreshSession | null>;
+}
+
+interface RevocationStore {
+  revoke(jti: string, expiresAtMs: number): Promise<void>;
+  isRevoked(jti: string): Promise<boolean>;
+}
+```
+
+### Plugin System
+
+```typescript
+interface TalakWeb3Plugin {
   name: string;
-  nativeCurrency: {
-    name: string;
-    symbol: string;
-    decimals: number;
-  };
-  rpcUrls: string[];
-  blockExplorers: {
-    name: string;
-    url: string;
-  }[];
-}
-```
-
-### SIWEMessage
-
-```typescript
-interface SIWEMessage {
-  domain: string;
-  address: string;
-  statement?: string;
-  uri: string;
   version: string;
-  chainId: number;
-  nonce: string;
-  issuedAt: string;
-  expirationTime?: string;
-  notBefore?: string;
-  requestId?: string;
-  resources?: string[];
-}
-```
-
-### Session
-
-```typescript
-interface Session {
-  id: string;
-  address: string;
-  chainId: number;
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: Date;
-  createdAt: Date;
+  setup(ctx: TalakWeb3Context): void | Promise<void>;
+  teardown?(ctx: TalakWeb3Context): void | Promise<void>;
 }
 ```
 
