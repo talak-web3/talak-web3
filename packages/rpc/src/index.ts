@@ -186,7 +186,10 @@ export class UnifiedRpc implements IRpc {
       })();
 
       this.pendingRequests.set(cacheKey, promise);
-      promise.finally(() => this.pendingRequests.delete(cacheKey));
+      promise.then(
+        () => this.pendingRequests.delete(cacheKey),
+        () => this.pendingRequests.delete(cacheKey),
+      );
       return promise;
     }
 
