@@ -1,20 +1,12 @@
 {
-  "name": "smoke-test",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "node test-esm.mjs && node test-cjs.cjs && npx tsx test-ts.ts"
-  },
+  "name": "@talak-web3/smoke-test",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
   "dependencies": {
     "talak-web3": "workspace:*"
   },
-  "devDependencies": {
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+  "scripts": {
+    "test": "node test-cjs-require.cjs && node test-esm-import.mjs"
   }
 }

@@ -1,6 +1,7 @@
 packages:
   - "packages/*"
   - "apps/*"
+  - "smoke-test"
 
 catalog:
   "@types/node": "25.6.0"

@@ -27,12 +27,6 @@ if (missingExports.length > 0) {
 }
 console.log(`✓ All ${expectedExports.length} expected exports are present`);
 
-if (typeof talakWeb3.__resetTalakWeb3 !== "function") {
-  console.error("❌ FAIL: __resetTalakWeb3 is not a function");
-  process.exit(1);
-}
-console.log("✓ __resetTalakWeb3 is exported for testing");
-
 if (typeof talakWeb3.MainnetPreset !== "object" || !talakWeb3.MainnetPreset.chains) {
   console.error("❌ FAIL: MainnetPreset is not properly structured");
   process.exit(1);

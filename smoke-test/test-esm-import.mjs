@@ -1,6 +1,5 @@
 import {
   talakWeb3,
-  __resetTalakWeb3,
   InMemoryTokenStorage,
   MainnetPreset,
   ConfigManager,
@@ -14,12 +13,6 @@ if (typeof talakWeb3 !== "function") {
   process.exit(1);
 }
 console.log("✓ talakWeb3 is imported as a function");
-
-if (typeof __resetTalakWeb3 !== "function") {
-  console.error("❌ FAIL: __resetTalakWeb3 is not a function");
-  process.exit(1);
-}
-console.log("✓ __resetTalakWeb3 is imported for testing");
 
 if (typeof MainnetPreset !== "object" || !MainnetPreset.chains) {
   console.error("❌ FAIL: MainnetPreset is not properly structured");

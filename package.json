@@ -32,7 +32,7 @@
     "test:e2e": "vitest run apps/**/e2e/**/*.ts",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:smoke": "node smoke-test/test-cjs-require.cjs && node smoke-test/test-esm-import.mjs",
+    "test:smoke": "pnpm --filter @talak-web3/smoke-test test",
     "ci:fast": "turbo run build typecheck test",
     "dev": "turbo run dev",
     "clean": "turbo run clean",

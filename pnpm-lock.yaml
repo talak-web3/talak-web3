@@ -473,6 +473,12 @@ importers:
         specifier: workspace:*
         version: link:../types
 
+  smoke-test:
+    dependencies:
+      talak-web3:
+        specifier: workspace:*
+        version: link:../packages/talak-web3
+
 packages:
 
   '@adobe/css-tools@4.5.0':
