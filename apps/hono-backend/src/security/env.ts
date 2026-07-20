@@ -14,10 +14,10 @@ function validateKeyStrength(pem: string, label: string): void {
     }
   } catch (err) {
     if (err instanceof TalakWeb3Error) throw err;
-    throw new TalakWeb3Error(
-      `INVALID CONFIGURATION: ${label} could not be parsed as a valid key`,
-      { code: "ENV_JWT_KEY_INVALID", status: 500 },
-    );
+    throw new TalakWeb3Error(`INVALID CONFIGURATION: ${label} could not be parsed as a valid key`, {
+      code: "ENV_JWT_KEY_INVALID",
+      status: 500,
+    });
   }
 }
 

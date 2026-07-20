@@ -12,7 +12,9 @@ function validateOrigins(origins: readonly string[]): void {
     try {
       new URL(origin);
     } catch {
-      console.error(`[CORS] Invalid origin format: "${origin}" — must be full URL like https://example.com`);
+      console.error(
+        `[CORS] Invalid origin format: "${origin}" — must be full URL like https://example.com`,
+      );
       process.exit(1);
     }
   }

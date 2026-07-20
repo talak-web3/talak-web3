@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
+
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("node:fs", async () => {
   const actual = await vi.importActual<typeof fs>("node:fs");
@@ -23,11 +24,11 @@ vi.mock("node:fs", async () => {
   };
 });
 
-import { doctorCommand } from "../commands/doctor.js";
-import { infoCommand } from "../commands/info.js";
 import { depsCommand } from "../commands/deps.js";
-import { envCommand } from "../commands/env.js";
 import { docsCommand } from "../commands/docs.js";
+import { doctorCommand } from "../commands/doctor.js";
+import { envCommand } from "../commands/env.js";
+import { infoCommand } from "../commands/info.js";
 
 describe("CLI Commands", () => {
   let consoleSpy: ReturnType<typeof vi.spyOn>;

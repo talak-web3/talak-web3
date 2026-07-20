@@ -1,8 +1,5 @@
+import { InMemoryTokenStorage, TalakWeb3Client } from "@talak-web3/client";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  InMemoryTokenStorage,
-  TalakWeb3Client,
-} from "@talak-web3/client";
 
 describe("InMemoryTokenStorage", () => {
   let storage: InMemoryTokenStorage;
@@ -69,9 +66,7 @@ describe("TalakWeb3Client", () => {
 
   describe("loginWithSiwe", () => {
     it("stores tokens on success", async () => {
-      const fetchMock = createMockFetch([
-        { body: { accessToken: "at", refreshToken: "rt" } },
-      ]);
+      const fetchMock = createMockFetch([{ body: { accessToken: "at", refreshToken: "rt" } }]);
       const storage = new InMemoryTokenStorage();
       const client = new TalakWeb3Client({
         baseUrl: "http://localhost:3000",
@@ -154,10 +149,19 @@ describe("TalakWeb3Client", () => {
         if (String(url).includes("/auth/refresh")) {
           refreshCount++;
           await new Promise((r) => setTimeout(r, 50));
-          return { ok: true, status: 200, json: async () => ({ accessToken: "new", refreshToken: "new" }) } as Response;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ accessToken: "new", refreshToken: "new" }),
+          } as Response;
         }
         if (String(url).includes("/auth/verify")) {
-          return { ok: false, status: 401, json: async () => ({}), text: async () => "" } as Response;
+          return {
+            ok: false,
+            status: 401,
+            json: async () => ({}),
+            text: async () => "",
+          } as Response;
         }
         return { ok: true, status: 200, json: async () => ({}), text: async () => "" } as Response;
       });

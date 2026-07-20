@@ -52,10 +52,38 @@ export type Eip1559Fees = {
   maxPriorityFeePerGas: bigint;
 };
 
-export async function estimateEip1559Fees(rpc: IRpc): Promise<Eip1559Fees> {
+/**
+ * Estimate EIP-1559 fees for a transaction.
+ *
+ * Tries to fetch `eth_maxPriorityFeePerGas` dynamically first.
+ * Falls back to the provided `priorityFee` (default 1.5 Gwei) when the RPC
+ * method is not supported or an error occurs.
+ *
+ * @param rpc   - RPC instance bound to the target chain.
+ * @param opts  - Optional overrides.
+ * @param opts.priorityFee - Priority fee in wei (default: 1_500_000_000 = 1.5 Gwei).
+ */
+export async function estimateEip1559Fees(
+  rpc: IRpc,
+  opts?: { priorityFee?: bigint },
+): Promise<Eip1559Fees> {
+  const defaultPriority = 1_500_000_000n;
+  const configuredPriority = opts?.priorityFee;
+
+  let priority: bigint;
+  if (configuredPriority !== undefined) {
+    priority = configuredPriority;
+  } else {
+    try {
+      const priorityHex = await rpc.request<string>("eth_maxPriorityFeePerGas");
+      priority = BigInt(priorityHex);
+    } catch {
+      priority = defaultPriority;
+    }
+  }
+
   const baseFeeHex = await rpc.request<string>("eth_gasPrice");
   const baseFee = BigInt(baseFeeHex);
-  const priority = 1_500_000_000n;
   const maxFee = baseFee * 2n + priority;
   return { maxFeePerGas: maxFee, maxPriorityFeePerGas: priority };
 }

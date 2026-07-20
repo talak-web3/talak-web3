@@ -53,6 +53,7 @@ export class RedisNonceStore implements NonceStore {
 
   private readonly waitReplicas: number;
   private readonly waitTimeoutMs: number;
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(opts: RedisNonceStoreOptions) {
     this.redis = opts.redis;
@@ -61,6 +62,39 @@ export class RedisNonceStore implements NonceStore {
     this.consumedRetentionMs = this.ttlMs * 2;
     this.waitReplicas = opts.waitReplicas ?? 1;
     this.waitTimeoutMs = opts.waitTimeoutMs ?? 100;
+    this.startCleanup();
+  }
+
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
+
+  private startCleanup(): void {
+    this.cleanupInterval = setInterval(async () => {
+      try {
+        const pattern = `${this.prefix}consumed:*`;
+        let cursor = "0";
+        do {
+          const res = await this.redis.scan(cursor, "MATCH", pattern, "COUNT", 100);
+          cursor = res[0];
+          const keys = res[1];
+          for (const key of keys) {
+            const ttl = await this.redis.pttl(key);
+            if (ttl === -1) {
+              await this.redis.pexpire(key, this.consumedRetentionMs).catch(() => {});
+            }
+          }
+        } while (cursor !== "0");
+      } catch {
+        // Cleanup is best-effort; failures are non-fatal
+      }
+    }, 300_000);
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref();
+    }
   }
 
   private pendingKey(address: string): string {
@@ -112,6 +146,8 @@ export class RedisNonceStore implements NonceStore {
           actual: replicasAcknowledged,
         });
       }
+
+      await this.redis.pexpire(consumedKey, this.consumedRetentionMs).catch(() => {});
 
       return true;
     } catch (err) {

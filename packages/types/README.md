@@ -51,7 +51,11 @@ interface NonceStore {
 }
 
 interface RefreshStore {
-  create(address: string, chainId: number, ttlMs: number): Promise<{ token: string; session: RefreshSession }>;
+  create(
+    address: string,
+    chainId: number,
+    ttlMs: number,
+  ): Promise<{ token: string; session: RefreshSession }>;
   rotate(token: string, ttlMs: number): Promise<{ token: string; session: RefreshSession }>;
   revoke(token: string): Promise<void>;
   lookup(token: string): Promise<RefreshSession | null>;

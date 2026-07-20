@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { TalakWeb3Auth, InMemoryNonceStore, InMemoryRefreshStore, InMemoryRevocationStore } from "./index.js";
+import {
+  TalakWeb3Auth,
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
+} from "./index.js";
 import { AuthoritativeTime } from "./time.js";
 
 vi.mock("viem", () => ({

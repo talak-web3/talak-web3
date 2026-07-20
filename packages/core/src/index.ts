@@ -22,7 +22,12 @@ import type {
 
 import { HookRegistry } from "./hook-registry.js";
 
-export { MiddlewareChain, errorHandlingMiddleware, requestLoggingMiddleware, requestIdMiddleware } from "./middleware.js";
+export {
+  MiddlewareChain,
+  errorHandlingMiddleware,
+  requestLoggingMiddleware,
+  requestIdMiddleware,
+} from "./middleware.js";
 import { createAuthHandler } from "./auth-handler.js";
 import { MiddlewareChain, requestIdMiddleware, requestLoggingMiddleware } from "./middleware.js";
 import { SecurityInvariant, securityMiddleware } from "./security.js";
@@ -66,7 +71,7 @@ class ConsoleLogger implements Logger {
   info(message: string, ...args: unknown[]): void {
     const output = this.formatMessage("info", message, args);
     if (this.structured) {
-      console.error(output);
+      console.log(output);
     } else {
       console.info("[talak-web3]", message, ...args);
     }
@@ -94,7 +99,7 @@ class ConsoleLogger implements Logger {
     if (process.env["NODE_ENV"] !== "production") {
       const output = this.formatMessage("debug", message, args);
       if (this.structured) {
-        console.error(output);
+        console.log(output);
       } else {
         console.debug("[talak-web3]", message, ...args);
       }
@@ -123,6 +128,8 @@ class TtlCache implements RpcCache {
       this.insertionOrder.delete(key);
       return undefined;
     }
+    this.insertionOrder.delete(key);
+    this.insertionOrder.add(key);
     return entry.value as T;
   }
 
@@ -133,9 +140,8 @@ class TtlCache implements RpcCache {
 
     this.store.set(key, { value, expiresAt: Date.now() + ttlMs });
 
-    if (!this.insertionOrder.has(key)) {
-      this.insertionOrder.add(key);
-    }
+    this.insertionOrder.delete(key);
+    this.insertionOrder.add(key);
   }
 
   delete(key: string): void {
@@ -196,7 +202,7 @@ function extractAuthStoresFromInput(input: unknown): {
   if (authConfig["refreshTtlSeconds"] !== undefined) {
     options.refreshTtlSeconds = authConfig["refreshTtlSeconds"] as number;
   }
-  if (authConfig["domain"]) options.expectedDomain = authConfig["domain"] as string;
+  if (authConfig.domain) options.expectedDomain = authConfig.domain as string;
 
   return options;
 }
@@ -447,13 +453,14 @@ function normalizeConfigInput(input: unknown): unknown {
     const c = chain as Record<string, unknown>;
     const id = typeof c["id"] === "number" ? c["id"] : i + 1;
     const currency = chainCurrencyMap[id] ?? { symbol: "ETH", name: "Ether" };
-    return Object.assign(c, {
-      name: typeof c[`name`] === `string` && c[`name`].length > 0 ? c[`name`] : `Chain ${id}`,
+    return {
+      ...c,
+      name: typeof c["name"] === "string" && c["name"].length > 0 ? c["name"] : `Chain ${id}`,
       nativeCurrency:
-        typeof c[`nativeCurrency`] === `object` && c[`nativeCurrency`] !== null
-          ? c[`nativeCurrency`]
+        typeof c["nativeCurrency"] === "object" && c["nativeCurrency"] !== null
+          ? c["nativeCurrency"]
           : { name: currency.name, symbol: currency.symbol, decimals: 18 },
-    });
+    };
   });
 
   return { ...rec, chains };

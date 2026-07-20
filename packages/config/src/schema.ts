@@ -30,7 +30,7 @@ export const PluginSchema = z
   .passthrough();
 
 export const TalakWeb3ConfigSchema = z.object({
-  chains: z.array(ChainSchema).default([]),
+  chains: z.array(ChainSchema).min(1, "At least one chain configuration is required").default([]),
   plugins: z.array(PluginSchema).default([]),
   auth: z
     .object({

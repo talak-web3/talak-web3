@@ -28,7 +28,8 @@ export function useChain() {
 
   useEffect(() => {
     return instance.context.hooks.on("chain-changed", setChainId);
-  }, [instance]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instance, setChainId]);
 
   return {
     chainId,
@@ -43,7 +44,8 @@ export function useAccount() {
 
   useEffect(() => {
     return instance.context.hooks.on("account-changed", setAddress);
-  }, [instance]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instance, setAddress]);
 
   return {
     address,
@@ -71,11 +73,11 @@ export function useGasless() {
     setLoading(true);
     setError(null);
     try {
-      const aa = (instance.context as unknown as Record<string, unknown>)["aa"] as
-        | { sendGasless(to: string, data: string): Promise<string> }
+      const aaPlugin = instance.context.plugins.get("aa") as
+        | { sendGasless?(to: string, data: string): Promise<string> }
         | undefined;
-      if (!aa) throw new Error("AccountAbstraction plugin not loaded");
-      const hash = await aa.sendGasless(to, callData);
+      if (!aaPlugin?.sendGasless) throw new Error("AccountAbstraction plugin not loaded");
+      const hash = await aaPlugin.sendGasless(to, callData);
       setLastHash(hash);
       return hash;
     } catch (err) {
@@ -100,14 +102,14 @@ export function useIdentity() {
   const resolve = async (addressOrDid: string) => {
     setLoading(true);
     try {
-      const identity = (instance.context as unknown as Record<string, unknown>)["identity"] as
+      const identityPlugin = instance.context.plugins.get("identity") as
         | { resolve(input: string): Promise<{ did?: string; ens?: string; address?: string }> }
         | undefined;
-      if (!identity) {
+      if (!identityPlugin) {
         setProfile({ address: addressOrDid });
         return;
       }
-      const p = await identity.resolve(addressOrDid);
+      const p = await identityPlugin.resolve(addressOrDid);
       setProfile(p);
     } finally {
       setLoading(false);

@@ -1,5 +1,6 @@
-import { cac } from "cac";
 import { createRequire } from "node:module";
+
+import { cac } from "cac";
 
 import { addCommand } from "./commands/add.js";
 import { depsCommand } from "./commands/deps.js";

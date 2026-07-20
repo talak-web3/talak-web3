@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AccountAbstractionClient } from "@talak-web3/tx";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const rpcResults: unknown[][] = [];
 let originalFetch: typeof globalThis.fetch;

@@ -40,8 +40,8 @@ describe("talakWeb3", () => {
 
     expect(setup).toHaveBeenCalledWith(instance.context);
     expect(instance.context.plugins.get("test-plugin")).toMatchObject({
-    name: plugin.name,
-    version: plugin.version,
-  });
+      name: plugin.name,
+      version: plugin.version,
+    });
   });
 });

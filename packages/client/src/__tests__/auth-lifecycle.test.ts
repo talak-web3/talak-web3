@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TalakWeb3Client, InMemoryTokenStorage } from "@talak-web3/client";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 describe("E2E Auth Lifecycle", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -16,16 +16,27 @@ describe("E2E Auth Lifecycle", () => {
       const seq = callCount;
 
       if (path.includes("/auth/nonce")) {
-        return { ok: true, status: 200, json: async () => ({ nonce: `nonce-${seq}` }), text: async () => "" } as Response;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ nonce: `nonce-${seq}` }),
+          text: async () => "",
+        } as Response;
       }
 
       if (path.includes("/auth/login")) {
         const body = JSON.parse(String(opts?.body ?? "{}"));
         if (!body.message || !body.signature) {
-          return { ok: false, status: 400, json: async () => ({}), text: async () => "Bad request" } as Response;
+          return {
+            ok: false,
+            status: 400,
+            json: async () => ({}),
+            text: async () => "Bad request",
+          } as Response;
         }
         return {
-          ok: true, status: 200,
+          ok: true,
+          status: 200,
           json: async () => ({ accessToken: `at-${seq}`, refreshToken: `rt-${seq}` }),
           text: async () => "",
         } as Response;
@@ -33,10 +44,16 @@ describe("E2E Auth Lifecycle", () => {
 
       if (path.includes("/auth/verify")) {
         if (!opts?.headers || !(opts.headers as Record<string, string>)["Authorization"]) {
-          return { ok: false, status: 401, json: async () => ({ ok: false }), text: async () => "" } as Response;
+          return {
+            ok: false,
+            status: 401,
+            json: async () => ({ ok: false }),
+            text: async () => "",
+          } as Response;
         }
         return {
-          ok: true, status: 200,
+          ok: true,
+          status: 200,
           json: async () => ({ ok: true, payload: { address: "0x1234", chainId: 1 } }),
           text: async () => "",
         } as Response;
@@ -45,17 +62,31 @@ describe("E2E Auth Lifecycle", () => {
       if (path.includes("/auth/refresh")) {
         const body = JSON.parse(String(opts?.body ?? "{}"));
         if (!body.refreshToken) {
-          return { ok: false, status: 400, json: async () => ({}), text: async () => "" } as Response;
+          return {
+            ok: false,
+            status: 400,
+            json: async () => ({}),
+            text: async () => "",
+          } as Response;
         }
         return {
-          ok: true, status: 200,
-          json: async () => ({ accessToken: `refreshed-at-${seq}`, refreshToken: `refreshed-rt-${seq}` }),
+          ok: true,
+          status: 200,
+          json: async () => ({
+            accessToken: `refreshed-at-${seq}`,
+            refreshToken: `refreshed-rt-${seq}`,
+          }),
           text: async () => "",
         } as Response;
       }
 
       if (path.includes("/auth/logout")) {
-        return { ok: true, status: 200, json: async () => ({ ok: true }), text: async () => "" } as Response;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ ok: true }),
+          text: async () => "",
+        } as Response;
       }
 
       return { ok: false, status: 404, json: async () => ({}), text: async () => "" } as Response;
@@ -75,7 +106,10 @@ describe("E2E Auth Lifecycle", () => {
     expect(storage.getAccessToken()).toBeNull();
 
     // Step 2: Login with SIWE
-    const loginRes = await client.loginWithSiwe("example.com wants you to sign in...", "0xsignature");
+    const loginRes = await client.loginWithSiwe(
+      "example.com wants you to sign in...",
+      "0xsignature",
+    );
     expect(loginRes.accessToken).toBe("at-2");
     expect(loginRes.refreshToken).toBe("rt-2");
     expect(storage.getAccessToken()).toBe("at-2");
@@ -111,12 +145,27 @@ describe("E2E Auth Lifecycle", () => {
       if (path.includes("/auth/verify")) {
         verifyAttempts++;
         if (verifyAttempts === 1) {
-          return { ok: false, status: 401, json: async () => ({}), text: async () => "" } as Response;
+          return {
+            ok: false,
+            status: 401,
+            json: async () => ({}),
+            text: async () => "",
+          } as Response;
         }
-        return { ok: true, status: 200, json: async () => ({ ok: true, payload: { address: "0x1234", chainId: 1 } }), text: async () => "" } as Response;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ ok: true, payload: { address: "0x1234", chainId: 1 } }),
+          text: async () => "",
+        } as Response;
       }
       if (path.includes("/auth/refresh")) {
-        return { ok: true, status: 200, json: async () => ({ accessToken: "new-at", refreshToken: "new-rt" }), text: async () => "" } as Response;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ accessToken: "new-at", refreshToken: "new-rt" }),
+          text: async () => "",
+        } as Response;
       }
       return { ok: true, status: 200, json: async () => ({}), text: async () => "" } as Response;
     });
@@ -147,7 +196,12 @@ describe("E2E Auth Lifecycle", () => {
       if (path.includes("/auth/refresh")) {
         refreshCount++;
         await new Promise((r) => setTimeout(r, 50));
-        return { ok: true, status: 200, json: async () => ({ accessToken: "deduped-at", refreshToken: "deduped-rt" }), text: async () => "" } as Response;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ accessToken: "deduped-at", refreshToken: "deduped-rt" }),
+          text: async () => "",
+        } as Response;
       }
       return { ok: true, status: 200, json: async () => ({}), text: async () => "" } as Response;
     });
@@ -163,9 +217,15 @@ describe("E2E Auth Lifecycle", () => {
   });
 
   it("login failure does not store tokens", async () => {
-    fetchMock.mockImplementationOnce(async () => ({
-      ok: false, status: 401, json: async () => ({}), text: async () => "Unauthorized",
-    }) as Response);
+    fetchMock.mockImplementationOnce(
+      async () =>
+        ({
+          ok: false,
+          status: 401,
+          json: async () => ({}),
+          text: async () => "Unauthorized",
+        }) as Response,
+    );
 
     await expect(client.loginWithSiwe("msg", "bad-sig")).rejects.toThrow("Login failed");
     expect(storage.getAccessToken()).toBeNull();
@@ -176,9 +236,15 @@ describe("E2E Auth Lifecycle", () => {
     storage.setAccessToken("at");
     storage.setRefreshToken("bad-rt");
 
-    fetchMock.mockImplementationOnce(async () => ({
-      ok: false, status: 401, json: async () => ({}), text: async () => "",
-    }) as Response);
+    fetchMock.mockImplementationOnce(
+      async () =>
+        ({
+          ok: false,
+          status: 401,
+          json: async () => ({}),
+          text: async () => "",
+        }) as Response,
+    );
 
     await expect(client.refresh("bad-rt")).rejects.toThrow("Refresh failed");
   });

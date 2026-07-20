@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import { Templates } from "@talak-web3/templates";
+import { describe, it, expect } from "vitest";
 
 describe("Templates", () => {
   describe("nextjs template", () => {

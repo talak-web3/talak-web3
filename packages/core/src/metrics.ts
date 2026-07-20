@@ -7,10 +7,21 @@ export class SecurityMetrics {
     this.counters.set(key, (this.counters.get(key) || 0) + 1);
   }
 
+  private static readonly MAX_HISTOGRAM_SAMPLES = 1000;
+
   static observe(name: string, value: number, labels: Record<string, string> = {}): void {
     const key = this.serialize(name, labels);
-    if (!this.histograms.has(key)) this.histograms.set(key, []);
-    this.histograms.get(key)!.push(value);
+    let arr = this.histograms.get(key);
+    if (!arr) {
+      arr = [];
+      this.histograms.set(key, arr);
+    }
+    if (arr.length >= this.MAX_HISTOGRAM_SAMPLES) {
+      const sum = arr.reduce((a, b) => a + b, 0);
+      const avg = sum / arr.length;
+      this.histograms.set(key, [avg]);
+    }
+    arr.push(value);
   }
 
   static expose(): string {

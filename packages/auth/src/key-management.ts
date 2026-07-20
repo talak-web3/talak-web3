@@ -1,4 +1,11 @@
-import { jwtVerify, type JWTVerifyOptions, importPKCS8, importSPKI, type KeyObject } from "jose";
+import {
+  jwtVerify,
+  SignJWT,
+  type JWTVerifyOptions,
+  importPKCS8,
+  importSPKI,
+  type KeyObject,
+} from "jose";
 
 type KeyLike = CryptoKey | KeyObject;
 import { TalakWeb3Error, AUTH_ERROR_CODES } from "@talak-web3/errors";
@@ -23,6 +30,7 @@ export interface KeyProvider {
   rotateKey(): Promise<{ kid: string; publicKey: KeyLike }>;
   revokeKey(kid: string): Promise<void>;
   publishKeyRevocation?(kid: string): Promise<void>;
+  getSigningPrivateKey(): Promise<{ kid: string; privateKey: KeyLike }>;
 }
 
 export class EnvironmentKeyProvider implements KeyProvider {
@@ -51,6 +59,18 @@ export class EnvironmentKeyProvider implements KeyProvider {
     const pub = this.jwksManager.getPublicKey(key.kid);
     if (!pub) throw new Error("Public key missing for primary kid");
     return { kid: key.kid, publicKey: pub };
+  }
+
+  async getSigningPrivateKey(): Promise<{ kid: string; privateKey: KeyLike }> {
+    await this.ensureInitialized();
+    const key = this.jwksManager.getPrimaryKey();
+    if (!key || !key.privateKey) {
+      throw new TalakWeb3Error("No signing key available", {
+        code: AUTH_ERROR_CODES.NO_SIGNING_KEY,
+        status: 500,
+      });
+    }
+    return { kid: key.kid, privateKey: key.privateKey };
   }
 
   async sign(data: Uint8Array): Promise<Uint8Array> {
@@ -225,7 +245,7 @@ export class JwtManager {
   private verificationCache: Map<string, KeyLike> = new Map();
   private cacheTimeoutMs: number;
 
-  constructor(keyProvider: KeyProvider, cacheTimeoutMs = 5 * 60 * 1000) {
+  constructor(keyProvider: KeyProvider, cacheTimeoutMs = 30_000) {
     this.keyProvider = keyProvider;
     this.cacheTimeoutMs = cacheTimeoutMs;
   }
@@ -240,55 +260,29 @@ export class JwtManager {
       jti?: string;
     } = {},
   ): Promise<string> {
-    const { kid } = await this.keyProvider.getCurrentSigningKeyInfo();
+    const { kid, privateKey } = await this.keyProvider.getSigningPrivateKey();
 
     const nowSec = Math.floor(Date.now() / 1000);
     const jwtPayload: Record<string, unknown> = { ...payload };
     jwtPayload.iat = nowSec;
-    if (options.issuer) jwtPayload.iss = options.issuer;
-    if (options.audience) jwtPayload.aud = options.audience;
-    if (options.subject) jwtPayload.sub = options.subject;
-    if (options.jti) jwtPayload.jti = options.jti;
+
+    const jwt = new SignJWT(jwtPayload)
+      .setProtectedHeader({ alg: "RS256", kid })
+      .setIssuedAt(nowSec);
+
+    if (options.issuer) jwt.setIssuer(options.issuer);
+    if (options.audience) jwt.setAudience(options.audience);
+    if (options.subject) jwt.setSubject(options.subject);
+    if (options.jti) jwt.setJti(options.jti);
     if (options.expiresIn !== undefined) {
-      const exp =
-        typeof options.expiresIn === "number"
-          ? nowSec + options.expiresIn
-          : nowSec + this.parseExpiresInToSeconds(options.expiresIn);
-      jwtPayload.exp = exp;
+      if (typeof options.expiresIn === "number") {
+        jwt.setExpirationTime(Math.floor(nowSec + options.expiresIn));
+      } else {
+        jwt.setExpirationTime(options.expiresIn);
+      }
     }
 
-    const protectedHeader = { alg: "RS256", kid, typ: "JWT" } as const;
-    const encodedHeader = Buffer.from(JSON.stringify(protectedHeader)).toString("base64url");
-    const encodedPayload = Buffer.from(JSON.stringify(jwtPayload)).toString("base64url");
-    const tbs = Buffer.from(`${encodedHeader}.${encodedPayload}`);
-    const signature = await this.keyProvider.sign(tbs);
-    const encodedSig = Buffer.from(signature).toString("base64url");
-    return `${encodedHeader}.${encodedPayload}.${encodedSig}`;
-  }
-
-  private parseExpiresInToSeconds(value: string): number {
-    const trimmed = value.trim();
-    const match = /^(\d+)\s*([smhd])$/i.exec(trimmed);
-    if (!match) {
-      throw new TalakWeb3Error(`Invalid expiresIn format: ${value}`, {
-        code: AUTH_ERROR_CODES.INVALID_EXPIRES_IN,
-        status: 400,
-      });
-    }
-    const amount = Number(match[1]!);
-    const unit = match[2]!.toLowerCase();
-    switch (unit) {
-      case "s":
-        return amount;
-      case "m":
-        return amount * 60;
-      case "h":
-        return amount * 60 * 60;
-      case "d":
-        return amount * 24 * 60 * 60;
-      default:
-        return amount;
-    }
+    return jwt.sign(privateKey);
   }
 
   async verify(

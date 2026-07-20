@@ -4,6 +4,7 @@ export interface RedisLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, options?: Record<string, unknown>): Promise<unknown>;
   del(key: string): Promise<unknown>;
+  incr(key: string): Promise<number>;
 }
 
 export interface CircuitBreakerConfig {
@@ -52,6 +53,10 @@ export class DistributedCircuitBreaker {
     return `circuit:${providerId}:latency`;
   }
 
+  private getHalfOpenKey(providerId: string): string {
+    return `circuit:${providerId}:halfopen`;
+  }
+
   async execute<T>(
     providerId: string,
     operation: () => Promise<T>,
@@ -73,21 +78,23 @@ export class DistributedCircuitBreaker {
         state: "half-open",
         failures: 0,
         successes: 0,
-        halfOpenInFlight: 0,
       });
+      await this.config.redis.del(this.getHalfOpenKey(providerId));
     }
 
     if (state.state === "half-open") {
-      const inFlight = state.halfOpenInFlight ?? 0;
-      if (inFlight >= (this.config.halfOpenMaxRequests ?? 1)) {
+      const inFlight = await this.config.redis.incr(this.getHalfOpenKey(providerId));
+      await this.config.redis.set(this.getHalfOpenKey(providerId), String(inFlight), {
+        PX: this.config.halfOpenTimeout,
+      });
+
+      if (inFlight > (this.config.halfOpenMaxRequests ?? 1)) {
         throw new TalakWeb3Error("Circuit breaker half-open limit reached", {
           code: CIRCUIT_ERROR_CODES.OPEN,
           status: 503,
           data: { providerId, inFlight },
         });
       }
-      state.halfOpenInFlight = inFlight + 1;
-      await this.setState(providerId, state);
     }
 
     const startTime = Date.now();
@@ -137,9 +144,7 @@ export class DistributedCircuitBreaker {
   private async setState(providerId: string, state: CircuitState): Promise<void> {
     try {
       const key = this.getKey(providerId);
-      await this.config.redis.set(key, JSON.stringify(state), {
-        PX: this.config.windowSize * 2,
-      });
+      await this.config.redis.set(key, JSON.stringify(state));
     } catch (error) {
       console.warn("Failed to update circuit state:", error);
     }
@@ -152,13 +157,12 @@ export class DistributedCircuitBreaker {
 
     if (state.state === "half-open") {
       state.successes++;
-      state.halfOpenInFlight = Math.max(0, (state.halfOpenInFlight ?? 1) - 1);
 
       if (state.successes >= this.config.successThreshold) {
         state.state = "closed";
         state.failures = 0;
         state.successes = 0;
-        state.halfOpenInFlight = 0;
+        await this.config.redis.del(this.getHalfOpenKey(providerId));
       }
     } else {
       state.failures = Math.max(0, state.failures - 1);
@@ -199,7 +203,7 @@ export class DistributedCircuitBreaker {
       } else if (state.state === "half-open") {
         state.state = "open";
         state.openedAt = Date.now();
-        state.halfOpenInFlight = 0;
+        await this.config.redis.del(this.getHalfOpenKey(providerId));
       }
     }
 

@@ -476,6 +476,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   private readonly expectedDomain: string | undefined;
   private readonly timeSource: AuthoritativeTime;
   private readonly contextEnforcementDate: number;
+  private readonly allowedChains: number[] | undefined;
 
   constructor(opts: {
     nonceStore: NonceStore;
@@ -484,6 +485,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     accessTtlSeconds?: number;
     refreshTtlSeconds?: number;
     expectedDomain?: string;
+    allowedChains?: number[];
     keyProviderType?: KeyProviderType;
     keyProviderOptions?: unknown;
     keyRotationConfig?: unknown;
@@ -503,6 +505,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     this.accessTtlSeconds = opts.accessTtlSeconds ?? 15 * 60;
     this.refreshTtlMs = (opts.refreshTtlSeconds ?? 7 * 24 * 60 * 60) * 1000;
     this.expectedDomain = opts.expectedDomain ?? process.env["SIWE_DOMAIN"] ?? undefined;
+    this.allowedChains = opts.allowedChains;
     this.timeSource = opts.timeSource ?? getAuthoritativeTime();
     this.contextEnforcementDate =
       opts.contextEnforcementDate?.getTime() ?? new Date("2025-06-01T00:00:00Z").getTime();
@@ -589,6 +592,10 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
       });
     }
 
+    if (this.allowedChains && this.allowedChains.length > 0) {
+      validateChainId(fields.chainId, this.allowedChains);
+    }
+
     validateIssuedAt(fields.issuedAt, 5 * 60_000, () => this.timeSource.now());
 
     if (fields.expirationTime) {
@@ -600,6 +607,21 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
       }
     }
 
+    if (fields.notBefore && new Date(fields.notBefore) > new Date()) {
+      throw new TalakWeb3Error("SIWE message not yet valid", {
+        code: AUTH_ERROR_CODES.SIWE_TIME_DRIFT,
+        status: 401,
+      });
+    }
+
+    const consumed = await this.nonceStore.consume(fields.address.toLowerCase(), fields.nonce);
+    if (!consumed) {
+      throw new TalakWeb3Error("SIWE nonce invalid or already used", {
+        code: AUTH_ERROR_CODES.SIWE_NONCE_REPLAY,
+        status: 401,
+      });
+    }
+
     const valid = await verifyMessage({
       address: fields.address,
       message: normalizedMessage,
@@ -609,14 +631,6 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     if (!valid) {
       throw new TalakWeb3Error("Invalid SIWE signature", {
         code: AUTH_ERROR_CODES.SIWE_INVALID_SIG,
-        status: 401,
-      });
-    }
-
-    const consumed = await this.nonceStore.consume(fields.address.toLowerCase(), fields.nonce);
-    if (!consumed) {
-      throw new TalakWeb3Error("SIWE nonce invalid or already used", {
-        code: AUTH_ERROR_CODES.SIWE_NONCE_REPLAY,
         status: 401,
       });
     }

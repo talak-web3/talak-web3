@@ -40,8 +40,17 @@ function registerShutdown(): void {
 export class ConnectionManager {
   private static redisInstances = new Map<string, Redis>();
 
-  static getRedis(purpose: "sessions" | "rate-limit" | "revocation" = "sessions"): Redis {
-    const baseUrl = process.env["REDIS_URL"] || "redis://localhost:6379";
+  /**
+   * Get or create a Redis connection.
+   *
+   * @param purpose - The purpose label for this connection.
+   * @param redisUrl - Optional Redis URL override. If not provided, falls back to REDIS_URL env var or "redis://localhost:6379".
+   */
+  static getRedis(
+    purpose: "sessions" | "rate-limit" | "revocation" = "sessions",
+    redisUrl?: string,
+  ): Redis {
+    const baseUrl = redisUrl || process.env["REDIS_URL"] || "redis://localhost:6379";
     const dbMap: Record<string, number> = {
       sessions: safeDbIndex(process.env["REDIS_DB_SESSIONS"], 0),
       "rate-limit": safeDbIndex(process.env["REDIS_DB_RATE_LIMIT"], 1),

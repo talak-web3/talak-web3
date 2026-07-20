@@ -33,13 +33,10 @@ export class TablelandPlugin implements TablelandAdapter {
     }
 
     if (!/^[0-9a-fA-F]{64}$/.test(privateKey)) {
-      throw new TalakWeb3Error(
-        "TABLELAND_PRIVATE_KEY must be a 64-character hex string",
-        {
-          code: TABLELAND_ERROR_CODES.KEY_MISSING,
-          status: 500,
-        },
-      );
+      throw new TalakWeb3Error("TABLELAND_PRIVATE_KEY must be a 64-character hex string", {
+        code: TABLELAND_ERROR_CODES.KEY_MISSING,
+        status: 500,
+      });
     }
 
     throw new Error("Tableland adapter requires optional dependencies: @tableland/sdk, ethers");

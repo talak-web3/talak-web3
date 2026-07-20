@@ -17,7 +17,7 @@ export const PolygonPreset = {
       id: 137,
       name: "Polygon Mainnet",
       rpcUrls: ["https://polygon-rpc.com"],
-      nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+      nativeCurrency: { name: "POL", symbol: "POL", decimals: 18 },
     },
   ],
 };

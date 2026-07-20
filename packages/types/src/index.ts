@@ -163,7 +163,7 @@ export interface TalakWeb3BaseConfig {
   readonly debug: boolean;
   readonly allowedOrigins?: readonly string[];
   readonly rpc: { readonly retries: number; readonly timeout: number };
-  readonly plugins?: ReadonlyArray<unknown>;
+  readonly plugins?: ReadonlyArray<TalakWeb3Plugin>;
   readonly auth?: {
     readonly domain?: string;
     readonly uri?: string;
@@ -174,7 +174,12 @@ export interface TalakWeb3BaseConfig {
     readonly accessTtlSeconds?: number;
     readonly refreshTtlSeconds?: number;
   };
-  readonly ai?: { readonly apiKey?: string; readonly baseUrl?: string; readonly model?: string; readonly mockMode?: boolean };
+  readonly ai?: {
+    readonly apiKey?: string;
+    readonly baseUrl?: string;
+    readonly model?: string;
+    readonly mockMode?: boolean;
+  };
   readonly ceramic?: { readonly nodeUrl: string; readonly seed?: string };
   readonly tableland?: { readonly privateKey?: string; readonly network?: string };
 }

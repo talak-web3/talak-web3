@@ -44,6 +44,7 @@
     "@talak-web3/auth": "workspace:*",
     "@talak-web3/config": "workspace:*",
     "@talak-web3/errors": "workspace:*",
+    "@talak-web3/rate-limit": "workspace:*",
     "@talak-web3/rpc": "workspace:*",
     "@talak-web3/types": "workspace:*"
   },

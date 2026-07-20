@@ -28,6 +28,8 @@ export class UnifiedRpc implements IRpc {
   private requestIdCounter = 0;
   private circuitBreaker?: DistributedCircuitBreaker;
   private pendingRequests = new Map<string, Promise<unknown>>();
+  private readonly maxPendingRequests = 1000;
+  private signalCleanup: (() => void) | undefined;
 
   constructor(
     ctx: TalakWeb3Context,
@@ -48,11 +50,11 @@ export class UnifiedRpc implements IRpc {
 
     this.ctx.requestChain.use(rpcValidationMiddleware);
 
-    const cleanup = () => {
+    this.signalCleanup = () => {
       this.stop();
     };
-    process.on("SIGINT", cleanup);
-    process.on("SIGTERM", cleanup);
+    process.on("SIGINT", this.signalCleanup);
+    process.on("SIGTERM", this.signalCleanup);
   }
 
   configureCircuitBreaker(config: Omit<CircuitBreakerConfig, "redis">): void {
@@ -72,6 +74,12 @@ export class UnifiedRpc implements IRpc {
 
   stop(): void {
     if (this.healthInterval) clearInterval(this.healthInterval);
+
+    if (this.signalCleanup) {
+      process.removeListener("SIGINT", this.signalCleanup);
+      process.removeListener("SIGTERM", this.signalCleanup);
+      this.signalCleanup = undefined;
+    }
   }
 
   pauseHealthChecks(): void {
@@ -99,16 +107,32 @@ export class UnifiedRpc implements IRpc {
   private async checkEndpointHealth(endpoint: RpcEndpoint): Promise<void> {
     const start = Date.now();
     try {
-      if (this.circuitBreaker && endpoint.providerId) {
-        await this.circuitBreaker.execute(
-          endpoint.providerId,
-          () => this.doRequest(endpoint.url, "eth_blockNumber", [], 5_000),
-          5000,
-        );
-      } else {
-        await this.doRequest(endpoint.url, "eth_blockNumber", [], 5_000);
+      const healthMethods = ["eth_blockNumber", "eth_chainId"];
+      let healthOk = false;
+
+      for (const method of healthMethods) {
+        try {
+          if (this.circuitBreaker && endpoint.providerId) {
+            await this.circuitBreaker.execute(
+              endpoint.providerId,
+              () => this.doRequest(endpoint.url, method, [], 5_000),
+              5000,
+            );
+          } else {
+            await this.doRequest(endpoint.url, method, [], 5_000);
+          }
+          healthOk = true;
+          break;
+        } catch {
+          // Try the next health check method
+        }
       }
-      endpoint.health = { status: "up", latency: Date.now() - start, lastChecked: Date.now() };
+
+      if (healthOk) {
+        endpoint.health = { status: "up", latency: Date.now() - start, lastChecked: Date.now() };
+      } else {
+        endpoint.health = { status: "down", latency: Infinity, lastChecked: Date.now() };
+      }
     } catch {
       endpoint.health = { status: "down", latency: Infinity, lastChecked: Date.now() };
     }
@@ -147,10 +171,17 @@ export class UnifiedRpc implements IRpc {
       const existing = this.pendingRequests.get(cacheKey) as Promise<T> | undefined;
       if (existing) return existing;
 
+      if (this.pendingRequests.size >= this.maxPendingRequests) {
+        const oldestKey = this.pendingRequests.keys().next().value;
+        if (oldestKey !== undefined) {
+          this.pendingRequests.delete(oldestKey);
+        }
+      }
+
       const promise = (async () => {
         const result = await this.executeChain<T>(this.ctx.requestChain, req, run);
         await this.executeChain(this.ctx.responseChain, { req, result }, async () => result);
-        this.ctx.cache.set(cacheKey, result, 12_000);
+        this.ctx.cache.set(cacheKey, result, this.getCacheTtl(method));
         return result;
       })();
 
@@ -189,9 +220,10 @@ export class UnifiedRpc implements IRpc {
     requestId?: number,
   ): Promise<T> {
     let lastError: Error | undefined;
+    let lastFailedUrl: string | undefined;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
-      const endpoint = await this.getBestEndpoint(failover ? undefined : lastError);
+      const endpoint = await this.getBestEndpoint(failover ? undefined : lastFailedUrl);
       if (!endpoint) {
         throw new TalakWeb3Error("No RPC endpoints available", {
           code: RPC_ERROR_CODES.NO_ENDPOINTS,
@@ -216,6 +248,7 @@ export class UnifiedRpc implements IRpc {
         return await this.doRequest<T>(endpoint.url, method, params, timeout, requestId);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        lastFailedUrl = endpoint.url;
         const canonical = this.endpoints.find((e) => e.url === endpoint.url);
         if (canonical) {
           canonical.health = { status: "down", latency: Infinity, lastChecked: Date.now() };
@@ -234,7 +267,7 @@ export class UnifiedRpc implements IRpc {
     });
   }
 
-  private async getBestEndpoint(_lastError?: Error | undefined): Promise<RpcEndpoint | undefined> {
+  private async getBestEndpoint(excludeUrl?: string): Promise<RpcEndpoint | undefined> {
     const endpoints = await Promise.all(
       this.endpoints.map(async (e) => {
         if (this.circuitBreaker && e.providerId) {
@@ -248,7 +281,9 @@ export class UnifiedRpc implements IRpc {
     );
 
     const healthy = endpoints
-      .filter((e) => !e.circuitOpen && (!e.health || e.health.status === "up"))
+      .filter(
+        (e) => !e.circuitOpen && (!e.health || e.health.status === "up") && e.url !== excludeUrl,
+      )
       .sort(
         (a, b) =>
           (a.priority ?? 0) - (b.priority ?? 0) ||
@@ -256,6 +291,18 @@ export class UnifiedRpc implements IRpc {
       );
 
     if (healthy.length > 0) return healthy[0];
+
+    if (excludeUrl) {
+      const fallback = endpoints
+        .filter((e) => !e.circuitOpen && (!e.health || e.health.status === "up"))
+        .sort(
+          (a, b) =>
+            (a.priority ?? 0) - (b.priority ?? 0) ||
+            (a.health?.latency ?? 0) - (b.health?.latency ?? 0),
+        );
+
+      if (fallback.length > 0) return fallback[0];
+    }
 
     const recovering = endpoints
       .filter((e) => e.circuitOpen)
@@ -266,6 +313,26 @@ export class UnifiedRpc implements IRpc {
     return [...this.endpoints].sort(
       (a, b) => (a.health?.lastChecked ?? 0) - (b.health?.lastChecked ?? 0),
     )[0];
+  }
+
+  /**
+   * Returns a method-appropriate cache TTL in milliseconds.
+   * eth_chainId changes rarely; eth_blockNumber changes every ~12s;
+   * other read methods use a moderate 12s default.
+   */
+  private getCacheTtl(method: string): number {
+    switch (method) {
+      case "eth_chainId":
+        return 60_000;
+      case "eth_blockNumber":
+        return 3_000;
+      case "eth_getBalance":
+        return 12_000;
+      case "eth_call":
+        return 12_000;
+      default:
+        return 12_000;
+    }
   }
 
   private async doRequest<T>(

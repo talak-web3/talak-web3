@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.0] - 2026-07-17
 
 ### Security Fixes (Critical)
+
 - Added TTL-based cleanup to all InMemory stores (Nonce, Refresh, Revocation) to prevent memory leaks
 - Fixed hardcoded `requestId` in middleware — now uses typed `ctx.requestId`
 - Expanded secret leak detection to cover PEM keys, raw hex, and base64 patterns
@@ -16,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added graceful shutdown with `SIGTERM`/`SIGINT` handlers
 
 ### Security Fixes (High)
+
 - Added safe Redis DB index validation (0-15 range)
 - Added RSA key strength validation (>= 2048 bits)
 - Added explicit `mockMode` config for AI (removed fragile `NODE_ENV=test` auto-detect)
@@ -26,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added `halfOpenMaxRequests` to circuit breaker
 
 ### Security Fixes (Medium)
+
 - Added IPv4-mapped IPv6 support to rate limiters
 - Enforced secure cookie defaults (httpOnly, secure, sameSite=strict)
 - Added logger injection to HookRegistry
@@ -33,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Split error codes into public/internal exports
 
 ### Features
+
 - Added `healthCheck()` method to TalakWeb3Instance
 - Added `requestLoggingMiddleware` for automatic request timing
 - Added `rateLimitHeaders()` helper for standard rate limit response headers
@@ -42,12 +46,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Zero-config dev mode: InMemory auth stores auto-created when none provided
 
 ### Bug Fixes
+
 - Fixed `this.client!` non-null assertion with proper null check in AI plugin
 - CLI version now reads from package.json instead of hardcoded
 - Removed stale `packages/handlers` reference from tsconfig
 - Fixed Node version check from `>= 20` to `>= 24`
 
 ### Tech Debt
+
 - Removed dead `generateSecret()` function
 - Removed redundant hand-written `.d.ts` files
 - Replaced placeholder adapter tests with real tests
@@ -55,6 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Updated packages.md to reflect actual workspace
 
 ### Documentation
+
 - Added JSDoc to core exports and type definitions
 - Added TypeDoc configuration
 - Updated CONTRIBUTING.md with security reporting and monorepo guides

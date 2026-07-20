@@ -256,6 +256,9 @@ importers:
       '@talak-web3/types':
         specifier: workspace:*
         version: link:../types
+      viem:
+        specifier: ^2.0.0
+        version: 2.48.1(typescript@6.0.3)(zod@4.3.6)
 
   packages/config:
     dependencies:
@@ -280,6 +283,9 @@ importers:
       '@talak-web3/errors':
         specifier: workspace:*
         version: link:../errors
+      '@talak-web3/rate-limit':
+        specifier: workspace:*
+        version: link:../rate-limit
       '@talak-web3/rpc':
         specifier: workspace:*
         version: link:../rpc

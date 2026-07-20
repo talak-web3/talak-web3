@@ -66,8 +66,10 @@ vi.mock("redis", () => {
     eval: vi.fn().mockImplementation((script: string, ...callArgs: unknown[]) => {
       const s = String(script);
       const firstArg = callArgs[0] as Record<string, unknown> | undefined;
-      const keys: string[] = Array.isArray(firstArg?.keys) ? firstArg!.keys as string[] : [];
-      const scriptArgs: string[] = Array.isArray(firstArg?.arguments) ? (firstArg!.arguments as string[]).map(String) : callArgs.slice(1).map(String);
+      const keys: string[] = Array.isArray(firstArg?.keys) ? (firstArg!.keys as string[]) : [];
+      const scriptArgs: string[] = Array.isArray(firstArg?.arguments)
+        ? (firstArg!.arguments as string[]).map(String)
+        : callArgs.slice(1).map(String);
 
       if (s.includes("consumed") && s.includes("HGETALL") && keys.length === 1) {
         const key = keys[0];
@@ -75,7 +77,10 @@ vi.mock("redis", () => {
         if (!map || map.size === 0) return Promise.resolve(0);
         if (map.get("consumed") === "1") return Promise.resolve(0);
         const expiresAt = Number(map.get("expiresAt") ?? "0");
-        if (expiresAt < Date.now()) { hashStores.delete(key); return Promise.resolve(0); }
+        if (expiresAt < Date.now()) {
+          hashStores.delete(key);
+          return Promise.resolve(0);
+        }
         map.set("consumed", "1");
         return Promise.resolve(1);
       }
@@ -93,7 +98,15 @@ vi.mock("redis", () => {
         oldMap.set("revoked", "1");
         const newExpiresAt = Date.now() + Number(ttlMs);
         const newMap = getHashMap(newKey);
-        for (const [f, v] of [["id", newId], ["address", address], ["chainId", chainId], ["hash", newHash], ["expiresAt", String(newExpiresAt)], ["revoked", "0"]] as [string, string][]) newMap.set(f, v);
+        for (const [f, v] of [
+          ["id", newId],
+          ["address", address],
+          ["chainId", chainId],
+          ["hash", newHash],
+          ["expiresAt", String(newExpiresAt)],
+          ["revoked", "0"],
+        ] as [string, string][])
+          newMap.set(f, v);
         return Promise.resolve([String(newExpiresAt), address, chainId]);
       }
 

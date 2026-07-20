@@ -44,9 +44,17 @@ function parseCookieHeader(cookieHeader: string | null): Map<string, string> {
   if (!cookieHeader) return cookies;
 
   for (const part of cookieHeader.split(";")) {
-    const [name, ...valueParts] = part.trim().split("=");
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const eqIndex = trimmed.indexOf("=");
+    if (eqIndex === -1) continue;
+    const name = trimmed.slice(0, eqIndex).trim();
     if (!name) continue;
-    cookies.set(name, decodeURIComponent(valueParts.join("=")));
+    let value = trimmed.slice(eqIndex + 1).trim();
+    if (value.startsWith('"') && value.endsWith('"')) {
+      value = value.slice(1, -1).replace(/\\"/g, '"');
+    }
+    cookies.set(name, decodeURIComponent(value));
   }
 
   return cookies;
@@ -110,7 +118,14 @@ export function getJwtExp(token: string): number | null {
   if (parts.length !== 3) return null;
 
   try {
-    const payload = JSON.parse(Buffer.from(parts[1]!, "base64url").toString("utf8")) as {
+    const base64 = parts[1]!.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const binStr = atob(padded);
+    const bytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) {
+      bytes[i] = binStr.charCodeAt(i);
+    }
+    const payload = JSON.parse(new TextDecoder().decode(bytes)) as {
       exp?: unknown;
     };
     return typeof payload.exp === "number" ? payload.exp : null;

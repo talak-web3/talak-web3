@@ -5,7 +5,15 @@ import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { HookRegistry } from "../hook-registry.js";
-import { TalakWeb3Provider, useTalakWeb3, useChain, useAccount, useRpc, useGasless, useIdentity } from "../index.js";
+import {
+  TalakWeb3Provider,
+  useTalakWeb3,
+  useChain,
+  useAccount,
+  useRpc,
+  useGasless,
+  useIdentity,
+} from "../index.js";
 
 type Events = {
   "chain-changed": number;
@@ -315,7 +323,13 @@ describe("Edge cases", () => {
   it("useChain with single chain config", () => {
     const instance = createMockInstance();
     (instance.config as Record<string, unknown>)["chains"] = [
-      { id: 1, name: "Ethereum", rpcUrls: ["https://rpc.example.com"], nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, testnet: false },
+      {
+        id: 1,
+        name: "Ethereum",
+        rpcUrls: ["https://rpc.example.com"],
+        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+        testnet: false,
+      },
     ];
     const wrapper = createWrapper(instance);
     const { result } = renderHook(() => useChain(), { wrapper });
@@ -366,11 +380,15 @@ describe("Edge cases", () => {
     const wrapper = createWrapper(instance);
     const { result } = renderHook(() => useAccount(), { wrapper });
 
-    act(() => { result.current.connect("0xAAA"); });
+    act(() => {
+      result.current.connect("0xAAA");
+    });
     expect(result.current.address).toBe("0xAAA");
     expect(result.current.isConnected).toBe(true);
 
-    act(() => { result.current.disconnect(); });
+    act(() => {
+      result.current.disconnect();
+    });
     expect(result.current.address).toBeNull();
     expect(result.current.isConnected).toBe(false);
   });
@@ -381,7 +399,9 @@ describe("Edge cases", () => {
     const wrapper = createWrapper(instance);
     const { result } = renderHook(() => useChain(), { wrapper });
 
-    act(() => { result.current.switchChain(10); });
+    act(() => {
+      result.current.switchChain(10);
+    });
     expect(emitSpy).toHaveBeenCalledWith("chain-switch", 10);
   });
 });

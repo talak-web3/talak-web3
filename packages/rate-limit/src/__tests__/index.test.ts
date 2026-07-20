@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { InMemoryRateLimiter, extractSubnet, normalizeIpForRateLimit, rateLimitHeaders } from "../index.js";
+
+import {
+  InMemoryRateLimiter,
+  extractSubnet,
+  normalizeIpForRateLimit,
+  rateLimitHeaders,
+} from "../index.js";
 
 describe("InMemoryRateLimiter", () => {
   let limiter: InMemoryRateLimiter;
@@ -61,7 +67,11 @@ describe("InMemoryRateLimiter", () => {
   });
 
   it("evicts oldest bucket when maxBuckets exceeded", async () => {
-    const smallLimiter = new InMemoryRateLimiter({ capacity: 5, refillPerSecond: 1, maxBuckets: 3 });
+    const smallLimiter = new InMemoryRateLimiter({
+      capacity: 5,
+      refillPerSecond: 1,
+      maxBuckets: 3,
+    });
     await smallLimiter.check("a");
     await smallLimiter.check("b");
     await smallLimiter.check("c");

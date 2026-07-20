@@ -42,6 +42,12 @@ export interface WebSocketMessagingOptions {
   maxBackoffMs?: number;
 }
 
+interface PendingRequest<T> {
+  resolve: (value: T) => void;
+  reject: (err: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
 export class WebSocketMessagingClient implements MessagingClient {
   private ws: WebSocket | undefined;
   private connected = false;
@@ -51,10 +57,17 @@ export class WebSocketMessagingClient implements MessagingClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined;
   private heartbeatTimer: ReturnType<typeof setInterval> | undefined;
 
-  private readonly pendingConversations = new Map<string, (convs: Conversation[]) => void>();
-  private readonly pendingHistory = new Map<string, (msgs: Message[]) => void>();
-  private readonly pendingSend = new Map<string, (result: { id: string }) => void>();
+  private readonly pendingConversations = new Map<string, PendingRequest<Conversation[]>>();
+  private readonly pendingHistory = new Map<string, PendingRequest<Message[]>>();
+  private readonly pendingSend = new Map<string, PendingRequest<{ id: string }>>();
   private readonly messageHandlers = new Set<(msg: Message & { conversationId: string }) => void>();
+
+  private boundHandlers?: {
+    open: () => void;
+    error: (evt: Event) => void;
+    close: () => void;
+    message: (evt: MessageEvent) => void;
+  };
 
   constructor(private readonly opts: WebSocketMessagingOptions) {
     this.maxBackoffMs = opts.maxBackoffMs ?? 30_000;
@@ -64,31 +77,35 @@ export class WebSocketMessagingClient implements MessagingClient {
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(this.opts.serverUrl);
 
-      this.ws.addEventListener("open", () => {
-        this.connected = true;
-        this.backoffMs = 500;
-        this.startHeartbeat();
-        resolve();
-      });
+      this.boundHandlers = {
+        open: () => {
+          this.connected = true;
+          this.backoffMs = 500;
+          this.startHeartbeat();
+          resolve();
+        },
+        error: (evt) => {
+          if (!this.connected) reject(new Error(`WebSocket connection failed: ${String(evt)}`));
+        },
+        close: () => {
+          this.connected = false;
+          this.stopHeartbeat();
+          if (!this.destroyed) this.scheduleReconnect();
+        },
+        message: (evt) => {
+          try {
+            const envelope = JSON.parse(evt.data as string) as WsEnvelope;
+            this.handleEnvelope(envelope);
+          } catch {
+            /* ignore malformed or non-JSON frames */
+          }
+        },
+      };
 
-      this.ws.addEventListener("error", (evt) => {
-        if (!this.connected) reject(new Error(`WebSocket connection failed: ${String(evt)}`));
-      });
-
-      this.ws.addEventListener("close", () => {
-        this.connected = false;
-        this.stopHeartbeat();
-        if (!this.destroyed) this.scheduleReconnect();
-      });
-
-      this.ws.addEventListener("message", (evt) => {
-        try {
-          const envelope = JSON.parse(evt.data as string) as WsEnvelope;
-          this.handleEnvelope(envelope);
-        } catch {
-          /* ignore malformed or non-JSON frames */
-        }
-      });
+      this.ws.addEventListener("open", this.boundHandlers.open);
+      this.ws.addEventListener("error", this.boundHandlers.error);
+      this.ws.addEventListener("close", this.boundHandlers.close);
+      this.ws.addEventListener("message", this.boundHandlers.message);
     });
   }
 
@@ -100,40 +117,65 @@ export class WebSocketMessagingClient implements MessagingClient {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = undefined;
     }
+
+    if (this.ws && this.boundHandlers) {
+      this.ws.removeEventListener("open", this.boundHandlers.open);
+      this.ws.removeEventListener("error", this.boundHandlers.error);
+      this.ws.removeEventListener("close", this.boundHandlers.close);
+      this.ws.removeEventListener("message", this.boundHandlers.message);
+    }
+
     this.ws?.close();
+
+    const disconnectedError = new Error("Disconnected");
+    for (const [, req] of this.pendingConversations) {
+      clearTimeout(req.timer);
+      req.reject(disconnectedError);
+    }
+    this.pendingConversations.clear();
+    for (const [, req] of this.pendingHistory) {
+      clearTimeout(req.timer);
+      req.reject(disconnectedError);
+    }
+    this.pendingHistory.clear();
+    for (const [, req] of this.pendingSend) {
+      clearTimeout(req.timer);
+      req.reject(disconnectedError);
+    }
+    this.pendingSend.clear();
   }
 
   async listConversations(): Promise<Conversation[]> {
-    return new Promise((resolve, reject) => {
-      const id = crypto.randomUUID();
-      this.pendingConversations.set(id, resolve);
-      setTimeout(() => {
+    const id = crypto.randomUUID();
+    return new Promise<Conversation[]>((resolve, reject) => {
+      const timer = setTimeout(() => {
         this.pendingConversations.delete(id);
         reject(new Error("listConversations timeout"));
       }, 10_000);
+      this.pendingConversations.set(id, { resolve, reject, timer });
       this.send({ type: "list_conversations" });
     });
   }
 
   async listMessages(conversationId: string): Promise<Message[]> {
-    return new Promise((resolve, reject) => {
-      this.pendingHistory.set(conversationId, resolve);
-      setTimeout(() => {
+    return new Promise<Message[]>((resolve, reject) => {
+      const timer = setTimeout(() => {
         this.pendingHistory.delete(conversationId);
         reject(new Error("listMessages timeout"));
       }, 10_000);
+      this.pendingHistory.set(conversationId, { resolve, reject, timer });
       this.send({ type: "get_history", conversationId });
     });
   }
 
   async sendMessage(conversationId: string, body: string): Promise<{ id: string }> {
-    return new Promise((resolve, reject) => {
-      const msgId = crypto.randomUUID();
-      this.pendingSend.set(msgId, resolve);
-      setTimeout(() => {
+    const msgId = crypto.randomUUID();
+    return new Promise<{ id: string }>((resolve, reject) => {
+      const timer = setTimeout(() => {
         this.pendingSend.delete(msgId);
         reject(new Error("sendMessage timeout"));
       }, 10_000);
+      this.pendingSend.set(msgId, { resolve, reject, timer });
       this.send({ type: "send", conversationId, body, from: this.opts.from });
     });
   }
@@ -161,16 +203,20 @@ export class WebSocketMessagingClient implements MessagingClient {
       case "pong":
         break;
       case "conversations": {
-        for (const [id, resolve] of this.pendingConversations) {
-          resolve(envelope.items);
+        for (const [id, req] of this.pendingConversations) {
+          clearTimeout(req.timer);
+          req.resolve(envelope.items);
           this.pendingConversations.delete(id);
           break;
         }
         break;
       }
       case "history": {
-        const cb = this.pendingHistory.get(envelope.conversationId);
-        cb?.(envelope.messages);
+        const req = this.pendingHistory.get(envelope.conversationId);
+        if (req) {
+          clearTimeout(req.timer);
+          req.resolve(envelope.messages);
+        }
         this.pendingHistory.delete(envelope.conversationId);
         break;
       }
@@ -181,8 +227,11 @@ export class WebSocketMessagingClient implements MessagingClient {
         break;
       }
       case "sent": {
-        const cb = this.pendingSend.get(envelope.id);
-        cb?.({ id: envelope.id });
+        const req = this.pendingSend.get(envelope.id);
+        if (req) {
+          clearTimeout(req.timer);
+          req.resolve({ id: envelope.id });
+        }
         this.pendingSend.delete(envelope.id);
         break;
       }

@@ -23,7 +23,7 @@ try {
   await authenticate(message, signature);
 } catch (error) {
   if (error instanceof TalakWeb3Error) {
-    console.log(error.code);   // "AUTH_SIWE_EXPIRED"
+    console.log(error.code); // "AUTH_SIWE_EXPIRED"
     console.log(error.status); // 401
   }
 }
@@ -31,10 +31,10 @@ try {
 
 ## Error Classes
 
-| Class | Base | Usage |
-|-------|------|-------|
-| `TalakWeb3Error` | `Error` | Base error class with `code`, `status`, `data`, `cause` |
-| `AuthError` | `TalakWeb3Error` | Broad authentication errors (status 401) |
+| Class            | Base             | Usage                                                   |
+| ---------------- | ---------------- | ------------------------------------------------------- |
+| `TalakWeb3Error` | `Error`          | Base error class with `code`, `status`, `data`, `cause` |
+| `AuthError`      | `TalakWeb3Error` | Broad authentication errors (status 401)                |
 
 ## Error Code Constants
 

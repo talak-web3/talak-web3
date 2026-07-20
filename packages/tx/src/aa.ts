@@ -4,7 +4,11 @@ import { encodeFunctionData, keccak256, encodeAbiParameters, parseAbiParameters 
 
 import type { UserOperation, PartialUserOp, GasEstimate, UserOperationReceipt } from "./index.js";
 
+/** ERC-4337 EntryPoint v0.6 */
 export const ENTRY_POINT_V06 = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Address;
+
+/** ERC-4337 EntryPoint v0.7 */
+export const ENTRY_POINT_V07 = "0x0000000071727De22E5E9d8BAf0edAc6f37da032" as Address;
 
 class BundlerRpc {
   constructor(private readonly url: string) {}
@@ -32,6 +36,7 @@ export interface AaClientOptions {
   sign: (hash: Hex) => Promise<Hex>;
   sender: Address;
   chainId: number;
+  /** EntryPoint contract address. Defaults to v0.7. */
   entryPoint?: Address;
 }
 
@@ -43,7 +48,7 @@ export class AccountAbstractionClient {
   constructor(private readonly opts: AaClientOptions) {
     this.bundler = new BundlerRpc(opts.bundlerUrl);
     this.paymaster = opts.paymasterUrl ? new BundlerRpc(opts.paymasterUrl) : undefined;
-    this.entryPoint = opts.entryPoint ?? ENTRY_POINT_V06;
+    this.entryPoint = opts.entryPoint ?? ENTRY_POINT_V07;
   }
 
   buildCallData(to: Address, value: bigint, data: Hex): Hex {

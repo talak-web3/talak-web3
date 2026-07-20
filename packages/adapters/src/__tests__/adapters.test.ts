@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TalakWeb3Error } from "@talak-web3/errors";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 describe("TablelandPlugin", () => {
   it("throws when TABLELAND_PRIVATE_KEY is missing", async () => {

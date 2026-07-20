@@ -28,32 +28,50 @@ export class InMemoryTokenStorage implements TokenStorage {
   }
 }
 
+const ACCESS_COOKIE_NAME = "talak_web3_access";
+const REFRESH_COOKIE_NAME = "talak_web3_refresh";
+const COOKIE_OPTIONS = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure`;
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
+  return match ? (match[2] ?? null) : null;
+}
+
+function writeCookie(name: string, value: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=${value}; ${COOKIE_OPTIONS}`;
+}
+
+function expireCookie(name: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+}
+
 export class CookieTokenStorage implements TokenStorage {
   private accessToken: string | null = null;
 
   getAccessToken(): string | null {
-    return this.accessToken;
+    return this.accessToken ?? readCookie(ACCESS_COOKIE_NAME);
   }
+
   setAccessToken(token: string): void {
     this.accessToken = token;
+    writeCookie(ACCESS_COOKIE_NAME, token);
   }
 
   getRefreshToken(): string | null {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(new RegExp("(^| )talak_web3_refresh=([^;]+)"));
-    return match ? (match[2] ?? null) : null;
+    return readCookie(REFRESH_COOKIE_NAME);
   }
 
   setRefreshToken(token: string): void {
-    if (typeof document === "undefined") return;
-    document.cookie = `talak_web3_refresh=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure`;
+    writeCookie(REFRESH_COOKIE_NAME, token);
   }
 
   clear(): void {
     this.accessToken = null;
-    if (typeof document !== "undefined") {
-      document.cookie = "talak_web3_refresh=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    }
+    expireCookie(ACCESS_COOKIE_NAME);
+    expireCookie(REFRESH_COOKIE_NAME);
   }
 }
 
@@ -147,6 +165,13 @@ export class TalakWeb3Client {
     return this.refreshPromise;
   }
 
+  /** Clear stored tokens (e.g. on unrecoverable auth failure). */
+  private clearTokens(): void {
+    this.storage.setAccessToken(null as unknown as string);
+    this.storage.setRefreshToken(null as unknown as string);
+    this.storage.clear();
+  }
+
   private getCsrfToken(): string | null {
     if (typeof document === "undefined") return null;
     const match = document.cookie.match(new RegExp("(^| )csrf_token=([^;]+)"));
@@ -171,8 +196,13 @@ export class TalakWeb3Client {
       throw new Error(`Login failed: HTTP ${res.status}: ${text}`);
     }
     const data = (await res.json()) as LoginResponse;
-    this.storage.setAccessToken(data.accessToken);
-    this.storage.setRefreshToken(data.refreshToken);
+    try {
+      this.storage.setAccessToken(data.accessToken);
+      this.storage.setRefreshToken(data.refreshToken);
+    } catch {
+      this.storage.clear();
+      throw new Error("Failed to persist auth tokens");
+    }
     return data;
   }
 
@@ -183,6 +213,7 @@ export class TalakWeb3Client {
       body: JSON.stringify({ refreshToken }),
     });
     if (!res.ok) {
+      this.clearTokens();
       const text = await res.text().catch(() => "");
       throw new Error(`Refresh failed: HTTP ${res.status}: ${text}`);
     }

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { WebSocketMessagingClient } from "@talak-web3/realtime";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 class MockWebSocket {
   static CONNECTING = 0;
@@ -51,12 +51,15 @@ let mockWs: MockWebSocket;
 const OriginalWebSocket = globalThis.WebSocket;
 
 beforeEach(() => {
-  vi.stubGlobal("WebSocket", class extends MockWebSocket {
-    constructor(url: string) {
-      super(url);
-      mockWs = this;
-    }
-  } as unknown as typeof WebSocket);
+  vi.stubGlobal(
+    "WebSocket",
+    class extends MockWebSocket {
+      constructor(url: string) {
+        super(url);
+        mockWs = this;
+      }
+    } as unknown as typeof WebSocket,
+  );
 });
 
 afterEach(() => {

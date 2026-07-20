@@ -170,7 +170,10 @@ export class PrometheusMetrics {
   recordAuthFailure(method: string, reason: string, duration: number): void {
     const labels = { environment: this.getEnvironment(), method, reason };
     this.authFailureCounter.inc(labels);
-    this.authDurationHistogram.observe({ environment: labels.environment, method }, duration / 1000);
+    this.authDurationHistogram.observe(
+      { environment: labels.environment, method },
+      duration / 1000,
+    );
   }
 
   setActiveSessions(count: number): void {

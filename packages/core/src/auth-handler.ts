@@ -1,4 +1,5 @@
 import { TalakWeb3Error } from "@talak-web3/errors";
+import { InMemoryRateLimiter, normalizeIpForRateLimit } from "@talak-web3/rate-limit";
 import type { TalakWeb3Auth } from "@talak-web3/types";
 import type { TalakWeb3Context, TalakWeb3Instance } from "@talak-web3/types";
 
@@ -32,6 +33,30 @@ type AuthRouteHandler = (
 
 const SESSION_REFRESH_THRESHOLD_SECONDS = 5 * 60;
 const MAX_AUTH_BODY_SIZE = 1024; // 1KB is plenty for auth payloads
+
+const rateLimiters = {
+  nonce: new InMemoryRateLimiter({ capacity: 20, refillPerSecond: 0.33 }),
+  login: new InMemoryRateLimiter({ capacity: 10, refillPerSecond: 0.17 }),
+  refresh: new InMemoryRateLimiter({ capacity: 15, refillPerSecond: 0.25 }),
+  logout: new InMemoryRateLimiter({ capacity: 30, refillPerSecond: 0.5 }),
+};
+
+async function checkRateLimit(
+  request: Request,
+  endpoint: keyof typeof rateLimiters,
+): Promise<Response | null> {
+  const context = getRequestContext(request);
+  const key = `${endpoint}:${normalizeIpForRateLimit(context.ip)}`;
+  const result = await rateLimiters[endpoint].check(key);
+  if (!result.allowed) {
+    const retryAfter = Math.ceil(((result.resetAt ?? Date.now()) - Date.now()) / 1000);
+    return jsonResponse({ error: "Too Many Requests", code: "RATE_LIMIT_EXCEEDED" }, 429, {
+      "Retry-After": String(Math.max(1, retryAfter)),
+      "X-RateLimit-Reset": String(Math.ceil((result.resetAt ?? Date.now()) / 1000)),
+    });
+  }
+  return null;
+}
 
 function jsonResponse(body: unknown, status = 200, headers?: HeadersInit): Response {
   const responseHeaders = new Headers(headers);
@@ -107,6 +132,9 @@ async function readJsonBody<T extends Record<string, unknown>>(
 }
 
 const handleNonce: AuthRouteHandler = async (request, auth) => {
+  const rateLimitResponse = await checkRateLimit(request, "nonce");
+  if (rateLimitResponse) return rateLimitResponse;
+
   const body = await readJsonBody<{ address?: string }>(request);
   const address = body?.address;
 
@@ -124,6 +152,9 @@ const handleNonce: AuthRouteHandler = async (request, auth) => {
 };
 
 const handleLogin: AuthRouteHandler = async (request, auth, ctx) => {
+  const rateLimitResponse = await checkRateLimit(request, "login");
+  if (rateLimitResponse) return rateLimitResponse;
+
   const body = await readJsonBody<{ message?: string; signature?: string }>(request);
   const message = body?.message;
   const signature = body?.signature;
@@ -170,6 +201,9 @@ const handleLogin: AuthRouteHandler = async (request, auth, ctx) => {
 };
 
 const handleRefresh: AuthRouteHandler = async (request, auth, ctx) => {
+  const rateLimitResponse = await checkRateLimit(request, "refresh");
+  if (rateLimitResponse) return rateLimitResponse;
+
   const body = await readJsonBody<{ refreshToken?: string }>(request);
   const refreshToken = body?.refreshToken ?? getRefreshTokenFromRequest(request);
 
@@ -182,6 +216,9 @@ const handleRefresh: AuthRouteHandler = async (request, auth, ctx) => {
 };
 
 const handleLogout: AuthRouteHandler = async (request, auth, ctx) => {
+  const rateLimitResponse = await checkRateLimit(request, "logout");
+  if (rateLimitResponse) return rateLimitResponse;
+
   const body = await readJsonBody<{ refreshToken?: string }>(request);
   const refreshToken = body?.refreshToken ?? getRefreshTokenFromRequest(request) ?? undefined;
   const accessToken = getAccessTokenFromRequest(request) ?? "";
