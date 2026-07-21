@@ -49,6 +49,19 @@ export interface RevocationStore {
   getGlobalInvalidationTime(): Promise<number>;
 }
 
+export interface RpcEndpoint {
+  url: string;
+  chainId: number;
+  providerId?: string;
+  weight?: number;
+  priority?: number;
+  health?: {
+    status: "up" | "down";
+    latency: number;
+    lastChecked: number;
+  };
+}
+
 export interface RpcOptions {
   retries?: number;
   timeout?: number;
@@ -56,7 +69,13 @@ export interface RpcOptions {
 }
 
 export interface IRpc {
-  request<T = unknown>(method: string, params?: unknown[], options?: RpcOptions): Promise<T>;
+  request<T = unknown>(
+    chainId: number,
+    method: string,
+    params?: unknown[],
+    options?: RpcOptions,
+  ): Promise<T>;
+  getProvider(chainId: number): Promise<RpcEndpoint | undefined>;
   pauseHealthChecks(): void;
   resumeHealthChecks(intervalMs?: number): void;
   stop(): void;
@@ -119,7 +138,19 @@ export interface TalakWeb3Auth extends IAuth {
 
 export type TalakWeb3EventsMap = {
   "plugin-load": { name: string };
-  "rpc-error": { endpoint: string; error: Error; attempt: number };
+  "rpc-error": {
+    chainId: number;
+    endpoint: string;
+    error: Error;
+    attempt: number;
+  };
+  "rpc:request": {
+    chainId: number;
+    method: string;
+    duration: number;
+    endpoint?: string | undefined;
+  };
+  "rpc:failover": { from: string; to: string; chainId: number; method: string };
   "chain-changed": number;
   "chain-switch": number;
   "account-changed": string | null;

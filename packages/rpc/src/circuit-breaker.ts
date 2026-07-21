@@ -45,24 +45,25 @@ export class DistributedCircuitBreaker {
     };
   }
 
-  private getKey(providerId: string): string {
-    return `circuit:${providerId}`;
+  private getKey(chainId: number, providerId: string): string {
+    return `circuit:${chainId}:${providerId}`;
   }
 
-  private getLatencyKey(providerId: string): string {
-    return `circuit:${providerId}:latency`;
+  private getLatencyKey(chainId: number, providerId: string): string {
+    return `circuit:${chainId}:${providerId}:latency`;
   }
 
-  private getHalfOpenKey(providerId: string): string {
-    return `circuit:${providerId}:halfopen`;
+  private getHalfOpenKey(chainId: number, providerId: string): string {
+    return `circuit:${chainId}:${providerId}:halfopen`;
   }
 
   async execute<T>(
+    chainId: number,
     providerId: string,
     operation: () => Promise<T>,
     timeoutMs: number = 5000,
   ): Promise<T> {
-    const state = await this.getState(providerId);
+    const state = await this.getState(chainId, providerId);
 
     if (state.state === "open") {
       const now = Date.now();
@@ -70,21 +71,21 @@ export class DistributedCircuitBreaker {
         throw new TalakWeb3Error("Circuit breaker open", {
           code: CIRCUIT_ERROR_CODES.OPEN,
           status: 503,
-          data: { providerId, openedAt: state.openedAt },
+          data: { chainId, providerId, openedAt: state.openedAt },
         });
       }
 
-      await this.setState(providerId, {
+      await this.setState(chainId, providerId, {
         state: "half-open",
         failures: 0,
         successes: 0,
       });
-      await this.config.redis.del(this.getHalfOpenKey(providerId));
+      await this.config.redis.del(this.getHalfOpenKey(chainId, providerId));
     }
 
     if (state.state === "half-open") {
-      const inFlight = await this.config.redis.incr(this.getHalfOpenKey(providerId));
-      await this.config.redis.set(this.getHalfOpenKey(providerId), String(inFlight), {
+      const inFlight = await this.config.redis.incr(this.getHalfOpenKey(chainId, providerId));
+      await this.config.redis.set(this.getHalfOpenKey(chainId, providerId), String(inFlight), {
         PX: this.config.halfOpenTimeout,
       });
 
@@ -92,7 +93,7 @@ export class DistributedCircuitBreaker {
         throw new TalakWeb3Error("Circuit breaker half-open limit reached", {
           code: CIRCUIT_ERROR_CODES.OPEN,
           status: 503,
-          data: { providerId, inFlight },
+          data: { chainId, providerId, inFlight },
         });
       }
     }
@@ -108,19 +109,19 @@ export class DistributedCircuitBreaker {
       ]);
 
       const latency = Date.now() - startTime;
-      await this.recordSuccess(providerId, latency);
+      await this.recordSuccess(chainId, providerId, latency);
 
       return result;
     } catch (error) {
       const latency = Date.now() - startTime;
-      await this.recordFailure(providerId, error, latency);
+      await this.recordFailure(chainId, providerId, error, latency);
       throw error;
     }
   }
 
-  private async getState(providerId: string): Promise<CircuitState> {
+  private async getState(chainId: number, providerId: string): Promise<CircuitState> {
     try {
-      const key = this.getKey(providerId);
+      const key = this.getKey(chainId, providerId);
       const data = await this.config.redis.get(key);
 
       if (!data) {
@@ -141,19 +142,19 @@ export class DistributedCircuitBreaker {
     }
   }
 
-  private async setState(providerId: string, state: CircuitState): Promise<void> {
+  private async setState(chainId: number, providerId: string, state: CircuitState): Promise<void> {
     try {
-      const key = this.getKey(providerId);
+      const key = this.getKey(chainId, providerId);
       await this.config.redis.set(key, JSON.stringify(state));
     } catch (error) {
       console.warn("Failed to update circuit state:", error);
     }
   }
 
-  private async recordSuccess(providerId: string, latency: number): Promise<void> {
-    const state = await this.getState(providerId);
+  private async recordSuccess(chainId: number, providerId: string, latency: number): Promise<void> {
+    const state = await this.getState(chainId, providerId);
 
-    await this.updateLatencyStats(providerId, latency);
+    await this.updateLatencyStats(chainId, providerId, latency);
 
     if (state.state === "half-open") {
       state.successes++;
@@ -162,22 +163,27 @@ export class DistributedCircuitBreaker {
         state.state = "closed";
         state.failures = 0;
         state.successes = 0;
-        await this.config.redis.del(this.getHalfOpenKey(providerId));
+        await this.config.redis.del(this.getHalfOpenKey(chainId, providerId));
       }
     } else {
       state.failures = Math.max(0, state.failures - 1);
     }
 
     state.lastSuccess = Date.now();
-    await this.setState(providerId, state);
+    await this.setState(chainId, providerId, state);
   }
 
-  private async recordFailure(providerId: string, error: unknown, latency: number): Promise<void> {
-    const state = await this.getState(providerId);
+  private async recordFailure(
+    chainId: number,
+    providerId: string,
+    error: unknown,
+    latency: number,
+  ): Promise<void> {
+    const state = await this.getState(chainId, providerId);
 
     const isLatencyFailure = this.config.latencyThreshold && latency > this.config.latencyThreshold;
 
-    const shouldUseAdaptiveThreshold = await this.shouldUseAdaptiveThreshold(providerId);
+    const shouldUseAdaptiveThreshold = await this.shouldUseAdaptiveThreshold(chainId, providerId);
     let failureWeight = 1;
 
     if (shouldUseAdaptiveThreshold && isLatencyFailure) {
@@ -193,7 +199,7 @@ export class DistributedCircuitBreaker {
       state.lastFailure = Date.now();
 
       const effectiveThreshold = shouldUseAdaptiveThreshold
-        ? await this.calculateAdaptiveThreshold(providerId)
+        ? await this.calculateAdaptiveThreshold(chainId, providerId)
         : this.config.failureThreshold;
 
       if (state.state === "closed" && state.failures >= effectiveThreshold) {
@@ -203,18 +209,22 @@ export class DistributedCircuitBreaker {
       } else if (state.state === "half-open") {
         state.state = "open";
         state.openedAt = Date.now();
-        await this.config.redis.del(this.getHalfOpenKey(providerId));
+        await this.config.redis.del(this.getHalfOpenKey(chainId, providerId));
       }
     }
 
-    await this.setState(providerId, state);
+    await this.setState(chainId, providerId, state);
   }
 
-  private async updateLatencyStats(providerId: string, latency: number): Promise<void> {
+  private async updateLatencyStats(
+    chainId: number,
+    providerId: string,
+    latency: number,
+  ): Promise<void> {
     if (!this.config.latencyThreshold) return;
 
     try {
-      const key = this.getLatencyKey(providerId);
+      const key = this.getLatencyKey(chainId, providerId);
       const existing = await this.config.redis.get(key);
 
       let stats: CircuitState["latencyStats"] = {
@@ -251,31 +261,31 @@ export class DistributedCircuitBreaker {
     }
   }
 
-  async getStats(providerId: string): Promise<CircuitState> {
-    return this.getState(providerId);
+  async getStats(chainId: number, providerId: string): Promise<CircuitState> {
+    return this.getState(chainId, providerId);
   }
 
-  async reset(providerId: string): Promise<void> {
-    await this.setState(providerId, {
+  async reset(chainId: number, providerId: string): Promise<void> {
+    await this.setState(chainId, providerId, {
       state: "closed",
       failures: 0,
       successes: 0,
     });
 
     try {
-      await this.config.redis.del(this.getLatencyKey(providerId));
+      await this.config.redis.del(this.getLatencyKey(chainId, providerId));
     } catch {
       /* best-effort cleanup of latency samples */
     }
   }
 
-  private async shouldUseAdaptiveThreshold(providerId: string): Promise<boolean> {
+  private async shouldUseAdaptiveThreshold(chainId: number, providerId: string): Promise<boolean> {
     if (!this.config.latencyThreshold || !this.config.minRequestsForLatency) {
       return false;
     }
 
     try {
-      const key = this.getLatencyKey(providerId);
+      const key = this.getLatencyKey(chainId, providerId);
       const data = await this.config.redis.get(key);
 
       if (!data) return false;
@@ -291,9 +301,9 @@ export class DistributedCircuitBreaker {
     }
   }
 
-  private async calculateAdaptiveThreshold(providerId: string): Promise<number> {
+  private async calculateAdaptiveThreshold(chainId: number, providerId: string): Promise<number> {
     try {
-      const key = this.getLatencyKey(providerId);
+      const key = this.getLatencyKey(chainId, providerId);
       const data = await this.config.redis.get(key);
 
       if (!data) return this.config.failureThreshold;
@@ -318,8 +328,8 @@ export class DistributedCircuitBreaker {
     }
   }
 
-  async isAvailable(providerId: string): Promise<boolean> {
-    const state = await this.getState(providerId);
+  async isAvailable(chainId: number, providerId: string): Promise<boolean> {
+    const state = await this.getState(chainId, providerId);
 
     if (state.state === "open") {
       const now = Date.now();

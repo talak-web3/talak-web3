@@ -37,11 +37,11 @@ describe("UnifiedRpc middleware integration", () => {
       return next();
     });
 
-    const rpc = new UnifiedRpc(ctx, []);
-    (rpc as unknown as { fetchWithRetry: () => Promise<string> }).fetchWithRetry = async () =>
-      "0x1";
+    const rpc = new UnifiedRpc(ctx, new Map());
+    (rpc as unknown as { fetchWithRetry: (...args: unknown[]) => Promise<string> }).fetchWithRetry =
+      async () => "0x1";
 
-    const result = await rpc.request("eth_chainId");
+    const result = await rpc.request(1, "eth_chainId");
     expect(result).toBe("0x1");
     expect(seen).toBe(true);
   });

@@ -31,11 +31,11 @@ export class MigrationTool {
     const mappings: Record<SDKType, Record<string, string>> = {
       ethers: {
         "ethers.providers.JsonRpcProvider": "new TalakWeb3Rpc(ctx)",
-        "signer.sendTransaction": 'ctx.rpc.request("eth_sendTransaction", [...])',
+        "signer.sendTransaction": 'ctx.rpc.request(chainId, "eth_sendTransaction", [...])',
       },
       viem: {
         createPublicClient: "talakWeb3(config)",
-        "client.readContract": 'ctx.rpc.request("eth_call", [...])',
+        "client.readContract": 'ctx.rpc.request(chainId, "eth_call", [...])',
       },
       web3js: {
         "new Web3(provider)": "talakWeb3({ rpc: { url: provider } })",

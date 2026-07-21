@@ -10,7 +10,9 @@ import {
 import { validateConfig } from "@talak-web3/config";
 import { TalakWeb3Error, RPC_ERROR_CODES, PLUGIN_ERROR_CODES } from "@talak-web3/errors";
 import { UnifiedRpc } from "@talak-web3/rpc";
+import type { RpcEndpoint } from "@talak-web3/rpc";
 import type {
+  IRpc,
   TalakWeb3BaseConfig,
   TalakWeb3Context,
   TalakWeb3EventsMap,
@@ -208,6 +210,52 @@ function extractAuthStoresFromInput(input: unknown): {
 }
 
 /**
+ * Placeholder RPC implementation used during bootstrap.
+ * Every method throws `TalakWeb3Error("RPC not initialized")` to fail
+ * fast if any code tries to use RPC before `UnifiedRpc` is wired up.
+ *
+ * Replaced by the real `UnifiedRpc` instance before `createTalakWeb3` returns.
+ */
+class PendingRpc implements IRpc {
+  async request<T = unknown>(
+    _chainId: number,
+    _method: string,
+    _params?: unknown[],
+    _options?: import("@talak-web3/types").RpcOptions,
+  ): Promise<T> {
+    throw new TalakWeb3Error("RPC not initialized", {
+      code: RPC_ERROR_CODES.NOT_READY,
+      status: 500,
+    });
+  }
+
+  pauseHealthChecks(): void {
+    throw new TalakWeb3Error("RPC not initialized", {
+      code: RPC_ERROR_CODES.NOT_READY,
+      status: 500,
+    });
+  }
+
+  resumeHealthChecks(): void {
+    throw new TalakWeb3Error("RPC not initialized", {
+      code: RPC_ERROR_CODES.NOT_READY,
+      status: 500,
+    });
+  }
+
+  async getProvider(_chainId: number): Promise<RpcEndpoint | undefined> {
+    throw new TalakWeb3Error("RPC not initialized", {
+      code: RPC_ERROR_CODES.NOT_READY,
+      status: 500,
+    });
+  }
+
+  stop(): void {
+    // No-op during bootstrap. Real cleanup happens in UnifiedRpc.stop().
+  }
+}
+
+/**
  * Creates a new TalakWeb3 SDK instance.
  *
  * @param input - Configuration object or partial config
@@ -272,9 +320,18 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
     );
   }
 
-  const endpoints = config.chains.flatMap((c, priority) =>
-    c.rpcUrls.map((url) => ({ url, priority })),
-  );
+  const endpointsByChain = new Map<number, RpcEndpoint[]>();
+  for (const chain of config.chains) {
+    endpointsByChain.set(
+      chain.id,
+      chain.rpcUrls.map((url, i) => ({
+        url,
+        chainId: chain.id,
+        priority: i,
+        weight: 1,
+      })),
+    );
+  }
 
   const contextShape: Omit<TalakWeb3Context, "rpc"> = {
     config,
@@ -289,29 +346,9 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
 
   const bootstrapContext: TalakWeb3Context = {
     ...contextShape,
-    rpc: {
-      request: async () => {
-        throw new TalakWeb3Error("RPC not initialized", {
-          code: RPC_ERROR_CODES.NOT_READY,
-          status: 500,
-        });
-      },
-      pauseHealthChecks: () => {
-        throw new TalakWeb3Error("RPC not initialized", {
-          code: RPC_ERROR_CODES.NOT_READY,
-          status: 500,
-        });
-      },
-      resumeHealthChecks: () => {
-        throw new TalakWeb3Error("RPC not initialized", {
-          code: RPC_ERROR_CODES.NOT_READY,
-          status: 500,
-        });
-      },
-      stop: () => {},
-    },
+    rpc: new PendingRpc(),
   };
-  const rpc = new UnifiedRpc(bootstrapContext, endpoints);
+  const rpc = new UnifiedRpc(bootstrapContext, endpointsByChain);
 
   const context: TalakWeb3Context = {
     ...contextShape,
