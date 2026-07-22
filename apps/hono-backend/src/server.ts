@@ -577,7 +577,12 @@ app.post("/rpc/:chainId", authMiddleware(auth), async (c) => {
     const instance = c.get("talak") as TalakWeb3Instance;
     const ctx: TalakWeb3Context = instance.context;
 
-    const result = await ctx.rpc.request(bodyResult.data.method, bodyResult.data.params ?? [], {});
+    const result = await ctx.rpc.request(
+      chainId,
+      bodyResult.data.method,
+      bodyResult.data.params ?? [],
+      {},
+    );
 
     metrics.recordRpcRequest(
       String(chainId),

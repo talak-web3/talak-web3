@@ -24,10 +24,11 @@ describe("UnifiedRpc", () => {
 
   it("should retry and failover on error", async () => {
     const endpoints = [
-      { url: "https://rpc1.com", priority: 1 },
-      { url: "https://rpc2.com", priority: 2 },
-    ] as const;
-    const rpc = new UnifiedRpc(mockContext, endpoints);
+      { url: "https://rpc1.com", chainId: 1, priority: 1 },
+      { url: "https://rpc2.com", chainId: 1, priority: 2 },
+    ];
+    const endpointsMap = new Map<number, import("../index").RpcEndpoint[]>([[1, endpoints]]);
+    const rpc = new UnifiedRpc(mockContext, endpointsMap);
 
     (global.fetch as unknown as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(new Error("Network error"))
@@ -36,7 +37,7 @@ describe("UnifiedRpc", () => {
         json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x123" }),
       });
 
-    const result = await rpc.request("eth_blockNumber");
+    const result = await rpc.request(1, "eth_blockNumber");
 
     expect(result).toBe("0x123");
     expect(global.fetch).toHaveBeenCalledTimes(2);
@@ -48,14 +49,15 @@ describe("UnifiedRpc", () => {
   });
 
   it("should throw error after max retries", async () => {
-    const endpoints = [{ url: "https://rpc1.com" }];
-    const rpc = new UnifiedRpc(mockContext, endpoints);
+    const endpoints = [{ url: "https://rpc1.com", chainId: 1 }];
+    const endpointsMap = new Map<number, import("../index").RpcEndpoint[]>([[1, endpoints]]);
+    const rpc = new UnifiedRpc(mockContext, endpointsMap);
 
     (global.fetch as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error("Network error"),
     );
 
-    await expect(rpc.request("eth_blockNumber", [], { retries: 2 })).rejects.toThrow(
+    await expect(rpc.request(1, "eth_blockNumber", [], { retries: 2 })).rejects.toThrow(
       "RPC request failed after 3 attempts",
     );
 
@@ -63,8 +65,9 @@ describe("UnifiedRpc", () => {
   });
 
   it("should perform health checks", async () => {
-    const endpoints = [{ url: "https://rpc1.com" }] as const;
-    const rpc = new UnifiedRpc(mockContext, endpoints);
+    const endpoints = [{ url: "https://rpc1.com", chainId: 1 }];
+    const endpointsMap = new Map<number, import("../index").RpcEndpoint[]>([[1, endpoints]]);
+    const rpc = new UnifiedRpc(mockContext, endpointsMap);
 
     (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,

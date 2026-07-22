@@ -51,7 +51,7 @@ const app = talakWeb3({
 await app.init();
 
 const nonce = await app.auth.createNonce("0x...");
-const result = await app.rpc.request("eth_blockNumber");
+const result = await app.context.rpc.request(1, "eth_blockNumber");
 ```
 
 ### Next.js Integration

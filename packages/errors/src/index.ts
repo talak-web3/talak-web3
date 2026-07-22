@@ -43,3 +43,24 @@ export class AuthError extends TalakWeb3Error {
     this.name = "AuthError";
   }
 }
+
+export class RpcError extends TalakWeb3Error {
+  readonly provider?: string | undefined;
+  readonly chainId?: number | undefined;
+  constructor(
+    message: string,
+    opts: {
+      provider?: string | undefined;
+      chainId?: number | undefined;
+      code: string;
+      status?: number;
+      cause?: unknown;
+      data?: unknown;
+    },
+  ) {
+    super(message, opts);
+    this.name = "RpcError";
+    this.provider = opts.provider;
+    this.chainId = opts.chainId;
+  }
+}

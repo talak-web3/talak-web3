@@ -49,12 +49,12 @@ describe("multichain", () => {
 
   it("computes conservative EIP-1559 fees from gasPrice", async () => {
     const rpc = {
-      request: async (method: string) => {
+      request: async (_chainId: number, method: string) => {
         if (method === "eth_maxPriorityFeePerGas") throw new Error("unsupported");
         return "0x3b9aca00";
       },
-    } as { request: (method: string) => Promise<string> };
-    const fees = await estimateEip1559Fees(rpc);
+    } as { request: (chainId: number, method: string) => Promise<string> };
+    const fees = await estimateEip1559Fees(rpc, 1);
     expect(fees.maxPriorityFeePerGas).toBe(1_500_000_000n);
     expect(fees.maxFeePerGas).toBe(2_000_000_000n + 1_500_000_000n);
   });

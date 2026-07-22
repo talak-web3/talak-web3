@@ -38,10 +38,7 @@ const app = talakWeb3({
 
 await app.init();
 
-const blockNumber = await app.context.rpc.request({
-  method: "eth_blockNumber",
-  chainId: 1,
-});
+const blockNumber = await app.context.rpc.request(1, "eth_blockNumber");
 
 await app.destroy();
 ```

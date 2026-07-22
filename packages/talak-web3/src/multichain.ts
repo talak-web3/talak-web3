@@ -1,5 +1,11 @@
 import { UnifiedRpc } from "@talak-web3/rpc";
-import type { TalakWeb3BaseConfig, TalakWeb3Context, IRpc, RpcOptions } from "@talak-web3/types";
+import type {
+  TalakWeb3BaseConfig,
+  TalakWeb3Context,
+  IRpc,
+  RpcEndpoint,
+  RpcOptions,
+} from "@talak-web3/types";
 
 export type ChainRef = {
   id: number;
@@ -35,15 +41,21 @@ export class MultiChainRouter {
     const chain = this.config.chains.find((c) => c.id === chainId);
     if (!chain) throw new Error(`Unknown chainId: ${chainId}`);
 
-    const endpoints = chain.rpcUrls.map((url: string, priority: number) => ({ url, priority }));
-    const rpc = new UnifiedRpc(this.ctx, endpoints);
+    const endpoints = chain.rpcUrls.map((url: string, priority: number) => ({
+      url,
+      chainId: chain.id,
+      priority,
+      weight: 1,
+    }));
+    const endpointsByChain = new Map<number, RpcEndpoint[]>([[chain.id, endpoints]]);
+    const rpc = new UnifiedRpc(this.ctx, endpointsByChain);
     this.rpcByChainId.set(chainId, rpc);
     return rpc;
   }
 
   async request<T = unknown>(req: MultiChainRequest): Promise<T> {
     const { chainId, method, params = [], options = {} } = req;
-    return this.getRpc(chainId).request<T>(method, params, options);
+    return this.getRpc(chainId).request<T>(chainId, method, params, options);
   }
 }
 
@@ -60,11 +72,13 @@ export type Eip1559Fees = {
  * method is not supported or an error occurs.
  *
  * @param rpc   - RPC instance bound to the target chain.
+ * @param chainId - Chain ID to query (passed through to every RPC call).
  * @param opts  - Optional overrides.
  * @param opts.priorityFee - Priority fee in wei (default: 1_500_000_000 = 1.5 Gwei).
  */
 export async function estimateEip1559Fees(
   rpc: IRpc,
+  chainId: number,
   opts?: { priorityFee?: bigint },
 ): Promise<Eip1559Fees> {
   const defaultPriority = 1_500_000_000n;
@@ -75,14 +89,14 @@ export async function estimateEip1559Fees(
     priority = configuredPriority;
   } else {
     try {
-      const priorityHex = await rpc.request<string>("eth_maxPriorityFeePerGas");
+      const priorityHex = await rpc.request<string>(chainId, "eth_maxPriorityFeePerGas");
       priority = BigInt(priorityHex);
     } catch {
       priority = defaultPriority;
     }
   }
 
-  const baseFeeHex = await rpc.request<string>("eth_gasPrice");
+  const baseFeeHex = await rpc.request<string>(chainId, "eth_gasPrice");
   const baseFee = BigInt(baseFeeHex);
   const maxFee = baseFee * 2n + priority;
   return { maxFeePerGas: maxFee, maxPriorityFeePerGas: priority };

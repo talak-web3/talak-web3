@@ -58,8 +58,15 @@ export function useAccount() {
 export function useRpc() {
   const instance = useTalakWeb3();
   return {
-    request: <T = unknown,>(method: string, params: unknown[] = []) =>
-      instance.context.rpc.request<T>(method, params),
+    request: <T = unknown,>(method: string, params: unknown[] = [], chainId?: number) => {
+      const resolvedChainId = chainId ?? instance.config.chains[0]?.id;
+      if (!resolvedChainId) {
+        throw new Error(
+          "useRpc: no chain configured. Provide a chainId or add at least one chain to the TalakWeb3 config.",
+        );
+      }
+      return instance.context.rpc.request<T>(resolvedChainId, method, params);
+    },
   };
 }
 

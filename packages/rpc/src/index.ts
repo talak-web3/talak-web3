@@ -1,20 +1,16 @@
-import { TalakWeb3Error, RPC_ERROR_CODES, CONFIG_ERROR_CODES } from "@talak-web3/errors";
-import type { TalakWeb3Context, IRpc, RpcOptions, MiddlewareHandler } from "@talak-web3/types";
+import { TalakWeb3Error, RpcError, RPC_ERROR_CODES, CONFIG_ERROR_CODES } from "@talak-web3/errors";
+import type {
+  TalakWeb3Context,
+  IRpc,
+  RpcOptions,
+  MiddlewareHandler,
+  RpcEndpoint,
+} from "@talak-web3/types";
 
 import { DistributedCircuitBreaker, type CircuitBreakerConfig } from "./circuit-breaker.js";
 import { validateRpcRequest } from "./validation.js";
 
-export interface RpcEndpoint {
-  url: string;
-  providerId?: string;
-  weight?: number;
-  priority?: number;
-  health?: {
-    status: "up" | "down";
-    latency: number;
-    lastChecked: number;
-  };
-}
+export type { RpcEndpoint } from "@talak-web3/types";
 
 export const rpcValidationMiddleware: MiddlewareHandler = async (req, next) => {
   validateRpcRequest(req);
@@ -22,7 +18,7 @@ export const rpcValidationMiddleware: MiddlewareHandler = async (req, next) => {
 };
 
 export class UnifiedRpc implements IRpc {
-  private endpoints: RpcEndpoint[];
+  private endpointsByChain: Map<number, RpcEndpoint[]>;
   ctx: TalakWeb3Context;
   private healthInterval: ReturnType<typeof setInterval> | undefined;
   private requestIdCounter = 0;
@@ -33,13 +29,13 @@ export class UnifiedRpc implements IRpc {
 
   constructor(
     ctx: TalakWeb3Context,
-    endpoints: RpcEndpoint[] = [],
+    endpointsByChain: Map<number, RpcEndpoint[]> = new Map(),
     options?: { healthCheckIntervalMs?: number },
   ) {
     this.ctx = ctx;
-    this.endpoints = endpoints;
+    this.endpointsByChain = endpointsByChain;
 
-    if (this.endpoints.length > 0) {
+    if (this.endpointsByChain.size > 0) {
       const intervalMs = options?.healthCheckIntervalMs ?? 30_000;
       this.healthInterval = setInterval(() => {
         void this.checkAllHealth();
@@ -47,8 +43,6 @@ export class UnifiedRpc implements IRpc {
 
       this.healthInterval.unref?.();
     }
-
-    this.ctx.requestChain.use(rpcValidationMiddleware);
 
     this.signalCleanup = () => {
       this.stop();
@@ -92,7 +86,7 @@ export class UnifiedRpc implements IRpc {
   resumeHealthChecks(intervalMs = 30_000): void {
     if (this.healthInterval) return;
 
-    if (this.endpoints.length > 0) {
+    if (this.endpointsByChain.size > 0) {
       this.healthInterval = setInterval(() => {
         void this.checkAllHealth();
       }, intervalMs);
@@ -100,8 +94,16 @@ export class UnifiedRpc implements IRpc {
     }
   }
 
+  async getProvider(chainId: number): Promise<RpcEndpoint | undefined> {
+    return this.getBestEndpoint(chainId);
+  }
+
   async checkAllHealth(): Promise<void> {
-    await Promise.all(this.endpoints.map((e) => this.checkEndpointHealth(e)));
+    const allEndpoints: RpcEndpoint[] = [];
+    for (const endpoints of this.endpointsByChain.values()) {
+      allEndpoints.push(...endpoints);
+    }
+    await Promise.all(allEndpoints.map((e) => this.checkEndpointHealth(e)));
   }
 
   private async checkEndpointHealth(endpoint: RpcEndpoint): Promise<void> {
@@ -114,12 +116,13 @@ export class UnifiedRpc implements IRpc {
         try {
           if (this.circuitBreaker && endpoint.providerId) {
             await this.circuitBreaker.execute(
+              endpoint.chainId,
               endpoint.providerId,
-              () => this.doRequest(endpoint.url, method, [], 5_000),
+              () => this.doRequest(endpoint.chainId, endpoint.url, method, [], 5_000),
               5000,
             );
           } else {
-            await this.doRequest(endpoint.url, method, [], 5_000);
+            await this.doRequest(endpoint.chainId, endpoint.url, method, [], 5_000);
           }
           healthOk = true;
           break;
@@ -139,6 +142,7 @@ export class UnifiedRpc implements IRpc {
   }
 
   async request<T = unknown>(
+    chainId: number,
     method: string,
     params: unknown[] = [],
     options: RpcOptions = {},
@@ -152,9 +156,14 @@ export class UnifiedRpc implements IRpc {
     const requestId = (this.requestIdCounter =
       (this.requestIdCounter + 1) % Number.MAX_SAFE_INTEGER);
     const run = async () =>
-      this.fetchWithRetry<T>(method, params, retries, timeout, failover, requestId);
+      this.fetchWithRetry<T>(chainId, method, params, retries, timeout, failover, requestId);
 
     const req = { jsonrpc: "2.0", id: requestId, method, params };
+
+    // Validate every request directly instead of relying on middleware chain
+    // registration. This ensures validation runs regardless of how UnifiedRpc
+    // is instantiated (createTalakWeb3, MultiChainRouter, or standalone).
+    validateRpcRequest(req);
 
     const readOnlyMethods = new Set([
       "eth_call",
@@ -215,6 +224,7 @@ export class UnifiedRpc implements IRpc {
   }
 
   private async fetchWithRetry<T>(
+    chainId: number,
     method: string,
     params: unknown[],
     retries: number,
@@ -222,59 +232,108 @@ export class UnifiedRpc implements IRpc {
     failover: boolean,
     requestId?: number,
   ): Promise<T> {
+    const rpcStartTime = Date.now();
     let lastError: Error | undefined;
     let lastFailedUrl: string | undefined;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
-      const endpoint = await this.getBestEndpoint(failover ? undefined : lastFailedUrl);
+      const endpoint = await this.getBestEndpoint(chainId, failover ? undefined : lastFailedUrl);
       if (!endpoint) {
-        throw new TalakWeb3Error("No RPC endpoints available", {
+        throw new RpcError("No RPC endpoints available", {
           code: RPC_ERROR_CODES.NO_ENDPOINTS,
           status: 503,
+          chainId,
         });
       }
 
       try {
         if (attempt > 0) {
-          const delay = Math.min(100 * Math.pow(2, attempt), 2000);
+          const baseDelay = Math.min(100 * Math.pow(2, attempt), 2000);
+          const jitter = baseDelay * Math.random() * 0.3;
+          const delay = baseDelay + jitter;
           await new Promise((r) => setTimeout(r, delay));
         }
 
+        const emitRpcRequest = (result: T) => {
+          this.ctx.hooks.emit("rpc:request", {
+            chainId,
+            method,
+            duration: Date.now() - rpcStartTime,
+            endpoint: endpoint.url,
+          });
+          return result;
+        };
+
         if (this.circuitBreaker && endpoint.providerId) {
-          return await this.circuitBreaker.execute(
+          const result = await this.circuitBreaker.execute(
+            chainId,
             endpoint.providerId,
-            () => this.doRequest<T>(endpoint.url, method, params, timeout, requestId),
+            () => this.doRequest<T>(chainId, endpoint.url, method, params, timeout, requestId),
             timeout,
           );
+          return emitRpcRequest(result);
         }
 
-        return await this.doRequest<T>(endpoint.url, method, params, timeout, requestId);
+        const result = await this.doRequest<T>(
+          chainId,
+          endpoint.url,
+          method,
+          params,
+          timeout,
+          requestId,
+        );
+        return emitRpcRequest(result);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        if (lastError instanceof TalakWeb3Error && !this.isRetryableError(lastError)) {
+          throw lastError;
+        }
         lastFailedUrl = endpoint.url;
-        const canonical = this.endpoints.find((e) => e.url === endpoint.url);
+        const chainEndpoints = this.endpointsByChain.get(chainId) ?? [];
+        const canonical = chainEndpoints.find((e) => e.url === endpoint.url);
         if (canonical) {
           canonical.health = { status: "down", latency: Infinity, lastChecked: Date.now() };
         }
-        this.ctx.hooks.emit("rpc-error", { endpoint: endpoint.url, error: lastError, attempt });
+        const nextEndpoint = await this.getBestEndpoint(chainId, lastFailedUrl);
+        if (nextEndpoint && nextEndpoint.url !== lastFailedUrl) {
+          this.ctx.hooks.emit("rpc:failover", {
+            from: lastFailedUrl!,
+            to: nextEndpoint.url,
+            chainId,
+            method,
+          });
+        }
+        this.ctx.hooks.emit("rpc-error", {
+          chainId,
+          endpoint: endpoint.url,
+          error: lastError,
+          attempt,
+        });
         this.ctx.logger.warn(
           `RPC attempt ${attempt + 1}/${retries + 1} failed on ${endpoint.url}: ${lastError.message}`,
         );
       }
     }
 
-    throw new TalakWeb3Error(`RPC request failed after ${retries + 1} attempts`, {
-      code: RPC_ERROR_CODES.MAX_RETRIES,
+    throw new RpcError(`RPC request failed after ${retries + 1} attempts`, {
+      code: RPC_ERROR_CODES.ALL_PROVIDERS_FAILED,
       status: 502,
       cause: lastError,
+      chainId,
     });
   }
 
-  private async getBestEndpoint(excludeUrl?: string): Promise<RpcEndpoint | undefined> {
+  private async getBestEndpoint(
+    chainId: number,
+    excludeUrl?: string,
+  ): Promise<RpcEndpoint | undefined> {
+    const chainEndpoints = this.endpointsByChain.get(chainId) ?? [];
+    if (chainEndpoints.length === 0) return undefined;
+
     const endpoints = await Promise.all(
-      this.endpoints.map(async (e) => {
+      chainEndpoints.map(async (e) => {
         if (this.circuitBreaker && e.providerId) {
-          const isAvailable = await this.circuitBreaker.isAvailable(e.providerId);
+          const isAvailable = await this.circuitBreaker.isAvailable(chainId, e.providerId);
           if (!isAvailable) {
             return { ...e, circuitOpen: true };
           }
@@ -313,7 +372,7 @@ export class UnifiedRpc implements IRpc {
 
     if (recovering.length > 0) return recovering[0];
 
-    return [...this.endpoints].sort(
+    return [...chainEndpoints].sort(
       (a, b) => (a.health?.lastChecked ?? 0) - (b.health?.lastChecked ?? 0),
     )[0];
   }
@@ -339,6 +398,7 @@ export class UnifiedRpc implements IRpc {
   }
 
   private async doRequest<T>(
+    chainId: number,
     url: string,
     method: string,
     params: unknown[],
@@ -360,18 +420,64 @@ export class UnifiedRpc implements IRpc {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status} from ${url}`);
+        throw new RpcError(`HTTP ${response.status} from ${url}`, {
+          code: RPC_ERROR_CODES.PROVIDER_ERROR,
+          status: response.status,
+          provider: url,
+          chainId,
+        });
       }
 
       const data = (await response.json()) as {
         result?: T;
         error?: { message: string; code: number };
       };
-      if (data.error) throw new Error(data.error.message);
-      if (data.result === undefined) throw new Error("Missing result in JSON-RPC response");
+      if (data.error)
+        throw new RpcError(data.error.message, {
+          code: RPC_ERROR_CODES.PROVIDER_ERROR,
+          status: 502,
+          provider: url,
+          chainId,
+          data: { jsonRpcCode: data.error.code },
+        });
+      if (data.result === undefined)
+        throw new RpcError("Missing result in JSON-RPC response", {
+          code: RPC_ERROR_CODES.PROVIDER_ERROR,
+          status: 502,
+          provider: url,
+          chainId,
+        });
       return data.result;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new RpcError(`RPC request timed out after ${timeoutMs}ms on ${url}`, {
+          code: RPC_ERROR_CODES.TIMEOUT,
+          status: 504,
+          provider: url,
+          chainId,
+        });
+      }
+      throw error;
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  private isRetryableError(error: TalakWeb3Error): boolean {
+    const nonRetryableCodes = new Set([
+      RPC_ERROR_CODES.VALIDATION_ERROR,
+      RPC_ERROR_CODES.INVALID_PAYLOAD,
+      RPC_ERROR_CODES.DEPTH_EXCEEDED,
+      RPC_ERROR_CODES.PAYLOAD_TOO_LARGE,
+    ]);
+    if (
+      nonRetryableCodes.has(error.code as typeof nonRetryableCodes extends Set<infer T> ? T : never)
+    ) {
+      return false;
+    }
+    if (error.status >= 400 && error.status < 500 && error.status !== 429) {
+      return false;
+    }
+    return true;
   }
 }

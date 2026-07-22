@@ -26,6 +26,7 @@ function createMockInstance(overrides?: { rpc?: Partial<IRpc> }): TalakWeb3Insta
 
   const rpc: IRpc = {
     request: vi.fn().mockResolvedValue(null),
+    getProvider: vi.fn().mockResolvedValue(undefined),
     pauseHealthChecks: vi.fn(),
     resumeHealthChecks: vi.fn(),
     stop: vi.fn(),
@@ -209,7 +210,7 @@ describe("useRpc", () => {
       response = await result.current.request("eth_blockNumber");
     });
 
-    expect(mockRequest).toHaveBeenCalledWith("eth_blockNumber", []);
+    expect(mockRequest).toHaveBeenCalledWith(1, "eth_blockNumber", []);
     expect(response).toEqual({ blockNumber: 42 });
   });
 
@@ -224,7 +225,7 @@ describe("useRpc", () => {
       await result.current.request("eth_getBalance", ["0xABC", "latest"]);
     });
 
-    expect(mockRequest).toHaveBeenCalledWith("eth_getBalance", ["0xABC", "latest"]);
+    expect(mockRequest).toHaveBeenCalledWith(1, "eth_getBalance", ["0xABC", "latest"]);
   });
 });
 
