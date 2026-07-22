@@ -1,15 +1,11 @@
 export type ChainId = number;
 
-/** Ethereum hex address (0x-prefixed, 40 hex chars) */
 export type Hex = `0x${string}`;
 
-/** Alias for Hex representing an Ethereum address */
 export type Address = Hex;
 
-/** Unix timestamp in milliseconds */
 export type UnixMs = number;
 
-/** Structured logging interface used by the SDK */
 export interface Logger {
   info(message: string, ...args: unknown[]): void;
   warn(message: string, ...args: unknown[]): void;
@@ -17,6 +13,7 @@ export interface Logger {
   debug(message: string, ...args: unknown[]): void;
 }
 
+/** Store for SIWE nonce creation and single-use consumption. */
 export interface NonceStore {
   create(address: string, meta?: { ip?: string; ua?: string }): Promise<string>;
   consume(address: string, nonce: string): Promise<boolean>;
@@ -31,6 +28,7 @@ export interface RefreshSession {
   revoked: boolean;
 }
 
+/** Persistent store for refresh-token CRUD and rotation. */
 export interface RefreshStore {
   create(
     address: string,
@@ -42,6 +40,7 @@ export interface RefreshStore {
   lookup(token: string): Promise<RefreshSession | null>;
 }
 
+/** Store for tracking revoked JWTs (jti) and global invalidation timestamps. */
 export interface RevocationStore {
   revoke(jti: string, expiresAtMs: number): Promise<void>;
   isRevoked(jti: string): Promise<boolean>;
@@ -177,7 +176,7 @@ export interface IMiddlewareChain<T = unknown, R = unknown> {
   execute(req: T, ctx: TalakWeb3Context, finalHandler: () => Promise<R>): Promise<R>;
 }
 
-/** SDK configuration validated by Zod schema */
+/** Full SDK configuration passed to `createTalakWeb3()`. All fields are readonly. */
 export interface TalakWeb3BaseConfig {
   readonly chains: ReadonlyArray<{
     readonly id: number;
@@ -195,16 +194,18 @@ export interface TalakWeb3BaseConfig {
   readonly allowedOrigins?: readonly string[];
   readonly rpc: { readonly retries: number; readonly timeout: number };
   readonly plugins?: ReadonlyArray<TalakWeb3Plugin>;
-  readonly auth?: {
-    readonly domain?: string;
-    readonly uri?: string;
-    readonly version?: string;
-    readonly nonceStore?: NonceStore;
-    readonly refreshStore?: RefreshStore;
-    readonly revocationStore?: RevocationStore;
-    readonly accessTtlSeconds?: number;
-    readonly refreshTtlSeconds?: number;
-  };
+  readonly auth?:
+    | TalakWeb3Auth
+    | {
+        readonly domain?: string;
+        readonly uri?: string;
+        readonly version?: string;
+        readonly nonceStore?: NonceStore;
+        readonly refreshStore?: RefreshStore;
+        readonly revocationStore?: RevocationStore;
+        readonly accessTtlSeconds?: number;
+        readonly refreshTtlSeconds?: number;
+      };
   readonly ai?: {
     readonly apiKey?: string;
     readonly baseUrl?: string;
@@ -215,7 +216,7 @@ export interface TalakWeb3BaseConfig {
   readonly tableland?: { readonly privateKey?: string; readonly network?: string };
 }
 
-/** Plugin interface for extending TalakWeb3 functionality */
+/** Lifecycle hooks for extending TalakWeb3. `setup` is required; middleware hooks are optional. */
 export interface TalakWeb3Plugin {
   name: string;
   version: string;
@@ -240,7 +241,7 @@ export interface TalakWeb3Middleware {
   onResponse?: MiddlewareHandler;
 }
 
-/** Core context object passed to middlewares, plugins, and hooks */
+/** Request-scoped context passed to middleware, hooks, and plugins. */
 export interface TalakWeb3Context {
   readonly config: TalakWeb3BaseConfig;
   readonly hooks: IHookRegistry<TalakWeb3EventsMap>;
@@ -255,7 +256,7 @@ export interface TalakWeb3Context {
   adapters?: Record<string, unknown>;
 }
 
-/** Main SDK instance returned by createTalakWeb3 */
+/** Returned by `createTalakWeb3()`. Must call `init()` before handling requests. */
 export interface TalakWeb3Instance {
   readonly config: TalakWeb3BaseConfig;
   readonly hooks: IHookRegistry<TalakWeb3EventsMap>;

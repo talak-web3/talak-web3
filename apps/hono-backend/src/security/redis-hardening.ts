@@ -196,7 +196,7 @@ export class RedisSecurityAuditor {
         if (defaultUser && defaultUser.passwords && defaultUser.passwords.length === 0) {
           issues.push("CRITICAL: Default Redis user has no password");
         }
-      } catch (err) {
+      } catch {
         // Ignore ACL errors for older Redis versions
       }
 

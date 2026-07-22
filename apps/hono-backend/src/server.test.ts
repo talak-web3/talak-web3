@@ -65,8 +65,6 @@ vi.mock("redis", () => {
     }),
     eval: vi.fn().mockImplementation((script: string, ...callArgs: unknown[]) => {
       const s = String(script);
-      // Support both ioredis flat format: (script, numKeys, key1..keyN, arg1..argN)
-      // and redis v4 options format: (script, { keys: [...], arguments: [...] })
       const firstArg = callArgs[0] as Record<string, unknown> | undefined;
       const keys: string[] = Array.isArray(firstArg?.keys)
         ? (firstArg!.keys as string[])

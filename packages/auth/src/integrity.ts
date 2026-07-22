@@ -213,6 +213,7 @@ function resolvePackageEntryPoint(
   } catch (err) {
     throw new Error(
       `Failed to resolve ${packageName} entry point: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err },
     );
   }
 }

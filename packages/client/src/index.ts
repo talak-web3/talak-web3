@@ -94,12 +94,24 @@ export interface VerifyResponse {
   payload?: { address: string; chainId: number };
 }
 
+/** Chain descriptor returned by the API. */
+export interface ChainInfo {
+  id: number;
+  name: string;
+  rpcUrls: string[];
+  nativeCurrency: { name: string; symbol: string; decimals: number };
+  testnet: boolean;
+  blockExplorers?: { name: string; url: string }[];
+}
+
+/** Options for constructing a {@link TalakWeb3Client}. */
 export type TalakWeb3ClientOptions = {
   baseUrl: string;
   fetch?: typeof fetch;
   storage?: TokenStorage;
 };
 
+/** Browser-friendly HTTP client for the TalakWeb3 API. Handles SIWE login, token refresh, RPC calls, and chain queries. */
 export class TalakWeb3Client {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
@@ -165,7 +177,6 @@ export class TalakWeb3Client {
     return this.refreshPromise;
   }
 
-  /** Clear stored tokens (e.g. on unrecoverable auth failure). */
   private clearTokens(): void {
     this.storage.setAccessToken(null as unknown as string);
     this.storage.setRefreshToken(null as unknown as string);
@@ -185,6 +196,7 @@ export class TalakWeb3Client {
     });
   }
 
+  /** Authenticate with a SIWE message + signature. Stores the returned token pair in {@link storage}. */
   async loginWithSiwe(message: string, signature: string): Promise<LoginResponse> {
     const res = await this.fetchImpl(`${this.baseUrl}/auth/login`, {
       method: "POST",
@@ -244,19 +256,30 @@ export class TalakWeb3Client {
     }
   }
 
+  /** Verify the current access token is still valid. */
   async verifySession(): Promise<VerifyResponse> {
     return this.request<VerifyResponse>("/auth/verify");
   }
 
-  async getChain(id: number): Promise<unknown> {
-    return this.request(`/chains/${id}`);
+  /** Fetch a single chain's metadata by ID. */
+  async getChain(id: number): Promise<ChainInfo> {
+    return this.request<ChainInfo>(`/chains/${id}`);
   }
-  async listChains(): Promise<unknown> {
-    return this.request("/chains");
+  /** List all supported chains. */
+  async listChains(): Promise<ChainInfo[]> {
+    return this.request<ChainInfo[]>("/chains");
   }
 
-  async rpcCall(chainId: number, method: string, params: unknown[]): Promise<unknown> {
-    return this.request(`/rpc/${chainId}`, {
+  /**
+   * Make a JSON-RPC call. The generic `T` parameter lets you type the response.
+   *
+   * @example
+   * ```ts
+   * const balance = await client.rpcCall<string>("eth_getBalance", ["0x..."]);
+   * ```
+   */
+  async rpcCall<T = unknown>(chainId: number, method: string, params: unknown[]): Promise<T> {
+    return this.request<T>(`/rpc/${chainId}`, {
       method: "POST",
       body: JSON.stringify({ method, params, id: 1, jsonrpc: "2.0" }),
     });

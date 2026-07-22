@@ -17,6 +17,14 @@ export const rpcValidationMiddleware: MiddlewareHandler = async (req, next) => {
   return next();
 };
 
+function hasExecuteMethod<T>(
+  chain: unknown,
+): chain is { execute: (p: unknown, ctx: TalakWeb3Context, n: () => Promise<T>) => Promise<T> } {
+  if (!chain || typeof chain !== "object") return false;
+  const candidate = chain as Record<string, unknown>;
+  return typeof candidate["execute"] === "function";
+}
+
 export class UnifiedRpc implements IRpc {
   private endpointsByChain: Map<number, RpcEndpoint[]>;
   ctx: TalakWeb3Context;
@@ -54,10 +62,15 @@ export class UnifiedRpc implements IRpc {
   configureCircuitBreaker(config: Omit<CircuitBreakerConfig, "redis">): void {
     const redis = this.ctx.cache as unknown as CircuitBreakerConfig["redis"] | undefined;
     if (!redis) {
-      throw new TalakWeb3Error("Redis client required for distributed circuit breaker", {
-        code: CONFIG_ERROR_CODES.INVALID,
-        status: 500,
-      });
+      throw new TalakWeb3Error(
+        "DistributedCircuitBreaker requires a Redis-backed cache implementation. " +
+          "Use the default in-memory cache or provide a Redis client via the cache property. " +
+          "Configure Redis stores using @talak-web3/auth/stores or a custom RedisLike adapter.",
+        {
+          code: CONFIG_ERROR_CODES.INVALID,
+          status: 500,
+        },
+      );
     }
 
     this.circuitBreaker = new DistributedCircuitBreaker({
@@ -127,7 +140,7 @@ export class UnifiedRpc implements IRpc {
           healthOk = true;
           break;
         } catch {
-          // Try the next health check method
+          // non-fatal: try next provider
         }
       }
 
@@ -160,9 +173,6 @@ export class UnifiedRpc implements IRpc {
 
     const req = { jsonrpc: "2.0", id: requestId, method, params };
 
-    // Validate every request directly instead of relying on middleware chain
-    // registration. This ensures validation runs regardless of how UnifiedRpc
-    // is instantiated (createTalakWeb3, MultiChainRouter, or standalone).
     validateRpcRequest(req);
 
     const readOnlyMethods = new Set([
@@ -212,13 +222,8 @@ export class UnifiedRpc implements IRpc {
     payload: unknown,
     fallback: () => Promise<T>,
   ): Promise<T> {
-    const executor = (
-      chain as
-        | { execute?: (p: unknown, ctx: TalakWeb3Context, n: () => Promise<T>) => Promise<T> }
-        | undefined
-    )?.execute;
-    if (typeof executor !== "function") return fallback();
-    const result = await executor.call(chain, payload, this.ctx, fallback);
+    if (!hasExecuteMethod<T>(chain)) return fallback();
+    const result = await chain.execute(payload, this.ctx, fallback);
     if (result === undefined) return fallback();
     return result;
   }
@@ -377,11 +382,6 @@ export class UnifiedRpc implements IRpc {
     )[0];
   }
 
-  /**
-   * Returns a method-appropriate cache TTL in milliseconds.
-   * eth_chainId changes rarely; eth_blockNumber changes every ~12s;
-   * other read methods use a moderate 12s default.
-   */
   private getCacheTtl(method: string): number {
     switch (method) {
       case "eth_chainId":

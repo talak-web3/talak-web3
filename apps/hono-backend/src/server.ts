@@ -244,15 +244,35 @@ const configuredChains = (process.env["SUPPORTED_CHAINS"] ?? "1")
   .map((id) => parseInt(id.trim(), 10))
   .filter((id) => !isNaN(id));
 
+const chainCurrencyMap: Record<number, { symbol: string; name: string; decimals: number }> = {
+  1: { symbol: "ETH", name: "Ether", decimals: 18 },
+  137: { symbol: "POL", name: "Polygon", decimals: 18 },
+  10: { symbol: "ETH", name: "Ether", decimals: 18 },
+  42161: { symbol: "ETH", name: "Ether", decimals: 18 },
+  56: { symbol: "BNB", name: "BNB", decimals: 18 },
+  43114: { symbol: "AVAX", name: "Avalanche", decimals: 18 },
+};
+
 const talak = talakWeb3({
   auth,
-  chains: configuredChains.map((id) => ({
-    id,
-    rpcUrls: (process.env[`RPC_URL_${id}`] ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
-  })),
+  debug: process.env["NODE_ENV"] !== "production",
+  rpc: {
+    retries: parseInt(process.env["RPC_RETRIES"] ?? "3"),
+    timeout: parseInt(process.env["RPC_TIMEOUT"] ?? "10000"),
+  },
+  chains: configuredChains.map((id) => {
+    const currency = chainCurrencyMap[id] ?? { symbol: "ETH", name: "Ether", decimals: 18 };
+    return {
+      id,
+      name: `Chain ${id}`,
+      rpcUrls: (process.env[`RPC_URL_${id}`] ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      nativeCurrency: { name: currency.name, symbol: currency.symbol, decimals: currency.decimals },
+      testnet: id !== 1 && id !== 137 && id !== 10 && id !== 42161,
+    };
+  }),
 });
 
 const allowedOrigins = (process.env["ALLOWED_ORIGINS"] ?? "")

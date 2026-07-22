@@ -10,19 +10,10 @@ import {
 type KeyLike = CryptoKey | KeyObject;
 import { TalakWeb3Error, AUTH_ERROR_CODES } from "@talak-web3/errors";
 import type { JwksResponse } from "@talak-web3/types";
-import type { RedisClientType } from "redis"; // @ts-ignore: redis types optional
+import type { RedisClientType } from "redis";
 
 import { JwksManager, type KeyRotationConfig } from "./jwks.js";
 
-/**
- * Signing/verification seam for JWT operations.
- * Currently only `environment` provider is implemented (reads keys from env vars).
- *
- * To add a new provider:
- * 1. Implement this interface
- * 2. Add the type to `KeyProviderType`
- * 3. Add the case in `createKeyProvider()`
- */
 export interface KeyProvider {
   getCurrentSigningKeyInfo(): Promise<{ kid: string; publicKey: KeyLike }>;
   sign(data: Uint8Array): Promise<Uint8Array>;

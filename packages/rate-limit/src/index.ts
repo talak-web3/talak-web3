@@ -12,7 +12,6 @@ export interface RateLimiter {
 }
 
 export function extractSubnet(ip: string): string {
-  // Handle IPv4-mapped IPv6 (::ffff:127.0.0.1 → 127.0.0.1)
   const ipv4Mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
   if (ipv4Mapped?.[1]) {
     ip = ipv4Mapped[1];

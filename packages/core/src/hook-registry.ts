@@ -2,9 +2,6 @@ import type { IHookRegistry, Logger } from "@talak-web3/types";
 
 type AnyHandler = (data: unknown) => void;
 
-/**
- * A type-safe event registry.
- */
 export class HookRegistry<Events extends Record<string, unknown>> implements IHookRegistry<Events> {
   private readonly map = new Map<keyof Events, Set<AnyHandler>>();
 
@@ -38,24 +35,6 @@ export class HookRegistry<Events extends Record<string, unknown>> implements IHo
         }
       }
     }
-  }
-
-  async emitAsync<K extends keyof Events>(event: K, data: Events[K]): Promise<void> {
-    const handlers = this.map.get(event);
-    if (!handlers || handlers.size === 0) return;
-    const promises: Promise<void>[] = [];
-    for (const h of handlers) {
-      promises.push(
-        Promise.resolve()
-          .then(() => (h as (data: unknown) => void)(data as unknown))
-          .catch((err) => {
-            if (this.logger) {
-              this.logger.error(`[HookRegistry] Async handler error:`, err);
-            }
-          }),
-      );
-    }
-    await Promise.allSettled(promises);
   }
 
   clear(): void {

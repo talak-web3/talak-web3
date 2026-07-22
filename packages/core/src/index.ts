@@ -7,7 +7,9 @@ import {
   InMemoryRefreshStore,
   InMemoryRevocationStore,
 } from "@talak-web3/auth";
+import type { TalakWeb3AuthOptions } from "@talak-web3/auth";
 import { validateConfig } from "@talak-web3/config";
+import type { TalakWeb3Config } from "@talak-web3/config";
 import { TalakWeb3Error, RPC_ERROR_CODES, PLUGIN_ERROR_CODES } from "@talak-web3/errors";
 import { UnifiedRpc } from "@talak-web3/rpc";
 import type { RpcEndpoint } from "@talak-web3/rpc";
@@ -23,12 +25,15 @@ import type {
 } from "@talak-web3/types";
 
 import { HookRegistry } from "./hook-registry.js";
+import { resolvePluginOrder } from "./plugin-pipeline.js";
 
 export {
   MiddlewareChain,
   errorHandlingMiddleware,
   requestLoggingMiddleware,
   requestIdMiddleware,
+  setRequestId as setContextRequestId,
+  getRequestId as getContextRequestId,
 } from "./middleware.js";
 import { createAuthHandler } from "./auth-handler.js";
 import { MiddlewareChain, requestIdMiddleware, requestLoggingMiddleware } from "./middleware.js";
@@ -50,6 +55,8 @@ export {
   resetShouldSkipSessionRefresh,
 } from "./should-session-refresh.js";
 export { runWithRequestState, runWithRequestStateAsync } from "./request-state.js";
+
+let shutdownRegistered = false;
 
 class ConsoleLogger implements Logger {
   private readonly structured: boolean;
@@ -109,10 +116,6 @@ class ConsoleLogger implements Logger {
   }
 }
 
-/**
- * In-memory TTL-based cache with O(1) lookup and eviction.
- * Uses a Set for O(1) insertion-order tracking.
- */
 class TtlCache implements RpcCache {
   private readonly store = new Map<string, { value: unknown; expiresAt: number }>();
   private readonly maxSize: number;
@@ -168,54 +171,38 @@ class TtlCache implements RpcCache {
 export type { TalakWeb3Instance, MiddlewareHandler, IMiddlewareChain } from "@talak-web3/types";
 
 function extractAuthFromInput(input: unknown): TalakWeb3Auth | undefined {
-  if (!input || typeof input !== "object") return undefined;
+  if (input === null || typeof input !== "object") return undefined;
+  if (!("auth" in input)) return undefined;
   const auth = (input as Record<string, unknown>)["auth"];
   return auth instanceof TalakWeb3Auth ? auth : undefined;
 }
 
-function extractAuthStoresFromInput(input: unknown): {
-  nonceStore?: NonceStore;
-  refreshStore?: RefreshStore;
-  revocationStore?: RevocationStore;
-  accessTtlSeconds?: number;
-  refreshTtlSeconds?: number;
-  expectedDomain?: string;
-  keyProviderType?: import("@talak-web3/auth").KeyProviderType;
-  keyProviderOptions?: unknown;
-  keyRotationConfig?: unknown;
-  timeSource?: import("@talak-web3/auth").AuthoritativeTime;
-  contextEnforcementDate?: Date;
-} {
-  if (!input || typeof input !== "object") return {};
+function extractAuthStoresFromInput(input: unknown): Partial<TalakWeb3AuthOptions> {
+  if (input === null || typeof input !== "object") return {};
+  if (!("auth" in input)) return {};
   const auth = (input as Record<string, unknown>)["auth"];
-  if (!auth || typeof auth !== "object" || auth instanceof TalakWeb3Auth) return {};
+  if (auth === null || typeof auth !== "object" || auth instanceof TalakWeb3Auth) return {};
 
-  const authConfig = auth as Record<string, unknown>;
-  const options: ReturnType<typeof extractAuthStoresFromInput> = {};
+  const options: Partial<TalakWeb3AuthOptions> = {};
 
-  if (authConfig["nonceStore"]) options.nonceStore = authConfig["nonceStore"] as NonceStore;
-  if (authConfig["refreshStore"]) options.refreshStore = authConfig["refreshStore"] as RefreshStore;
-  if (authConfig["revocationStore"]) {
-    options.revocationStore = authConfig["revocationStore"] as RevocationStore;
+  if ("nonceStore" in auth) options.nonceStore = auth["nonceStore"] as NonceStore;
+  if ("refreshStore" in auth) options.refreshStore = auth["refreshStore"] as RefreshStore;
+  if ("revocationStore" in auth) {
+    options.revocationStore = auth["revocationStore"] as RevocationStore;
   }
-  if (authConfig["accessTtlSeconds"] !== undefined) {
-    options.accessTtlSeconds = authConfig["accessTtlSeconds"] as number;
+  if ("accessTtlSeconds" in auth) {
+    options.accessTtlSeconds = auth["accessTtlSeconds"] as number;
   }
-  if (authConfig["refreshTtlSeconds"] !== undefined) {
-    options.refreshTtlSeconds = authConfig["refreshTtlSeconds"] as number;
+  if ("refreshTtlSeconds" in auth) {
+    options.refreshTtlSeconds = auth["refreshTtlSeconds"] as number;
   }
-  if (authConfig.domain) options.expectedDomain = authConfig.domain as string;
+  if ("domain" in auth && typeof auth["domain"] === "string") {
+    options.expectedDomain = auth["domain"];
+  }
 
   return options;
 }
 
-/**
- * Placeholder RPC implementation used during bootstrap.
- * Every method throws `TalakWeb3Error("RPC not initialized")` to fail
- * fast if any code tries to use RPC before `UnifiedRpc` is wired up.
- *
- * Replaced by the real `UnifiedRpc` instance before `createTalakWeb3` returns.
- */
 class PendingRpc implements IRpc {
   async request<T = unknown>(
     _chainId: number,
@@ -251,32 +238,39 @@ class PendingRpc implements IRpc {
   }
 
   stop(): void {
-    // No-op during bootstrap. Real cleanup happens in UnifiedRpc.stop().
+    // noop
   }
 }
 
 /**
- * Creates a new TalakWeb3 SDK instance.
+ * Create a new TalakWeb3 SDK instance.
  *
- * @param input - Configuration object or partial config
- * @returns TalakWeb3Instance with handler, init, destroy, shutdown, and healthCheck methods
+ * Omitting auth stores (`nonceStore`, `refreshStore`, `revocationStore`)
+ * auto-creates in-memory stores suitable for development. Production setups
+ * should provide persistent stores (e.g. Redis-backed).
+ *
+ * The returned instance must be initialized via `await app.init()` before
+ * it can handle requests.
  *
  * @example
- * ```typescript
+ * ```ts
  * const app = createTalakWeb3({
- *   chains: [{ id: 1, name: "Ethereum", rpcUrls: ["https://..."], nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, testnet: false }],
- *   auth: { domain: "app.example.com" }
+ *   chains: [{ id: 1, name: "Ethereum", rpcUrls: ["https://cloudflare-eth.com"],
+ *              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+ *              testnet: false }],
+ *   auth: { domain: "app.example.com" },
  * });
  * await app.init();
- * // If no auth stores provided, InMemory stores are auto-created for dev mode
  * ```
  */
-export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
+export function createTalakWeb3(input: TalakWeb3BaseConfig): TalakWeb3Instance {
   const normalizedInput = normalizeConfigInput(input);
   const injectedAuth = extractAuthFromInput(normalizedInput);
   const injectedAuthStores = extractAuthStoresFromInput(normalizedInput);
   SecurityInvariant.checkSecrets(normalizedInput);
-  const config = validateConfig(normalizedInput) as TalakWeb3BaseConfig;
+
+  const validatedConfig: TalakWeb3Config = validateConfig(normalizedInput);
+  const config = validatedConfig as TalakWeb3BaseConfig;
   const logger = new ConsoleLogger();
   const hooks = new HookRegistry<TalakWeb3EventsMap>(logger);
   const plugins = new Map<string, TalakWeb3Plugin>();
@@ -299,25 +293,11 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
     if (!authOptions.refreshStore) authOptions.refreshStore = new InMemoryRefreshStore();
     if (!authOptions.revocationStore) authOptions.revocationStore = new InMemoryRevocationStore();
 
-    if (!authOptions.expectedDomain && authConfig.domain) {
+    if (!authOptions.expectedDomain && "domain" in authConfig && authConfig.domain) {
       authOptions.expectedDomain = authConfig.domain;
     }
 
-    auth = new TalakWeb3Auth(
-      authOptions as {
-        nonceStore: NonceStore;
-        refreshStore: RefreshStore;
-        revocationStore: RevocationStore;
-        accessTtlSeconds?: number;
-        refreshTtlSeconds?: number;
-        expectedDomain?: string;
-        keyProviderType?: import("@talak-web3/auth").KeyProviderType;
-        keyProviderOptions?: unknown;
-        keyRotationConfig?: unknown;
-        timeSource?: import("@talak-web3/auth").AuthoritativeTime;
-        contextEnforcementDate?: Date;
-      },
-    );
+    auth = new TalakWeb3Auth(authOptions as TalakWeb3AuthOptions);
   }
 
   const endpointsByChain = new Map<number, RpcEndpoint[]>();
@@ -381,13 +361,20 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
     async init() {
       await auth.coldStart();
 
-      for (const plugin of config.plugins ?? []) {
+      const rawPlugins = config.plugins ?? [];
+
+      for (const plugin of rawPlugins) {
         if (!isTalakWeb3Plugin(plugin)) {
           throw new TalakWeb3Error("Invalid plugin config: expected TalakWeb3Plugin object", {
             code: PLUGIN_ERROR_CODES.INVALID,
             status: 400,
           });
         }
+      }
+
+      const ordered = resolvePluginOrder(rawPlugins);
+
+      for (const plugin of ordered) {
         if (plugins.has(plugin.name)) {
           throw new TalakWeb3Error(`Plugin "${plugin.name}" already registered`, {
             code: PLUGIN_ERROR_CODES.DUPLICATE,
@@ -438,8 +425,8 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
     },
   };
 
-  if (!(globalThis as Record<string, unknown>)["__talak_shutdown_registered"]) {
-    (globalThis as Record<string, unknown>)["__talak_shutdown_registered"] = true;
+  if (!shutdownRegistered) {
+    shutdownRegistered = true;
     const gracefulShutdown = async () => {
       await instance.destroy();
       const { ConnectionManager } = await import("./connections.js");
@@ -453,52 +440,58 @@ export function createTalakWeb3(input: unknown = {}): TalakWeb3Instance {
   return instance;
 }
 
-/**
- * Alias for {@link createTalakWeb3}.
- */
-export function talakWeb3(input: unknown = {}): TalakWeb3Instance {
+/** Alias for {@link createTalakWeb3}. */
+export function talakWeb3(input: TalakWeb3BaseConfig): TalakWeb3Instance {
   return createTalakWeb3(input);
 }
 
 function isTalakWeb3Plugin(input: unknown): input is TalakWeb3Plugin {
-  if (!input || typeof input !== "object") return false;
-  const rec = input as Record<string, unknown>;
   return (
-    typeof rec["name"] === "string" &&
-    typeof rec["version"] === "string" &&
-    typeof rec["setup"] === "function"
+    typeof input === "object" &&
+    input !== null &&
+    typeof (input as Record<string, unknown>)["name"] === "string" &&
+    typeof (input as Record<string, unknown>)["version"] === "string" &&
+    typeof (input as Record<string, unknown>)["setup"] === "function"
   );
 }
 
 function normalizeConfigInput(input: unknown): unknown {
-  if (!input || typeof input !== "object") return input;
-  const rec = input as Record<string, unknown>;
-  const rawChains = Array.isArray(rec["chains"]) ? rec["chains"] : undefined;
-  if (!rawChains) return input;
+  if (input === null || typeof input !== "object") return {};
+  const rawChains = Array.isArray((input as Record<string, unknown>)["chains"])
+    ? (input as Record<string, unknown>)["chains"]
+    : undefined;
 
-  const chainCurrencyMap: Record<number, { symbol: string; name: string }> = {
-    1: { symbol: "ETH", name: "Ether" },
-    137: { symbol: "POL", name: "Polygon" },
-    10: { symbol: "ETH", name: "Ether" },
-    42161: { symbol: "ETH", name: "Ether" },
-    56: { symbol: "BNB", name: "BNB" },
-    43114: { symbol: "AVAX", name: "Avalanche" },
-  };
+  const result: Record<string, unknown> = { ...(input as Record<string, unknown>) };
 
-  const chains = rawChains.map((chain, i) => {
-    if (!chain || typeof chain !== "object") return chain;
-    const c = chain as Record<string, unknown>;
-    const id = typeof c["id"] === "number" ? c["id"] : i + 1;
-    const currency = chainCurrencyMap[id] ?? { symbol: "ETH", name: "Ether" };
-    return {
-      ...c,
-      name: typeof c["name"] === "string" && c["name"].length > 0 ? c["name"] : `Chain ${id}`,
-      nativeCurrency:
-        typeof c["nativeCurrency"] === "object" && c["nativeCurrency"] !== null
-          ? c["nativeCurrency"]
-          : { name: currency.name, symbol: currency.symbol, decimals: 18 },
+  if (rawChains) {
+    const chainCurrencyMap: Record<number, { symbol: string; name: string }> = {
+      1: { symbol: "ETH", name: "Ether" },
+      137: { symbol: "POL", name: "Polygon" },
+      10: { symbol: "ETH", name: "Ether" },
+      42161: { symbol: "ETH", name: "Ether" },
+      56: { symbol: "BNB", name: "BNB" },
+      43114: { symbol: "AVAX", name: "Avalanche" },
     };
-  });
 
-  return { ...rec, chains };
+    result["chains"] = (rawChains as unknown[]).map((chain: unknown, i: number) => {
+      if (typeof chain !== "object" || chain === null) return chain;
+      const chainObj = chain as Record<string, unknown>;
+      const id = typeof chainObj["id"] === "number" ? chainObj["id"] : i + 1;
+      const currency = chainCurrencyMap[id] ?? { symbol: "ETH", name: "Ether" };
+      const nc = chainObj["nativeCurrency"];
+      return {
+        ...chainObj,
+        name:
+          typeof chainObj["name"] === "string" && (chainObj["name"] as string).length > 0
+            ? chainObj["name"]
+            : `Chain ${id}`,
+        nativeCurrency:
+          typeof nc === "object" && nc !== null
+            ? nc
+            : { name: currency.name, symbol: currency.symbol, decimals: 18 },
+      };
+    });
+  }
+
+  return result;
 }

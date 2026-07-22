@@ -171,10 +171,11 @@ function parseSiweMessage(message: string): SiweFields {
   if (uriMatch?.[1]) {
     try {
       new URL(uriMatch[1]);
-    } catch {
+    } catch (cause) {
       throw new TalakWeb3Error("Invalid SIWE URI format", {
         code: AUTH_ERROR_CODES.SIWE_PARSE_ERROR,
         status: 400,
+        cause,
       });
     }
   }
@@ -216,7 +217,7 @@ function parseSiweMessage(message: string): SiweFields {
     });
   }
 
-  // EIP-4361: version must be "1"
+  // https://eips.ethereum.org/EIPS/eip-4361#message-fields
   const version = versionMatch?.[1] ?? "1";
   if (version !== "1") {
     throw new TalakWeb3Error("Unsupported SIWE version", {
@@ -226,7 +227,7 @@ function parseSiweMessage(message: string): SiweFields {
     });
   }
 
-  // EIP-4361: nonce must be non-empty alphanumeric
+  // https://eips.ethereum.org/EIPS/eip-4361#abnf-message-format
   const nonce = nonceMatch[1];
   if (!/^[A-Za-z0-9]+$/.test(nonce)) {
     throw new TalakWeb3Error("SIWE nonce must be alphanumeric", {
@@ -235,7 +236,7 @@ function parseSiweMessage(message: string): SiweFields {
     });
   }
 
-  // EIP-4361: URI must start with "/" or be a valid URI
+  // https://eips.ethereum.org/EIPS/eip-4361#message-fields
   const uri = uriMatch?.[1] ?? "";
   if (uri && !uri.startsWith("/") && !uri.startsWith("https://") && !uri.startsWith("http://")) {
     throw new TalakWeb3Error("Invalid SIWE URI format", {
@@ -472,6 +473,67 @@ export class InMemoryRevocationStore implements RevocationStore {
   }
 }
 
+interface JwtPayload {
+  sub: string;
+  address: string;
+  chainId: number;
+  iat: number;
+  exp: number;
+  jti: string;
+  contextHash?: string | undefined;
+  ipSubnet?: string | undefined;
+  iss?: string | undefined;
+  aud?: string | undefined;
+}
+
+function parseJwtPayload(raw: unknown): JwtPayload | undefined {
+  if (typeof raw !== "object" || raw === null) return undefined;
+  const r = raw as Record<string, unknown>;
+  if (
+    typeof r["sub"] !== "string" ||
+    typeof r["address"] !== "string" ||
+    typeof r["chainId"] !== "number" ||
+    typeof r["iat"] !== "number" ||
+    typeof r["exp"] !== "number" ||
+    typeof r["jti"] !== "string"
+  ) {
+    return undefined;
+  }
+  return {
+    sub: r["sub"],
+    address: r["address"],
+    chainId: r["chainId"],
+    iat: r["iat"],
+    exp: r["exp"],
+    jti: r["jti"],
+    contextHash: typeof r["contextHash"] === "string" ? r["contextHash"] : undefined,
+    ipSubnet: typeof r["ipSubnet"] === "string" ? r["ipSubnet"] : undefined,
+    iss: typeof r["iss"] === "string" ? r["iss"] : undefined,
+    aud: typeof r["aud"] === "string" ? r["aud"] : undefined,
+  };
+}
+
+/** Options for constructing a {@link TalakWeb3Auth}. Only `nonceStore`, `refreshStore`, and `revocationStore` are required. */
+export interface TalakWeb3AuthOptions {
+  nonceStore: NonceStore;
+  refreshStore: RefreshStore;
+  revocationStore: RevocationStore;
+  accessTtlSeconds?: number;
+  refreshTtlSeconds?: number;
+  expectedDomain?: string;
+  allowedChains?: number[];
+  keyProviderType?: KeyProviderType;
+  keyProviderOptions?: unknown;
+  keyRotationConfig?: unknown;
+  timeSource?: AuthoritativeTime;
+  contextEnforcementDate?: Date;
+  verifySignature?: SignatureVerifier;
+}
+
+/**
+ * Authentication engine: SIWE login, JWT signing/verification, session management, and revocation.
+ * All three stores are mandatory — see {@link TalakWeb3AuthOptions}.
+ */
 export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   private readonly jwtManager: JwtManager;
   private readonly nonceStore: NonceStore;
@@ -485,21 +547,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   private readonly allowedChains: number[] | undefined;
   private readonly verifySignature: SignatureVerifier;
 
-  constructor(opts: {
-    nonceStore: NonceStore;
-    refreshStore: RefreshStore;
-    revocationStore: RevocationStore;
-    accessTtlSeconds?: number;
-    refreshTtlSeconds?: number;
-    expectedDomain?: string;
-    allowedChains?: number[];
-    keyProviderType?: KeyProviderType;
-    keyProviderOptions?: unknown;
-    keyRotationConfig?: unknown;
-    timeSource?: AuthoritativeTime;
-    contextEnforcementDate?: Date;
-    verifySignature?: SignatureVerifier;
-  }) {
+  constructor(opts: TalakWeb3AuthOptions) {
     if (!opts || !opts.nonceStore || !opts.refreshStore || !opts.revocationStore) {
       throw new TalakWeb3Error(
         "CRITICAL: Mandatory auth stores (nonce, refresh, revocation) are missing from the configuration. This is a fatal error in production.",
@@ -530,25 +578,24 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
   }
 
   async coldStart(): Promise<void> {
-    /* no-op: signing keys are provisioned lazily on first use */
+    // noop: signing keys provisioned lazily on first use
   }
 
   async validateJwt(token: string): Promise<boolean> {
     try {
-      const payload = await this.jwtManager.verify(token, {
+      const raw = await this.jwtManager.verify(token, {
         issuer: "talak:auth",
         audience: "talak:web3",
         requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
       });
 
-      const iat = (payload as Record<string, unknown>)["iat"];
-      if (typeof iat === "number") {
-        const globalInvalidationAt = await this.revocations.getGlobalInvalidationTime();
-        if (iat < globalInvalidationAt) return false;
-      }
+      const payload = parseJwtPayload(raw);
+      if (!payload) return false;
 
-      const jti = (payload as Record<string, unknown>)["jti"];
-      if (typeof jti === "string" && (await this.revocations.isRevoked(jti))) return false;
+      const globalInvalidationAt = await this.revocations.getGlobalInvalidationTime();
+      if (payload.iat < globalInvalidationAt) return false;
+
+      if (await this.revocations.isRevoked(payload.jti)) return false;
       return true;
     } catch {
       return false;
@@ -710,9 +757,9 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     token: string,
     context?: { ip: string; userAgent: string },
   ): Promise<SessionPayload> {
-    let payload: unknown;
+    let raw: unknown;
     try {
-      payload = await this.jwtManager.verify(token, {
+      raw = await this.jwtManager.verify(token, {
         issuer: "talak:auth",
         audience: "talak:web3",
         requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
@@ -725,49 +772,43 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
       });
     }
 
-    const jti = (payload as Record<string, unknown>)["jti"];
-    if (typeof jti === "string" && (await this.revocations.isRevoked(jti))) {
-      throw new TalakWeb3Error("Session has been revoked", {
-        code: AUTH_ERROR_CODES.TOKEN_REVOKED,
-        status: 401,
-      });
-    }
-
-    const sub = (payload as Record<string, unknown>)["sub"];
-    if (typeof sub !== "string" || sub.length === 0) {
-      throw new TalakWeb3Error("Invalid session token subject", {
-        code: AUTH_ERROR_CODES.TOKEN_INVALID_SUB,
-        status: 401,
-      });
-    }
-
-    const address = (payload as Record<string, unknown>)["address"];
-    const chainId = (payload as Record<string, unknown>)["chainId"];
-    if (typeof address !== "string" || typeof chainId !== "number") {
+    const payload = parseJwtPayload(raw);
+    if (!payload) {
       throw new TalakWeb3Error("Malformed session token payload", {
         code: AUTH_ERROR_CODES.TOKEN_MALFORMED,
         status: 401,
       });
     }
 
-    if (context) {
-      const tokenContextHash = (payload as Record<string, unknown>)["contextHash"];
-      const tokenIpSubnet = (payload as Record<string, unknown>)["ipSubnet"];
+    if (await this.revocations.isRevoked(payload.jti)) {
+      throw new TalakWeb3Error("Session has been revoked", {
+        code: AUTH_ERROR_CODES.TOKEN_REVOKED,
+        status: 401,
+      });
+    }
 
-      if (typeof tokenContextHash === "string" && tokenContextHash.length > 0) {
+    if (payload.sub.length === 0) {
+      throw new TalakWeb3Error("Invalid session token subject", {
+        code: AUTH_ERROR_CODES.TOKEN_INVALID_SUB,
+        status: 401,
+      });
+    }
+
+    if (context) {
+      if (typeof payload.contextHash === "string" && payload.contextHash.length > 0) {
         const currentContextHash = createHash("sha256")
           .update(`${context.ip}|${context.userAgent}`)
           .digest("hex");
 
-        if (currentContextHash === tokenContextHash) {
-          // Context matches, proceed
-        } else if (tokenIpSubnet && typeof tokenIpSubnet === "string") {
+        if (currentContextHash === payload.contextHash) {
+          // context matches, allow
+        } else if (payload.ipSubnet && typeof payload.ipSubnet === "string") {
           const ipParts = context.ip.split(".");
           if (ipParts.length === 4 && ipParts[3] !== undefined) {
             const lastOctet = parseInt(ipParts[3]);
             const subnetLastOctet = lastOctet & 0xfc;
             const currentSubnet = `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}.${subnetLastOctet}/30`;
-            if (currentSubnet === tokenIpSubnet) {
+            if (currentSubnet === payload.ipSubnet) {
               console.debug("[AUTH] Token accepted with NAT tolerance", { subnet: currentSubnet });
             } else {
               throw new TalakWeb3Error("Token context mismatch - possible token theft", {
@@ -799,24 +840,23 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
       }
     }
 
-    return { address, chainId };
+    return { address: payload.address, chainId: payload.chainId };
   }
 
   async revokeSession(accessToken: string, refreshToken?: string): Promise<void> {
     try {
-      const payload = await this.jwtManager.verify(accessToken, {
+      const raw = await this.jwtManager.verify(accessToken, {
         issuer: "talak:auth",
         audience: "talak:web3",
         requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
       });
 
-      const jti = (payload as Record<string, unknown>)["jti"];
-      const exp = (payload as Record<string, unknown>)["exp"];
-      if (typeof jti === "string" && typeof exp === "number") {
-        await this.revocations.revoke(jti, exp * 1000);
+      const payload = parseJwtPayload(raw);
+      if (payload) {
+        await this.revocations.revoke(payload.jti, payload.exp * 1000);
       }
     } catch {
-      /* access-token revocation is best-effort; the refresh token is still revoked below */
+      // best-effort; refresh token still revoked below
     }
 
     if (refreshToken) {
@@ -848,12 +888,15 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     token: string,
   ): Promise<{ valid: boolean; payload?: Record<string, unknown> }> {
     try {
-      const payload = await this.jwtManager.verify(token, {
+      const raw = await this.jwtManager.verify(token, {
         issuer: "talak:auth",
         audience: "talak:web3",
         requiredClaims: ["iat", "exp", "sub", "jti", "iss", "aud"],
       });
-      return { valid: true, payload: payload as unknown as Record<string, unknown> };
+
+      const parsed = parseJwtPayload(raw);
+      if (!parsed) return { valid: false };
+      return { valid: true, payload: parsed as unknown as Record<string, unknown> };
     } catch {
       return { valid: false };
     }

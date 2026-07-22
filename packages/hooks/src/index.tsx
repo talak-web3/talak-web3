@@ -28,7 +28,6 @@ export function useChain() {
 
   useEffect(() => {
     return instance.context.hooks.on("chain-changed", setChainId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instance, setChainId]);
 
   return {
@@ -44,7 +43,6 @@ export function useAccount() {
 
   useEffect(() => {
     return instance.context.hooks.on("account-changed", setAddress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instance, setAddress]);
 
   return {

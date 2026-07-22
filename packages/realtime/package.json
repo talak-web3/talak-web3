@@ -32,7 +32,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint:package": "publint run --strict --pack false",
     "lint:types": "attw --profile esm-only --pack ."

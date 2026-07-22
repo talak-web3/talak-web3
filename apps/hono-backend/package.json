@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc --noEmit",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
     "start": "node dist/server.js",
     "test": "vitest run --passWithNoTests",
     "clean": "rm -rf dist"

@@ -89,7 +89,7 @@ export class RedisNonceStore implements NonceStore {
           }
         } while (cursor !== "0");
       } catch {
-        // Cleanup is best-effort; failures are non-fatal
+        // non-fatal cleanup
       }
     }, 300_000);
     if (this.cleanupInterval.unref) {

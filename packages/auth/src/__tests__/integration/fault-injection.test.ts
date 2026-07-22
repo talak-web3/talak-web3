@@ -163,7 +163,6 @@ describe("FAULT INJECTION: Time Authority (I6)", () => {
     await time.sync();
     const firstTime = time.now();
 
-    // @ts-ignore - Testing private property
     (time as unknown as { lastObservedTime: number }).lastObservedTime = firstTime + 100_000;
 
     expect(() => time.now()).toThrow("Time regression detected");

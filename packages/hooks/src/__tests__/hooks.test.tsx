@@ -1,7 +1,7 @@
+// @vitest-environment jsdom
 import type { TalakWeb3Instance, TalakWeb3Context, IRpc } from "@talak-web3/types";
 import { renderHook, act } from "@testing-library/react";
 import type { ReactNode } from "react";
-// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { HookRegistry } from "../hook-registry.js";
@@ -90,7 +90,6 @@ describe("TalakWeb3Provider + useTalakWeb3", () => {
   });
 
   it("throws when used outside provider", () => {
-    // Suppress React console.error for expected throw
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => {
@@ -250,7 +249,7 @@ describe("useGasless", () => {
       try {
         await result.current.sendGasless("0xtarget", "0xdata");
       } catch {
-        // expected
+        // expected error
       }
     });
     expect(result.current.error).toBe("AccountAbstraction plugin not loaded");
@@ -349,7 +348,7 @@ describe("Edge cases", () => {
       try {
         await result.current.request("eth_blockNumber");
       } catch {
-        // expected
+        // expected error
       }
     });
 
@@ -368,7 +367,7 @@ describe("Edge cases", () => {
       try {
         await result.current.sendGasless("0xtarget", "0xdata");
       } catch {
-        // expected
+        // expected error
       }
     });
 

@@ -71,3 +71,8 @@ export const TalakWeb3ConfigSchema = z.object({
 
 export type TalakWeb3Config = z.infer<typeof TalakWeb3ConfigSchema>;
 export type Chain = z.infer<typeof ChainSchema>;
+
+/** Validate and return a chain config with full IDE autocompletion. Catches typos at the definition site. */
+export function defineChain(config: Chain): Chain {
+  return config;
+}

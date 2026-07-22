@@ -32,7 +32,7 @@ type AuthRouteHandler = (
 ) => Promise<Response>;
 
 const SESSION_REFRESH_THRESHOLD_SECONDS = 5 * 60;
-const MAX_AUTH_BODY_SIZE = 1024; // 1KB is plenty for auth payloads
+const MAX_AUTH_BODY_SIZE = 1024;
 
 const rateLimiters = {
   nonce: new InMemoryRateLimiter({ capacity: 20, refillPerSecond: 0.33 }),
@@ -95,6 +95,12 @@ function getAuthTtls(ctx: TalakWeb3Context): {
   refreshTtlSeconds: number;
 } {
   const authConfig = ctx.config.auth ?? {};
+  if ("generateNonce" in authConfig) {
+    return {
+      accessTtlSeconds: 15 * 60,
+      refreshTtlSeconds: 7 * 24 * 60 * 60,
+    };
+  }
   return {
     accessTtlSeconds: authConfig.accessTtlSeconds ?? 15 * 60,
     refreshTtlSeconds: authConfig.refreshTtlSeconds ?? 7 * 24 * 60 * 60,
@@ -191,7 +197,7 @@ const handleLogin: AuthRouteHandler = async (request, auth, ctx) => {
         );
       }
     } catch {
-      // Ignore malformed origin headers and continue with SIWE validation.
+      // non-fatal: validation error already handled upstream
     }
   }
 

@@ -1,17 +1,3 @@
-/**
- * Next.js integration for talak-web3
- *
- * - Thin route handler adapter (toNextJsHandler)
- * - Cookie plugin with RSC detection (nextCookies)
- * - Cookie plugin guard for proper ordering
- *
- * @example
- * ```ts
- * import { toNextJsHandler, nextCookies } from "talak-web3/nextjs";
- * ```
- */
-
-// Re-export everything from the integrations directory
 export {
   // Auth HTTP handler
   createAuthHandler,

@@ -100,12 +100,10 @@ describe("E2E Auth Lifecycle", () => {
   });
 
   it("complete lifecycle: nonce → login → verify → refresh → logout", async () => {
-    // Step 1: Get nonce
     const nonceRes = await client.getNonce("0x1234");
     expect(nonceRes.nonce).toBeTruthy();
     expect(storage.getAccessToken()).toBeNull();
 
-    // Step 2: Login with SIWE
     const loginRes = await client.loginWithSiwe(
       "example.com wants you to sign in...",
       "0xsignature",
@@ -115,30 +113,25 @@ describe("E2E Auth Lifecycle", () => {
     expect(storage.getAccessToken()).toBe("at-2");
     expect(storage.getRefreshToken()).toBe("rt-2");
 
-    // Step 3: Verify session (should use stored access token)
     const verifyRes = await client.verifySession();
     expect(verifyRes.ok).toBe(true);
     const authHeader = fetchMock.mock.calls[2]?.[1]?.headers?.["Authorization"];
     expect(authHeader).toBe("Bearer at-2");
 
-    // Step 4: Refresh tokens
     const refreshRes = await client.refresh("rt-2");
     expect(refreshRes.accessToken).toBe("refreshed-at-4");
     expect(refreshRes.refreshToken).toBe("refreshed-rt-4");
     expect(storage.getAccessToken()).toBe("refreshed-at-4");
     expect(storage.getRefreshToken()).toBe("refreshed-rt-4");
 
-    // Step 5: Logout
     await client.logout();
     expect(storage.getAccessToken()).toBeNull();
     expect(storage.getRefreshToken()).toBeNull();
   });
 
   it("auto-retry on 401 with refresh token", async () => {
-    // Login first
     await client.loginWithSiwe("msg", "0xsig");
 
-    // Make verify return 401 first, then 200 after refresh
     let verifyAttempts = 0;
     fetchMock.mockImplementation(async (url: string | URL | Request, opts?: RequestInit) => {
       const path = String(url);

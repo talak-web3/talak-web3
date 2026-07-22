@@ -1,10 +1,3 @@
-/**
- * Cookie utilities for Next.js integration.
- */
-
-/**
- * Parsed cookie attributes
- */
 export interface CookieAttributes {
   value: string;
   "max-age"?: number | undefined;
@@ -36,9 +29,6 @@ function tryDecode(str: string): string {
   }
 }
 
-/**
- * Strip surrounding double-quotes per RFC 6265 §4.1.1 quoted-string form.
- */
 function unquoteCookieValue(value: string): string {
   if (value.length < 2 || !value.startsWith('"') || !value.endsWith('"')) {
     return value;
@@ -46,9 +36,6 @@ function unquoteCookieValue(value: string): string {
   return value.slice(1, -1);
 }
 
-/**
- * Split a comma-joined `Set-Cookie` header string into individual cookies.
- */
 function splitSetCookieHeader(setCookie: string): string[] {
   if (!setCookie) return [];
 
@@ -146,7 +133,6 @@ export function parseSetCookieHeader(setCookie: string): Map<string, CookieAttri
             : undefined;
           break;
         default:
-          // Handle any other attributes
           attrObj[normalizedAttrName] = attrValue ? attrValue.trim() : true;
           break;
       }
@@ -158,9 +144,6 @@ export function parseSetCookieHeader(setCookie: string): Map<string, CookieAttri
   return cookies;
 }
 
-/**
- * Convert CookieAttributes to an object suitable for cookie setting.
- */
 export function toCookieOptions(attributes: CookieAttributes): ParsedCookieOptions {
   return {
     maxAge: attributes["max-age"],
@@ -173,9 +156,6 @@ export function toCookieOptions(attributes: CookieAttributes): ParsedCookieOptio
   };
 }
 
-/**
- * Create a Set-Cookie string from name, value, and options
- */
 export function createSetCookieString(
   name: string,
   value: string,
@@ -183,7 +163,6 @@ export function createSetCookieString(
 ): string {
   const parts = [`${name}=${encodeURIComponent(value)}`];
 
-  // Always include path, default to "/"
   parts.push(`Path=${options.path ?? "/"}`);
 
   if (options.domain) {

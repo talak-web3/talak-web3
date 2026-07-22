@@ -2,13 +2,6 @@ import type { IHookRegistry } from "@talak-web3/types";
 
 type AnyHandler = (data: unknown) => void;
 
-/**
- * A type-safe event registry.
- *
- * This file intentionally has zero React imports so consumers that only
- * need the event system (e.g. @talak-web3/core) can import it without
- * pulling in React.
- */
 export class HookRegistry<Events extends Record<string, unknown>> implements IHookRegistry<Events> {
   private readonly map = new Map<keyof Events, Set<AnyHandler>>();
 

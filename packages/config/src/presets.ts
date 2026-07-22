@@ -1,23 +1,91 @@
-import { TalakWeb3ConfigSchema } from "./schema";
+import { TalakWeb3ConfigSchema, type TalakWeb3Config } from "./schema";
 
-export const MainnetPreset = {
+export const MainnetPreset: TalakWeb3Config = {
+  plugins: [],
+  rpc: { retries: 7, timeout: 10000 },
+  debug: false,
   chains: [
     {
       id: 1,
       name: "Ethereum Mainnet",
       rpcUrls: ["https://cloudflare-eth.com"],
       nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      testnet: false,
     },
   ],
 };
 
-export const PolygonPreset = {
+export const PolygonPreset: TalakWeb3Config = {
+  plugins: [],
+  rpc: { retries: 7, timeout: 10000 },
+  debug: false,
   chains: [
     {
       id: 137,
       name: "Polygon Mainnet",
       rpcUrls: ["https://polygon-rpc.com"],
       nativeCurrency: { name: "POL", symbol: "POL", decimals: 18 },
+      testnet: false,
+    },
+  ],
+};
+
+export const ArbitrumPreset: TalakWeb3Config = {
+  plugins: [],
+  rpc: { retries: 7, timeout: 10000 },
+  debug: false,
+  chains: [
+    {
+      id: 42161,
+      name: "Arbitrum One",
+      rpcUrls: ["https://arb1.arbitrum.io/rpc"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      testnet: false,
+    },
+  ],
+};
+
+export const OptimismPreset: TalakWeb3Config = {
+  plugins: [],
+  rpc: { retries: 7, timeout: 10000 },
+  debug: false,
+  chains: [
+    {
+      id: 10,
+      name: "Optimism",
+      rpcUrls: ["https://mainnet.optimism.io"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      testnet: false,
+    },
+  ],
+};
+
+export const BasePreset: TalakWeb3Config = {
+  plugins: [],
+  rpc: { retries: 7, timeout: 10000 },
+  debug: false,
+  chains: [
+    {
+      id: 8453,
+      name: "Base",
+      rpcUrls: ["https://mainnet.base.org"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      testnet: false,
+    },
+  ],
+};
+
+export const AvalanchePreset: TalakWeb3Config = {
+  plugins: [],
+  rpc: { retries: 7, timeout: 10000 },
+  debug: false,
+  chains: [
+    {
+      id: 43114,
+      name: "Avalanche C-Chain",
+      rpcUrls: ["https://api.avax.network/ext/bc/C/rpc"],
+      nativeCurrency: { name: "AVAX", symbol: "AVAX", decimals: 18 },
+      testnet: false,
     },
   ],
 };
@@ -27,10 +95,16 @@ export class ConfigManager {
     return TalakWeb3ConfigSchema.parse(config);
   }
 
-  static fromPreset(preset: "mainnet" | "polygon") {
-    const presets = {
+  static fromPreset(
+    preset: "mainnet" | "polygon" | "arbitrum" | "optimism" | "base" | "avalanche",
+  ) {
+    const presets: Record<string, TalakWeb3Config> = {
       mainnet: MainnetPreset,
       polygon: PolygonPreset,
+      arbitrum: ArbitrumPreset,
+      optimism: OptimismPreset,
+      base: BasePreset,
+      avalanche: AvalanchePreset,
     };
     return this.validate(presets[preset]);
   }
@@ -40,5 +114,9 @@ export class ConfigManager {
       ...(base as Record<string, unknown>),
       ...(override as Record<string, unknown>),
     });
+  }
+
+  static fromConfig(config: TalakWeb3Config): TalakWeb3Config {
+    return this.validate(config);
   }
 }

@@ -257,7 +257,7 @@ export class DistributedCircuitBreaker {
         PX: 7200000,
       });
     } catch {
-      /* metrics are best-effort; never fail the circuit breaker on redis errors */
+      // non-fatal: cache write failures ignored
     }
   }
 
@@ -275,7 +275,7 @@ export class DistributedCircuitBreaker {
     try {
       await this.config.redis.del(this.getLatencyKey(chainId, providerId));
     } catch {
-      /* best-effort cleanup of latency samples */
+      // non-fatal: cache write failures ignored
     }
   }
 

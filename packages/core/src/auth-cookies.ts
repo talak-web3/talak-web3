@@ -16,7 +16,6 @@ export function createSetCookieString(
   value: string,
   options: AuthCookieOptions = {},
 ): string {
-  // Security-mandatory defaults: user can only make MORE secure, not less
   const isProduction = process.env["NODE_ENV"] === "production" || process.env["HTTPS"] === "true";
   const secure = options.secure !== undefined ? options.secure : isProduction;
   const httpOnly = options.httpOnly !== undefined ? options.httpOnly : true;
