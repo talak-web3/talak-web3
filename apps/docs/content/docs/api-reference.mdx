@@ -13,10 +13,10 @@ This document provides the complete API reference for Talak Web3.
 Creates a new talak-web3 application instance. Every instance exposes `app.handler` for HTTP auth routes.
 
 ```typescript
-import { talakWeb3, MainnetPreset } from "talak-web3";
+import { talakWeb3 } from "talak-web3";
 
 const app = talakWeb3({
-  ...MainnetPreset,
+  preset: "mainnet",
   auth: {
     domain: "myapp.com",
     secret: process.env.JWT_SECRET!,

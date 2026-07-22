@@ -8,7 +8,7 @@ import {
   InMemoryRevocationStore,
 } from "@talak-web3/auth";
 import type { TalakWeb3AuthOptions } from "@talak-web3/auth";
-import { validateConfig } from "@talak-web3/config";
+import { resolvePreset, validateConfig } from "@talak-web3/config";
 import type { TalakWeb3Config } from "@talak-web3/config";
 import { TalakWeb3Error, RPC_ERROR_CODES, PLUGIN_ERROR_CODES } from "@talak-web3/errors";
 import { UnifiedRpc } from "@talak-web3/rpc";
@@ -16,6 +16,7 @@ import type { RpcEndpoint } from "@talak-web3/rpc";
 import type {
   IRpc,
   TalakWeb3BaseConfig,
+  TalakWeb3Input,
   TalakWeb3Context,
   TalakWeb3EventsMap,
   TalakWeb3Instance,
@@ -263,8 +264,9 @@ class PendingRpc implements IRpc {
  * await app.init();
  * ```
  */
-export function createTalakWeb3(input: TalakWeb3BaseConfig): TalakWeb3Instance {
-  const normalizedInput = normalizeConfigInput(input);
+export function createTalakWeb3(input: TalakWeb3Input = {}): TalakWeb3Instance {
+  const resolvedInput = resolvePreset(input as Record<string, unknown>);
+  const normalizedInput = normalizeConfigInput(resolvedInput);
   const injectedAuth = extractAuthFromInput(normalizedInput);
   const injectedAuthStores = extractAuthStoresFromInput(normalizedInput);
   SecurityInvariant.checkSecrets(normalizedInput);
@@ -441,7 +443,7 @@ export function createTalakWeb3(input: TalakWeb3BaseConfig): TalakWeb3Instance {
 }
 
 /** Alias for {@link createTalakWeb3}. */
-export function talakWeb3(input: TalakWeb3BaseConfig): TalakWeb3Instance {
+export function talakWeb3(input: TalakWeb3Input = {}): TalakWeb3Instance {
   return createTalakWeb3(input);
 }
 

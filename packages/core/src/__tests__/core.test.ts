@@ -3,6 +3,7 @@ import {
   InMemoryRefreshStore,
   InMemoryRevocationStore,
 } from "@talak-web3/auth";
+import { MainnetPreset } from "@talak-web3/config";
 import { describe, it, expect, vi } from "vitest";
 
 import { talakWeb3 } from "../index";
@@ -14,6 +15,33 @@ const stores = () => ({
 });
 
 describe("talakWeb3", () => {
+  it("initializes with preset name", () => {
+    const instance = talakWeb3({ preset: "mainnet", auth: stores() });
+    expect(instance.config).toBeDefined();
+    expect(instance.config.chains[0].id).toBe(1);
+  });
+
+  it("throws on unknown preset name", () => {
+    expect(() => talakWeb3({ preset: "moonbeam" as any, auth: stores() })).toThrow(
+      "Unknown preset",
+    );
+  });
+
+  it("preset with overridden chain works end-to-end", () => {
+    const instance = talakWeb3({
+      preset: "mainnet",
+      chains: [{ id: 1, rpcUrls: ["https://custom-rpc.com"] }],
+      auth: stores(),
+    });
+    expect(instance.config.chains).toHaveLength(1);
+    expect(instance.config.chains[0].rpcUrls[0]).toBe("https://custom-rpc.com");
+  });
+
+  it("backward compat: spread preset still works", () => {
+    const instance = talakWeb3({ ...MainnetPreset, auth: stores() });
+    expect(instance.config.chains[0].id).toBe(1);
+  });
+
   it("should initialize with default config", () => {
     const instance = talakWeb3({ auth: stores() });
     expect(instance.config).toBeDefined();

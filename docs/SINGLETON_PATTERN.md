@@ -72,9 +72,9 @@ beforeEach(() => {
 Initialize once at module level and reuse:
 
 ```typescript
-import { talakWeb3, MainnetPreset } from "talak-web3";
+import { talakWeb3 } from "talak-web3";
 
-export const talak = talakWeb3(MainnetPreset);
+export const talak = talakWeb3({ preset: "mainnet" });
 
 export async function handler(event) {
   await talak.init();

@@ -9,10 +9,10 @@ Complete API reference for talak-web3.
 Creates a new talak-web3 application instance.
 
 ```typescript
-import { talakWeb3, MainnetPreset } from "talak-web3";
+import { talakWeb3 } from "talak-web3";
 
 const app = talakWeb3({
-  ...MainnetPreset,
+  preset: "mainnet",
   auth: {
     domain: "myapp.com",
     secret: process.env.JWT_SECRET!,

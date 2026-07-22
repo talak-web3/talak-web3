@@ -1,8 +1,7 @@
 import { createTalakWeb3 } from "talak-web3";
-import { MainnetPreset } from "talak-web3/presets";
 
 export const app = createTalakWeb3({
-  ...MainnetPreset,
+  preset: "mainnet",
   auth: {
     domain: process.env.SIWE_DOMAIN || "localhost:3000",
 

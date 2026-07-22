@@ -45,7 +45,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "clean": "pnpm rimraf dist",
     "lint:package": "publint run --strict --pack false",

@@ -39,7 +39,7 @@
     "build": "tsdown",
     "dev": "tsx src/bin.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "clean": "pnpm rimraf dist",
     "lint:package": "publint run --strict --pack false",

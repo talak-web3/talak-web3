@@ -90,6 +90,48 @@ export const AvalanchePreset: TalakWeb3Config = {
   ],
 };
 
+const PRESETS: Record<string, TalakWeb3Config> = {
+  mainnet: MainnetPreset,
+  polygon: PolygonPreset,
+  arbitrum: ArbitrumPreset,
+  optimism: OptimismPreset,
+  base: BasePreset,
+  avalanche: AvalanchePreset,
+};
+
+export type PresetName = keyof typeof PRESETS;
+
+export function resolvePreset(input: Record<string, unknown>): Record<string, unknown> {
+  const presetName = input["preset"];
+  if (!presetName || typeof presetName !== "string") return input;
+
+  const preset = PRESETS[presetName];
+  if (!preset) {
+    throw new Error(`Unknown preset: "${presetName}"`);
+  }
+
+  const { preset: _, chains: userChainsRaw, ...rest } = input;
+
+  // Merge chains by id: user chains override preset chains with same id,
+  // user chains with new ids are appended
+  const userChains = Array.isArray(userChainsRaw)
+    ? (userChainsRaw as Record<string, unknown>[])
+    : [];
+  const presetChains = [...preset.chains] as Record<string, unknown>[];
+  const mergedChains = [...presetChains];
+
+  for (const uc of userChains) {
+    const idx = mergedChains.findIndex((pc) => pc.id === uc.id);
+    if (idx >= 0) {
+      mergedChains[idx] = { ...mergedChains[idx], ...uc };
+    } else {
+      mergedChains.push(uc);
+    }
+  }
+
+  return { ...preset, ...rest, chains: mergedChains };
+}
+
 export class ConfigManager {
   static validate(config: unknown) {
     return TalakWeb3ConfigSchema.parse(config);

@@ -9,6 +9,8 @@ export type {
   TalakWeb3Context,
   TalakWeb3Plugin,
   TalakWeb3BaseConfig,
+  PresetName,
+  TalakWeb3Input,
   ChainId,
   UnixMs,
   Hex,

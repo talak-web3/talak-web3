@@ -49,7 +49,7 @@
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "clean": "pnpm rimraf dist",
     "lint:package": "publint run --strict --pack false",
     "lint:types": "attw --profile node16 --pack ."

@@ -256,6 +256,15 @@ export interface TalakWeb3Context {
   adapters?: Record<string, unknown>;
 }
 
+/** Known preset names for quick-start configurations. */
+export type PresetName = "mainnet" | "polygon" | "arbitrum" | "optimism" | "base" | "avalanche";
+
+/**
+ * Input type for `createTalakWeb3()` / `talakWeb3()`.
+ * All fields are optional — Zod defaults fill missing values.
+ */
+export type TalakWeb3Input = Partial<TalakWeb3BaseConfig> & { preset?: PresetName };
+
 /** Returned by `createTalakWeb3()`. Must call `init()` before handling requests. */
 export interface TalakWeb3Instance {
   readonly config: TalakWeb3BaseConfig;

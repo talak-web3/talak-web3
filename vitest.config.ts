@@ -76,23 +76,16 @@ export default defineConfig({
         },
       },
     },
-
     testTimeout: 30000,
-
     retry: 1,
-
     pool: "threads",
-    poolOptions: {
-      threads: {
-        singleThread: false,
-      },
-    },
     alias: {
       "@talak-web3/core": path.resolve(__dirname, "./packages/core/src/index.ts"),
       "@talak-web3/config": path.resolve(__dirname, "./packages/config/src/index.ts"),
       "@talak-web3/hooks": path.resolve(__dirname, "./packages/hooks/src/index.tsx"),
       "@talak-web3/types": path.resolve(__dirname, "./packages/types/src/index.ts"),
       "@talak-web3/errors": path.resolve(__dirname, "./packages/errors/src/index.ts"),
+      "@talak-web3/rate-limit": path.resolve(__dirname, "./packages/rate-limit/src/index.ts"),
       "@talak-web3/utils": path.resolve(__dirname, "./packages/utils/src/index.ts"),
       "@talak-web3/rpc": path.resolve(__dirname, "./packages/rpc/src/index.ts"),
       "@talak-web3/adapters": path.resolve(__dirname, "./packages/adapters/src/index.ts"),

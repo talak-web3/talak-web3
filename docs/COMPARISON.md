@@ -177,10 +177,10 @@ This document compares talak-web3 with alternative Web3 authentication and backe
 import NextAuth from "next-auth";
 import { SiweMessage } from "siwe";
 
-import { talakWeb3, MainnetPreset } from "talak-web3";
+import { talakWeb3 } from "talak-web3";
 
 const app = talakWeb3({
-  ...MainnetPreset,
+  preset: "mainnet",
   auth: {
     domain: "myapp.com",
     secret: process.env.JWT_SECRET!,
