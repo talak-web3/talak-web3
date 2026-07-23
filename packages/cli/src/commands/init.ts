@@ -154,6 +154,12 @@ function getTemplateDevDependencies(template: string): Record<string, string> {
 }
 
 function generateConfig(template: (typeof templates)[number]): string {
+  const storesBlock = `// DEV ONLY: InMemory stores are rejected when NODE_ENV=production.
+    // Production: use RedisNonceStore / RedisRefreshStore / RedisRevocationStore from @talak-web3/auth/stores
+    nonceStore: new InMemoryNonceStore(),
+    refreshStore: new InMemoryRefreshStore(),
+    revocationStore: new InMemoryRevocationStore(),`;
+
   if (template === "nextjs") {
     return `import { talakWeb3 } from "talak-web3";
 import { nextCookies } from "talak-web3/nextjs";
@@ -174,9 +180,7 @@ export const app = talakWeb3({
   ],
   auth: {
     domain: process.env.SIWE_DOMAIN || "localhost:3000",
-    nonceStore: new InMemoryNonceStore(),
-    refreshStore: new InMemoryRefreshStore(),
-    revocationStore: new InMemoryRevocationStore(),
+    ${storesBlock}
   },
   plugins: [nextCookies()],
 });
@@ -194,9 +198,7 @@ export const app = talakWeb3({
   preset: "mainnet",
   auth: {
     domain: process.env.SIWE_DOMAIN || "localhost:3000",
-    nonceStore: new InMemoryNonceStore(),
-    refreshStore: new InMemoryRefreshStore(),
-    revocationStore: new InMemoryRevocationStore(),
+    ${storesBlock}
   },
 });
 `;

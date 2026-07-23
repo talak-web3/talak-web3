@@ -38,19 +38,27 @@ npm install talak-web3@1.0.9
 ### Basic Setup
 
 ```typescript
+import {
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
+} from "@talak-web3/auth";
 import { talakWeb3 } from "talak-web3";
 
+// Dev only — production needs Redis stores + JWT_PRIVATE_KEY / JWT_PUBLIC_KEY (RS256)
 const app = talakWeb3({
   preset: "mainnet",
   auth: {
     domain: "yourdapp.com",
-    secret: process.env.JWT_SECRET,
+    nonceStore: new InMemoryNonceStore(),
+    refreshStore: new InMemoryRefreshStore(),
+    revocationStore: new InMemoryRevocationStore(),
   },
 });
 
 await app.init();
 
-const nonce = await app.auth.createNonce("0x...");
+const nonce = await app.context.auth.createNonce("0x...");
 const result = await app.context.rpc.request(1, "eth_blockNumber");
 ```
 
@@ -116,7 +124,10 @@ const app = talakWeb3({
   chains: [...PolygonPreset.chains],
   auth: {
     domain: "yourdapp.com",
-    secret: process.env.JWT_SECRET,
+    // Provide Redis stores in production — see Production Configuration
+    nonceStore: /* … */,
+    refreshStore: /* … */,
+    revocationStore: /* … */,
   },
 });
 
@@ -139,17 +150,31 @@ The SDK implements a secure SIWE authentication flow with short-lived JWTs and r
 ```typescript
 import { talakWeb3 } from "talak-web3";
 
-const app = talakWeb3({ auth: { domain: "yourdapp.com", secret: process.env.JWT_SECRET } });
+const app = talakWeb3({
+  auth: {
+    domain: "yourdapp.com",
+    nonceStore: /* RedisNonceStore or InMemory for dev */,
+    refreshStore: /* … */,
+    revocationStore: /* … */,
+  },
+});
 
-const nonce = await app.auth.createNonce(address);
+const nonce = await app.context.auth.createNonce(address);
 
-const { accessToken, refreshToken } = await app.auth.loginWithSiwe(signedMessage, signature);
+const { accessToken, refreshToken } = await app.context.auth.loginWithSiwe(
+  signedMessage,
+  signature,
+  { ip, userAgent },
+);
 
-const payload = await app.auth.verifySession(accessToken);
+const payload = await app.context.auth.verifySession(accessToken, { ip, userAgent });
 
-const { accessToken: newAccess, refreshToken: newRefresh } = await app.auth.refresh(refreshToken);
+const { accessToken: newAccess, refreshToken: newRefresh } = await app.context.auth.refresh(
+  refreshToken,
+  { ip, userAgent },
+);
 
-await app.auth.revokeSession(accessToken, refreshToken);
+await app.context.auth.revokeSession(accessToken, refreshToken);
 ```
 
 ### Production Configuration
@@ -166,10 +191,10 @@ const redis = new Redis(process.env.REDIS_URL);
 const app = talakWeb3({
   auth: {
     domain: "yourdapp.com",
-    secret: process.env.JWT_SECRET,
-    nonceStore: new RedisNonceStore(redis),
-    refreshStore: new RedisRefreshStore(redis),
-    revocationStore: new RedisRevocationStore(redis),
+    // JWT_PRIVATE_KEY + JWT_PUBLIC_KEY env (RS256) — not JWT_SECRET
+    nonceStore: new RedisNonceStore({ redis }),
+    refreshStore: new RedisRefreshStore({ redis }),
+    revocationStore: new RedisRevocationStore({ redis }),
     accessTtlSeconds: 900,
     refreshTtlSeconds: 604800,
   },
@@ -282,14 +307,18 @@ Creates or returns the singleton application instance.
 const app = talakWeb3({
   auth: {
     domain: "yourdapp.com",
-    secret: process.env.JWT_SECRET,
+    nonceStore: /* required durable stores in production */,
+    refreshStore: /* … */,
+    revocationStore: /* … */,
   },
-  rpc: {
-    providers: [
-      { url: "https://eth.llamarpc.com", priority: 1 },
-      { url: "https://rpc.ankr.com/eth", priority: 2 },
-    ],
-  },
+  chains: [
+    {
+      id: 1,
+      name: "Ethereum",
+      rpcUrls: ["https://eth.llamarpc.com", "https://rpc.ankr.com/eth"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    },
+  ],
 });
 ```
 
@@ -318,13 +347,16 @@ RPC provider with automatic failover.
 
 ## Environment Variables
 
-| Variable      | Required             | Description                                    |
-| ------------- | -------------------- | ---------------------------------------------- |
-| `JWT_SECRET`  | **Yes** (production) | Secret key for JWT signing (min 32 characters) |
-| `REDIS_URL`   | **Yes** (production) | Redis connection string for session storage    |
-| `NODE_ENV`    | No                   | Environment (`development` or `production`)    |
-| `LOG_FORMAT`  | No                   | Set to `json` for structured logging           |
-| `SIWE_DOMAIN` | No                   | SIWE domain override (defaults to auth.domain) |
+| Variable | Required | Description |
+| --- | --- | --- |
+| `JWT_PRIVATE_KEY` | **Yes** (production) | PKCS#8 PEM RSA private key (RS256, ≥2048 bits) |
+| `JWT_PUBLIC_KEY` | **Yes** (production) | SPKI PEM RSA public key |
+| `JWT_PRIMARY_KID` | No | JWT key id (default `v1`) |
+| `REDIS_URL` | **Yes** (production) | Redis for durable nonce/refresh/revocation stores |
+| `SIWE_DOMAIN` | Recommended | Expected SIWE domain |
+| `TRUST_PROXY` | No | Set `true` to honor `X-Forwarded-For` behind a reverse proxy |
+| `NODE_ENV` | No | `production` rejects in-memory auth stores |
+| `LOG_FORMAT` | No | Set to `json` for structured logging |
 
 ## Examples
 

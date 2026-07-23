@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { exportPKCS8, exportSPKI, generateKeyPair } from "jose";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import {
   TalakWeb3Auth,
@@ -13,6 +14,15 @@ describe("Login Flow Integration", () => {
   let refreshStore: InMemoryRefreshStore;
   let revocationStore: InMemoryRevocationStore;
 
+  beforeAll(async () => {
+    const { privateKey, publicKey } = await generateKeyPair("RS256", {
+      modulusLength: 2048,
+      extractable: true,
+    });
+    process.env["JWT_PRIVATE_KEY"] = await exportPKCS8(privateKey);
+    process.env["JWT_PUBLIC_KEY"] = await exportSPKI(publicKey);
+  });
+
   beforeEach(() => {
     nonceStore = new InMemoryNonceStore();
     refreshStore = new InMemoryRefreshStore();
@@ -24,6 +34,7 @@ describe("Login Flow Integration", () => {
       revocationStore,
       accessTtlSeconds: 900,
       refreshTtlSeconds: 7 * 24 * 60 * 60,
+      allowInsecureMemoryStores: true,
     });
   });
 

@@ -38,6 +38,7 @@ export async function createMockTokenPair(
   const jti = crypto.randomUUID();
 
   const accessToken = await new SignJWT({ address, chainId })
+    // Test helper only — production runtime uses RS256 exclusively.
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(address.toLowerCase())
     .setJti(jti)
@@ -64,6 +65,7 @@ export async function createExpiredAccessToken(
   const jti = crypto.randomUUID();
 
   return new SignJWT({ address, chainId })
+    // Test helper only — production runtime uses RS256 exclusively.
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(address.toLowerCase())
     .setJti(jti)
@@ -86,6 +88,7 @@ export async function createInvalidSignatureToken(
   const now = Math.floor(Date.now() / 1000);
 
   return new SignJWT({ address, chainId })
+    // Test helper only — production runtime uses RS256 exclusively.
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(address.toLowerCase())
     .setIssuedAt()

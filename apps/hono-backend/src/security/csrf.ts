@@ -1,9 +1,20 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 
 import { TalakWeb3Error } from "@talak-web3/errors";
 import type { MiddlewareHandler } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import type { CookieOptions } from "hono/utils/cookie";
+
+function csrfTokensEqual(a: string, b: string): boolean {
+  try {
+    const ba = Buffer.from(a, "utf8");
+    const bb = Buffer.from(b, "utf8");
+    if (ba.length !== bb.length) return false;
+    return timingSafeEqual(ba, bb);
+  } catch {
+    return false;
+  }
+}
 
 export function csrfProtection(): MiddlewareHandler {
   return async (c, next) => {
@@ -12,10 +23,12 @@ export function csrfProtection(): MiddlewareHandler {
     if (!token) {
       token = randomBytes(16).toString("hex");
       const cookieDomain = process.env["COOKIE_DOMAIN"];
+      // httpOnly:false required for classic double-submit (JS reads cookie → x-csrf-token header).
+      // Auth session cookies remain HttpOnly elsewhere.
       const cookieOptions: CookieOptions = {
         path: "/",
         secure: true,
-        httpOnly: true,
+        httpOnly: false,
         sameSite: "Strict",
         maxAge: 60 * 60 * 24 * 7,
       };
@@ -35,7 +48,7 @@ export function csrfProtection(): MiddlewareHandler {
     if (isMutating && !isSafePath) {
       const headerToken = c.req.header("x-csrf-token");
 
-      if (!headerToken || headerToken !== token) {
+      if (!headerToken || !csrfTokensEqual(headerToken, token)) {
         throw new TalakWeb3Error(
           "CSRF token mismatch or missing. Double-submit validation failed.",
           {
@@ -80,7 +93,7 @@ export function csrfProtection(): MiddlewareHandler {
       const cookieOptions: CookieOptions = {
         path: "/",
         secure: true,
-        httpOnly: true,
+        httpOnly: false,
         sameSite: "Strict",
         maxAge: 60 * 60 * 24 * 7,
       };

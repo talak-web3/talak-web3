@@ -9,12 +9,24 @@ import { verifyMessage } from "viem";
 import type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from "./contracts.js";
 import type { KeyRotationConfig } from "./jwks.js";
 import { createKeyProvider, type KeyProviderType, JwtManager } from "./key-management.js";
+import {
+  assertProductionSafeStores,
+  TALAK_STORE_KIND,
+  type TalakStoreKind,
+} from "./store-kind.js";
 import { getAuthoritativeTime, type AuthoritativeTime } from "./time.js";
 
 export type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from "./contracts.js";
 export type { SessionPayload } from "@talak-web3/types";
 export type { KeyProviderType } from "./key-management.js";
 export { AuthoritativeTime } from "./time.js";
+export {
+  assertProductionSafeStores,
+  getStoreKind,
+  isMemoryStore,
+  TALAK_STORE_KIND,
+  type TalakStoreKind,
+} from "./store-kind.js";
 type KeyLike = CryptoKey | KeyObject;
 
 export type SignatureVerifier = (args: {
@@ -262,6 +274,8 @@ function parseSiweMessage(message: string): SiweFields {
 }
 
 export class InMemoryNonceStore implements NonceStore {
+  readonly [TALAK_STORE_KIND]: TalakStoreKind = "memory";
+  readonly __talakStoreKind: TalakStoreKind = "memory";
   private readonly ttlMs: number;
 
   private readonly entries = new Map<string, Map<string, number>>();
@@ -335,7 +349,33 @@ function sha256Hex(input: string): string {
   return createHash("sha256").update(input).digest("hex");
 }
 
+/** Derive a coarse IP subnet for NAT-tolerant token binding (IPv4 /30 or IPv6 /64). */
+function computeIpSubnet(ip: string): string | undefined {
+  const ipv4Mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  if (ipv4Mapped?.[1]) {
+    ip = ipv4Mapped[1];
+  }
+  if (ip.includes(":")) {
+    const parts = ip.split(":");
+    if (parts.length >= 4) {
+      return `${parts.slice(0, 4).join(":")}::/64`;
+    }
+    const head = ip.split("::")[0];
+    return head ? `${head}::/64` : undefined;
+  }
+  const octets = ip.split(".");
+  if (octets.length === 4 && octets[3] !== undefined) {
+    const lastOctet = parseInt(octets[3], 10);
+    if (Number.isNaN(lastOctet)) return undefined;
+    const subnetLastOctet = lastOctet & 0xfc;
+    return `${octets[0]}.${octets[1]}.${octets[2]}.${subnetLastOctet}/30`;
+  }
+  return undefined;
+}
+
 export class InMemoryRefreshStore implements RefreshStore {
+  readonly [TALAK_STORE_KIND]: TalakStoreKind = "memory";
+  readonly __talakStoreKind: TalakStoreKind = "memory";
   private readonly sessions = new Map<string, RefreshSession>();
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -408,6 +448,8 @@ export class InMemoryRefreshStore implements RefreshStore {
         status: 401,
       });
 
+    // Single-process check-and-set: mark revoked before await so concurrent
+    // rotate() callers cannot both succeed. Not multi-process safe — use RedisRefreshStore.
     this.sessions.set(hash, { ...old, revoked: true });
 
     return this.create(old.address, old.chainId, ttlMs);
@@ -421,6 +463,8 @@ export class InMemoryRefreshStore implements RefreshStore {
 }
 
 export class InMemoryRevocationStore implements RevocationStore {
+  readonly [TALAK_STORE_KIND]: TalakStoreKind = "memory";
+  readonly __talakStoreKind: TalakStoreKind = "memory";
   private readonly entries = new Map<string, number>();
   private globalInvalidationAt = 0;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
@@ -528,6 +572,11 @@ export interface TalakWeb3AuthOptions {
   timeSource?: AuthoritativeTime;
   contextEnforcementDate?: Date;
   verifySignature?: SignatureVerifier;
+  /**
+   * When true, allow InMemory* stores even if NODE_ENV=production.
+   * For controlled tests only — never enable in real deployments.
+   */
+  allowInsecureMemoryStores?: boolean;
 }
 
 /**
@@ -554,6 +603,15 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
         { code: AUTH_ERROR_CODES.STORES_MISSING, status: 500 },
       );
     }
+
+    assertProductionSafeStores(
+      {
+        nonceStore: opts.nonceStore,
+        refreshStore: opts.refreshStore,
+        revocationStore: opts.revocationStore,
+      },
+      { allowInsecureMemoryStores: opts.allowInsecureMemoryStores === true },
+    );
 
     this.nonceStore = opts.nonceStore;
     this.refreshStore = opts.refreshStore;
@@ -709,12 +767,7 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     let contextHash: string | undefined;
     let ipSubnet: string | undefined;
     if (context) {
-      const ipParts = context.ip.split(".");
-      if (ipParts.length === 4 && ipParts[3] !== undefined) {
-        const lastOctet = parseInt(ipParts[3]);
-        const subnetLastOctet = lastOctet & 0xfc;
-        ipSubnet = `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}.${subnetLastOctet}/30`;
-      }
+      ipSubnet = computeIpSubnet(context.ip);
 
       const contextString = `${context.ip}|${context.userAgent}`;
       contextHash = createHash("sha256").update(contextString).digest("hex");
@@ -803,19 +856,9 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
         if (currentContextHash === payload.contextHash) {
           // context matches, allow
         } else if (payload.ipSubnet && typeof payload.ipSubnet === "string") {
-          const ipParts = context.ip.split(".");
-          if (ipParts.length === 4 && ipParts[3] !== undefined) {
-            const lastOctet = parseInt(ipParts[3]);
-            const subnetLastOctet = lastOctet & 0xfc;
-            const currentSubnet = `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}.${subnetLastOctet}/30`;
-            if (currentSubnet === payload.ipSubnet) {
-              console.debug("[AUTH] Token accepted with NAT tolerance", { subnet: currentSubnet });
-            } else {
-              throw new TalakWeb3Error("Token context mismatch - possible token theft", {
-                code: AUTH_ERROR_CODES.TOKEN_CONTEXT_MISMATCH,
-                status: 401,
-              });
-            }
+          const currentSubnet = computeIpSubnet(context.ip);
+          if (currentSubnet && currentSubnet === payload.ipSubnet) {
+            console.debug("[AUTH] Token accepted with NAT tolerance", { subnet: currentSubnet });
           } else {
             throw new TalakWeb3Error("Token context mismatch - possible token theft", {
               code: AUTH_ERROR_CODES.TOKEN_CONTEXT_MISMATCH,
@@ -874,13 +917,16 @@ export class TalakWeb3Auth implements TalakWeb3AuthInterface {
     return this.nonceStore.create(address.toLowerCase(), meta);
   }
 
-  async refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async refresh(
+    refreshToken: string,
+    context?: { ip: string; userAgent: string },
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const { session, token: newRefreshToken } = await this.refreshStore.rotate(
       refreshToken,
       this.refreshTtlMs,
     );
 
-    const accessToken = await this.issueAccessToken(session.address, session.chainId);
+    const accessToken = await this.issueAccessToken(session.address, session.chainId, context);
     return { accessToken, refreshToken: newRefreshToken };
   }
 

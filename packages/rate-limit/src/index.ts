@@ -191,7 +191,11 @@ export class RedisRateLimiter implements RateLimiter {
     const now = Date.now();
 
     for (let i = 0; i < cost; i++) {
-      await this.redis.zadd(fullKey, now, `${now}:penalty:${i}:${Math.random()}`);
+      const unique =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${now}-${i}-${process.hrtime.bigint()}`;
+      await this.redis.zadd(fullKey, now, `${now}:penalty:${i}:${unique}`);
     }
     await this.redis.pexpire(fullKey, this.windowMs);
   }

@@ -39,8 +39,16 @@ export function verifyDependencyIntegrity(
 
   const failures: string[] = [];
 
+  const isProduction = process.env["NODE_ENV"] === "production";
+
   for (const dep of dependencies) {
     if (dep.expectedHash === "sha256:skip") {
+      if (isProduction && failClosed) {
+        failures.push(
+          `${dep.packageName}: integrity hash is sha256:skip — set JOSE_INTEGRITY_HASH / VIEM_INTEGRITY_HASH / IOREDIS_INTEGRITY_HASH in production`,
+        );
+        continue;
+      }
       console.warn(`[AUTH] Skipping integrity check for ${dep.packageName} (development mode)`);
       continue;
     }

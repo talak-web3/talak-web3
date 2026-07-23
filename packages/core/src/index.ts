@@ -6,11 +6,17 @@ import {
   InMemoryNonceStore,
   InMemoryRefreshStore,
   InMemoryRevocationStore,
+  isMemoryStore,
 } from "@talak-web3/auth";
 import type { TalakWeb3AuthOptions } from "@talak-web3/auth";
 import { resolvePreset, validateConfig } from "@talak-web3/config";
 import type { TalakWeb3Config } from "@talak-web3/config";
-import { TalakWeb3Error, RPC_ERROR_CODES, PLUGIN_ERROR_CODES } from "@talak-web3/errors";
+import {
+  TalakWeb3Error,
+  RPC_ERROR_CODES,
+  PLUGIN_ERROR_CODES,
+  CONFIG_ERROR_CODES,
+} from "@talak-web3/errors";
 import { UnifiedRpc } from "@talak-web3/rpc";
 import type { RpcEndpoint } from "@talak-web3/rpc";
 import type {
@@ -247,8 +253,9 @@ class PendingRpc implements IRpc {
  * Create a new TalakWeb3 SDK instance.
  *
  * Omitting auth stores (`nonceStore`, `refreshStore`, `revocationStore`)
- * auto-creates in-memory stores suitable for development. Production setups
- * should provide persistent stores (e.g. Redis-backed).
+ * auto-creates in-memory stores suitable for **development only**.
+ * In production (`NODE_ENV=production`), in-memory stores are rejected —
+ * provide Redis-backed stores from `@talak-web3/auth/stores`.
  *
  * The returned instance must be initialized via `await app.init()` before
  * it can handle requests.
@@ -282,6 +289,7 @@ export function createTalakWeb3(input: TalakWeb3Input = {}): TalakWeb3Instance {
   const cache = new TtlCache();
 
   let auth: TalakWeb3Auth;
+  const isProduction = process.env["NODE_ENV"] === "production";
 
   if (injectedAuth) {
     auth = injectedAuth;
@@ -291,9 +299,31 @@ export function createTalakWeb3(input: TalakWeb3Input = {}): TalakWeb3Instance {
       ...injectedAuthStores,
     };
 
+    const missingStores =
+      !authOptions.nonceStore || !authOptions.refreshStore || !authOptions.revocationStore;
+
+    if (isProduction && missingStores) {
+      throw new TalakWeb3Error(
+        "Production forbids auto-created in-memory auth stores. Provide nonceStore, refreshStore, and revocationStore (e.g. Redis stores from @talak-web3/auth/stores).",
+        { code: CONFIG_ERROR_CODES.INMEMORY_STORES_IN_PRODUCTION, status: 500 },
+      );
+    }
+
     if (!authOptions.nonceStore) authOptions.nonceStore = new InMemoryNonceStore();
     if (!authOptions.refreshStore) authOptions.refreshStore = new InMemoryRefreshStore();
     if (!authOptions.revocationStore) authOptions.revocationStore = new InMemoryRevocationStore();
+
+    if (
+      isProduction &&
+      (isMemoryStore(authOptions.nonceStore) ||
+        isMemoryStore(authOptions.refreshStore) ||
+        isMemoryStore(authOptions.revocationStore))
+    ) {
+      throw new TalakWeb3Error(
+        "Production forbids InMemoryNonceStore / InMemoryRefreshStore / InMemoryRevocationStore. Use Redis-backed stores from @talak-web3/auth/stores.",
+        { code: CONFIG_ERROR_CODES.INMEMORY_STORES_IN_PRODUCTION, status: 500 },
+      );
+    }
 
     if (!authOptions.expectedDomain && "domain" in authConfig && authConfig.domain) {
       authOptions.expectedDomain = authConfig.domain;

@@ -56,11 +56,19 @@
   },
   "dependencies": {
     "@talak-web3/errors": "workspace:*",
-    "@talak-web3/types": "workspace:*",
+    "@talak-web3/types": "workspace:*"
+  },
+  "peerDependencies": {
     "openai": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "openai": "^4.0.0",
     "vitest": "catalog:"
   }
 }

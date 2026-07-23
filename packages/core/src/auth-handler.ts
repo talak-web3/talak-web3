@@ -1,5 +1,10 @@
-import { TalakWeb3Error } from "@talak-web3/errors";
-import { InMemoryRateLimiter, normalizeIpForRateLimit } from "@talak-web3/rate-limit";
+import { TalakWeb3Error, CONFIG_ERROR_CODES } from "@talak-web3/errors";
+import {
+  InMemoryRateLimiter,
+  RedisRateLimiter,
+  normalizeIpForRateLimit,
+  type RateLimiter,
+} from "@talak-web3/rate-limit";
 import type { TalakWeb3Auth } from "@talak-web3/types";
 import type { TalakWeb3Context, TalakWeb3Instance } from "@talak-web3/types";
 
@@ -23,31 +28,120 @@ export interface AuthHandlerOptions {
    * @default "/api/auth"
    */
   basePath?: string;
+  /**
+   * When true (default when `TRUST_PROXY=true` or `TRUSTED_PROXIES` is set),
+   * honor `X-Forwarded-For` / `X-Real-IP`. Otherwise client IP is `"unknown"`.
+   */
+  trustProxy?: boolean;
+  /**
+   * Optional rate limiters for auth endpoints. Defaults to process-local
+   * in-memory limiters (not multi-instance safe). Prefer Redis-backed
+   * limiters from `@talak-web3/rate-limit` in production.
+   */
+  rateLimiters?: Partial<{
+    nonce: RateLimiter;
+    login: RateLimiter;
+    refresh: RateLimiter;
+    logout: RateLimiter;
+  }>;
+  /**
+   * Optional Redis (ioredis) client for distributed auth rate limiting.
+   * When set, defaults to Redis sliding-window limiters for all auth routes.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  redis?: any;
+  /**
+   * When true (or REQUIRE_REDIS_RATE_LIMIT=true) and NODE_ENV=production,
+   * refuse to start without Redis-backed rate limiters.
+   */
+  requireRedisRateLimit?: boolean;
 }
 
 type AuthRouteHandler = (
   request: Request,
   auth: TalakWeb3Auth,
   ctx: TalakWeb3Context,
+  options: ResolvedAuthHandlerOptions,
 ) => Promise<Response>;
+
+type ResolvedAuthHandlerOptions = {
+  trustProxy: boolean;
+  rateLimiters: {
+    nonce: RateLimiter;
+    login: RateLimiter;
+    refresh: RateLimiter;
+    logout: RateLimiter;
+  };
+};
 
 const SESSION_REFRESH_THRESHOLD_SECONDS = 5 * 60;
 const MAX_AUTH_BODY_SIZE = 1024;
 
-const rateLimiters = {
-  nonce: new InMemoryRateLimiter({ capacity: 20, refillPerSecond: 0.33 }),
-  login: new InMemoryRateLimiter({ capacity: 10, refillPerSecond: 0.17 }),
-  refresh: new InMemoryRateLimiter({ capacity: 15, refillPerSecond: 0.25 }),
-  logout: new InMemoryRateLimiter({ capacity: 30, refillPerSecond: 0.5 }),
-};
+function memoryRateLimiters(): ResolvedAuthHandlerOptions["rateLimiters"] {
+  return {
+    nonce: new InMemoryRateLimiter({ capacity: 20, refillPerSecond: 0.33 }),
+    login: new InMemoryRateLimiter({ capacity: 10, refillPerSecond: 0.17 }),
+    refresh: new InMemoryRateLimiter({ capacity: 15, refillPerSecond: 0.25 }),
+    logout: new InMemoryRateLimiter({ capacity: 30, refillPerSecond: 0.5 }),
+  };
+}
+
+function redisRateLimiters(redis: any): ResolvedAuthHandlerOptions["rateLimiters"] {
+  // Sliding window: capacity roughly matches prior token-bucket burst sizes.
+  const windowMs = 60_000;
+  return {
+    nonce: new RedisRateLimiter(redis, { capacity: 20, windowMs }),
+    login: new RedisRateLimiter(redis, { capacity: 10, windowMs }),
+    refresh: new RedisRateLimiter(redis, { capacity: 15, windowMs }),
+    logout: new RedisRateLimiter(redis, { capacity: 30, windowMs }),
+  };
+}
+
+function resolveDefaultRateLimiters(
+  options: AuthHandlerOptions,
+): ResolvedAuthHandlerOptions["rateLimiters"] {
+  const isProduction = process.env["NODE_ENV"] === "production";
+  const requireRedis =
+    options.requireRedisRateLimit === true ||
+    process.env["REQUIRE_REDIS_RATE_LIMIT"] === "true" ||
+    process.env["REQUIRE_REDIS_RATE_LIMIT"] === "1";
+
+  if (options.redis) {
+    return redisRateLimiters(options.redis);
+  }
+
+  if (isProduction && !options.redis) {
+    if (requireRedis) {
+      throw new TalakWeb3Error(
+        "Production requires Redis-backed auth rate limiters. Pass AuthHandlerOptions.redis or set REQUIRE_REDIS_RATE_LIMIT=false only if you accept process-local limits.",
+        { code: CONFIG_ERROR_CODES.INVALID, status: 500 },
+      );
+    }
+    console.warn(
+      "[talak-web3] createAuthHandler using InMemoryRateLimiter in production — not multi-instance safe. Pass redis or set REDIS-backed rateLimiters.",
+    );
+  }
+
+  return memoryRateLimiters();
+}
+
+function resolveTrustProxy(options: AuthHandlerOptions): boolean {
+  if (options.trustProxy !== undefined) return options.trustProxy;
+  if (process.env["TRUST_PROXY"] === "true" || process.env["TRUST_PROXY"] === "1") return true;
+  if (process.env["TRUSTED_PROXIES"] && process.env["TRUSTED_PROXIES"].trim().length > 0) {
+    return true;
+  }
+  return false;
+}
 
 async function checkRateLimit(
   request: Request,
-  endpoint: keyof typeof rateLimiters,
+  endpoint: keyof ResolvedAuthHandlerOptions["rateLimiters"],
+  options: ResolvedAuthHandlerOptions,
 ): Promise<Response | null> {
-  const context = getRequestContext(request);
+  const context = getRequestContext(request, options.trustProxy);
   const key = `${endpoint}:${normalizeIpForRateLimit(context.ip)}`;
-  const result = await rateLimiters[endpoint].check(key);
+  const result = await options.rateLimiters[endpoint].check(key);
   if (!result.allowed) {
     const retryAfter = Math.ceil(((result.resetAt ?? Date.now()) - Date.now()) / 1000);
     return jsonResponse({ error: "Too Many Requests", code: "RATE_LIMIT_EXCEEDED" }, 429, {
@@ -81,11 +175,21 @@ function errorResponse(err: unknown): Response {
   return jsonResponse({ error: "Internal Server Error" }, 500);
 }
 
-function getRequestContext(request: Request): { ip: string; userAgent: string } {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown";
+/**
+ * Resolve client IP. Forwarded headers are only used when `trustProxy` is true
+ * (via options or TRUST_PROXY / TRUSTED_PROXIES env). Prevents XFF spoofing.
+ */
+export function getRequestContext(
+  request: Request,
+  trustProxy = false,
+): { ip: string; userAgent: string } {
+  let ip = "unknown";
+  if (trustProxy) {
+    ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+  }
   const userAgent = request.headers.get("user-agent") ?? "unknown";
   return { ip, userAgent };
 }
@@ -137,8 +241,8 @@ async function readJsonBody<T extends Record<string, unknown>>(
   }
 }
 
-const handleNonce: AuthRouteHandler = async (request, auth) => {
-  const rateLimitResponse = await checkRateLimit(request, "nonce");
+const handleNonce: AuthRouteHandler = async (request, auth, _ctx, options) => {
+  const rateLimitResponse = await checkRateLimit(request, "nonce", options);
   if (rateLimitResponse) return rateLimitResponse;
 
   const body = await readJsonBody<{ address?: string }>(request);
@@ -148,7 +252,7 @@ const handleNonce: AuthRouteHandler = async (request, auth) => {
     return jsonResponse({ error: "Invalid address" }, 400);
   }
 
-  const context = getRequestContext(request);
+  const context = getRequestContext(request, options.trustProxy);
   const nonce = await auth.createNonce(address, {
     ip: context.ip,
     ...(context.userAgent ? { ua: context.userAgent } : {}),
@@ -157,8 +261,8 @@ const handleNonce: AuthRouteHandler = async (request, auth) => {
   return jsonResponse({ nonce });
 };
 
-const handleLogin: AuthRouteHandler = async (request, auth, ctx) => {
-  const rateLimitResponse = await checkRateLimit(request, "login");
+const handleLogin: AuthRouteHandler = async (request, auth, ctx, options) => {
+  const rateLimitResponse = await checkRateLimit(request, "login", options);
   if (rateLimitResponse) return rateLimitResponse;
 
   const body = await readJsonBody<{ message?: string; signature?: string }>(request);
@@ -170,6 +274,19 @@ const handleLogin: AuthRouteHandler = async (request, auth, ctx) => {
   }
 
   const requestOrigin = request.headers.get("origin") ?? request.headers.get("referer");
+  const requireBrowserOrigin =
+    process.env["NODE_ENV"] === "production" || process.env["REQUIRE_SIWE_ORIGIN"] === "true";
+
+  if (!requestOrigin && requireBrowserOrigin && request.headers.get("sec-fetch-mode")) {
+    return jsonResponse(
+      {
+        error: "Origin header required for browser login",
+        code: "AUTH_ORIGIN_REQUIRED",
+      },
+      403,
+    );
+  }
+
   if (requestOrigin) {
     try {
       const originUrl = new URL(requestOrigin);
@@ -201,13 +318,13 @@ const handleLogin: AuthRouteHandler = async (request, auth, ctx) => {
     }
   }
 
-  const context = getRequestContext(request);
+  const context = getRequestContext(request, options.trustProxy);
   const result = await auth.loginWithSiwe(message, signature, context);
   return withAuthCookies(jsonResponse(result), result, ctx);
 };
 
-const handleRefresh: AuthRouteHandler = async (request, auth, ctx) => {
-  const rateLimitResponse = await checkRateLimit(request, "refresh");
+const handleRefresh: AuthRouteHandler = async (request, auth, ctx, options) => {
+  const rateLimitResponse = await checkRateLimit(request, "refresh", options);
   if (rateLimitResponse) return rateLimitResponse;
 
   const body = await readJsonBody<{ refreshToken?: string }>(request);
@@ -217,12 +334,13 @@ const handleRefresh: AuthRouteHandler = async (request, auth, ctx) => {
     return jsonResponse({ error: "Invalid request body" }, 400);
   }
 
-  const result = await auth.refresh(refreshToken);
+  const context = getRequestContext(request, options.trustProxy);
+  const result = await auth.refresh(refreshToken, context);
   return withAuthCookies(jsonResponse(result), result, ctx);
 };
 
-const handleLogout: AuthRouteHandler = async (request, auth, ctx) => {
-  const rateLimitResponse = await checkRateLimit(request, "logout");
+const handleLogout: AuthRouteHandler = async (request, auth, _ctx, options) => {
+  const rateLimitResponse = await checkRateLimit(request, "logout", options);
   if (rateLimitResponse) return rateLimitResponse;
 
   const body = await readJsonBody<{ refreshToken?: string }>(request);
@@ -236,14 +354,14 @@ const handleLogout: AuthRouteHandler = async (request, auth, ctx) => {
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 };
 
-const handleVerify: AuthRouteHandler = async (request, auth) => {
+const handleVerify: AuthRouteHandler = async (request, auth, _ctx, options) => {
   const token = getAccessTokenFromRequest(request);
   if (!token) {
     return jsonResponse({ ok: false }, 401);
   }
 
   try {
-    const context = getRequestContext(request);
+    const context = getRequestContext(request, options.trustProxy);
     const payload = await auth.verifySession(token, context);
     return jsonResponse({ ok: true, payload });
   } catch {
@@ -251,10 +369,10 @@ const handleVerify: AuthRouteHandler = async (request, auth) => {
   }
 };
 
-const handleSession: AuthRouteHandler = async (request, auth, ctx) => {
+const handleSession: AuthRouteHandler = async (request, auth, ctx, options) => {
   const accessToken = getAccessTokenFromRequest(request);
   const refreshToken = getRefreshTokenFromRequest(request);
-  const context = getRequestContext(request);
+  const context = getRequestContext(request, options.trustProxy);
 
   if (!accessToken && !refreshToken) {
     return jsonResponse({ address: null, chainId: null, isAuthenticated: false });
@@ -269,7 +387,7 @@ const handleSession: AuthRouteHandler = async (request, auth, ctx) => {
         exp !== null && exp - now <= SESSION_REFRESH_THRESHOLD_SECONDS && !!refreshToken;
 
       if (needsRefresh && !getShouldSkipSessionRefresh()) {
-        const refreshed = await auth.refresh(refreshToken!);
+        const refreshed = await auth.refresh(refreshToken!, context);
         const response = jsonResponse({
           address: payload.address,
           chainId: payload.chainId,
@@ -294,7 +412,7 @@ const handleSession: AuthRouteHandler = async (request, auth, ctx) => {
 
   if (refreshToken && !getShouldSkipSessionRefresh()) {
     try {
-      const refreshed = await auth.refresh(refreshToken);
+      const refreshed = await auth.refresh(refreshToken, context);
       const payload = await auth.verifySession(refreshed.accessToken, context);
       const response = jsonResponse({
         address: payload.address,
@@ -338,6 +456,7 @@ async function dispatchRoute(
   request: Request,
   auth: TalakWeb3Auth,
   ctx: TalakWeb3Context,
+  options: ResolvedAuthHandlerOptions,
 ): Promise<Response> {
   const routeHandlers = routes[route];
   if (!routeHandlers) {
@@ -350,7 +469,7 @@ async function dispatchRoute(
   }
 
   try {
-    return await handler(request, auth, ctx);
+    return await handler(request, auth, ctx, options);
   } catch (err) {
     return errorResponse(err);
   }
@@ -375,6 +494,16 @@ export function createAuthHandler(
   const basePath = options.basePath ?? "/api/auth";
   const { context } = instance;
   const { auth } = context;
+  const defaults = resolveDefaultRateLimiters(options);
+  const resolved: ResolvedAuthHandlerOptions = {
+    trustProxy: resolveTrustProxy(options),
+    rateLimiters: {
+      nonce: options.rateLimiters?.nonce ?? defaults.nonce,
+      login: options.rateLimiters?.login ?? defaults.login,
+      refresh: options.rateLimiters?.refresh ?? defaults.refresh,
+      logout: options.rateLimiters?.logout ?? defaults.logout,
+    },
+  };
 
   return async (request: Request): Promise<Response> => {
     return runWithRequestStateAsync(async () => {
@@ -388,7 +517,7 @@ export function createAuthHandler(
       if (!route) {
         response = new Response("Not Found", { status: 404 });
       } else {
-        response = await dispatchRoute(route, request.method, request, auth, context);
+        response = await dispatchRoute(route, request.method, request, auth, context, resolved);
       }
 
       await runPluginAfterHooks(context.plugins.values(), response, context);
