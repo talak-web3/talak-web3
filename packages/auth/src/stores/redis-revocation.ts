@@ -2,6 +2,7 @@ import { TalakWeb3Error, AUTH_ERROR_CODES } from "@talak-web3/errors";
 import type Redis from "ioredis";
 
 import type { RevocationStore } from "../contracts.js";
+import { TALAK_STORE_KIND, type TalakStoreKind } from "../store-kind.js";
 
 export interface RevocationMessage {
   type: "jti_revoked" | "global_invalidation" | "key_revoked";
@@ -24,6 +25,8 @@ export interface RedisRevocationStoreOptions {
 }
 
 export class RedisRevocationStore implements RevocationStore {
+  readonly [TALAK_STORE_KIND]: TalakStoreKind = "redis";
+  readonly __talakStoreKind: TalakStoreKind = "redis";
   private readonly redis: Redis;
   private readonly prefix: string;
   private readonly enablePubSub: boolean;

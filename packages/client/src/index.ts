@@ -30,7 +30,7 @@ export class InMemoryTokenStorage implements TokenStorage {
 
 const ACCESS_COOKIE_NAME = "talak_web3_access";
 const REFRESH_COOKIE_NAME = "talak_web3_refresh";
-const COOKIE_OPTIONS = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure`;
+const COOKIE_OPTIONS = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax; Secure`;
 
 function readCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -48,8 +48,27 @@ function expireCookie(name: string): void {
   document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }
 
+/**
+ * Browser cookie storage for tokens.
+ *
+ * **Insecure for production sessions:** tokens written via `document.cookie` cannot
+ * be HttpOnly, so XSS can steal them. Prefer server-set HttpOnly cookies (credentials)
+ * + Authorization header, or {@link InMemoryTokenStorage}.
+ *
+ * Opt-in only: pass `allowInsecureCookies: true` to enable writes.
+ */
 export class CookieTokenStorage implements TokenStorage {
   private accessToken: string | null = null;
+  private readonly allowInsecureCookies: boolean;
+
+  constructor(opts: { allowInsecureCookies?: boolean } = {}) {
+    this.allowInsecureCookies = opts.allowInsecureCookies === true;
+    if (this.allowInsecureCookies && typeof console !== "undefined") {
+      console.warn(
+        "[talak-web3-client] CookieTokenStorage with allowInsecureCookies stores tokens in non-HttpOnly cookies (XSS-readable). Prefer server HttpOnly cookies or InMemoryTokenStorage.",
+      );
+    }
+  }
 
   getAccessToken(): string | null {
     return this.accessToken ?? readCookie(ACCESS_COOKIE_NAME);
@@ -57,14 +76,25 @@ export class CookieTokenStorage implements TokenStorage {
 
   setAccessToken(token: string): void {
     this.accessToken = token;
-    writeCookie(ACCESS_COOKIE_NAME, token);
+    if (this.allowInsecureCookies) {
+      writeCookie(ACCESS_COOKIE_NAME, token);
+    }
   }
 
   getRefreshToken(): string | null {
+    if (!this.allowInsecureCookies) return null;
     return readCookie(REFRESH_COOKIE_NAME);
   }
 
   setRefreshToken(token: string): void {
+    if (!this.allowInsecureCookies) {
+      if (typeof console !== "undefined") {
+        console.warn(
+          "[talak-web3-client] Refresh token not persisted: CookieTokenStorage requires allowInsecureCookies: true (not recommended).",
+        );
+      }
+      return;
+    }
     writeCookie(REFRESH_COOKIE_NAME, token);
   }
 

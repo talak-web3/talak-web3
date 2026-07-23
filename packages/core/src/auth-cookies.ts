@@ -19,7 +19,9 @@ export function createSetCookieString(
   const isProduction = process.env["NODE_ENV"] === "production" || process.env["HTTPS"] === "true";
   const secure = options.secure !== undefined ? options.secure : isProduction;
   const httpOnly = options.httpOnly !== undefined ? options.httpOnly : true;
-  const sameSite = options.sameSite ?? "strict";
+  // Prefer Lax for browser navigations + CSRF-resistant POST-from-other-site default.
+  // Aligns with appendAuthCookies (must stay consistent).
+  const sameSite = options.sameSite ?? "lax";
   const path = options.path ?? "/";
 
   const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${path}`];

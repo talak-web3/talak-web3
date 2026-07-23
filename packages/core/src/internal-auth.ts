@@ -30,6 +30,14 @@ export class InternalAuth {
     this.timestampHeader = config.timestampHeader ?? "X-Talak-Timestamp";
     this.keyIdHeader = config.keyIdHeader ?? "X-Talak-Key-Id";
     this.maxSkewSeconds = config.maxSkewSeconds ?? 30;
+
+    const hasNamedSecret = Object.values(this.secrets).some((s) => typeof s === "string" && s.length > 0);
+    if (!this.secret && !hasNamedSecret) {
+      throw new TalakWeb3Error(
+        "InternalAuth requires a non-empty secret or secrets map — empty HMAC key is forbidden",
+        { code: INTERNAL_ERROR_CODES.AUTH_MISSING, status: 500 },
+      );
+    }
   }
 
   private resolveSecret(keyId?: string): string {

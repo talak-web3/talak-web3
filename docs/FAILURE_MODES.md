@@ -25,12 +25,13 @@
 - **Impact**: If an RPC provider fails, the `UnifiedRpc` will automatically attempt the request on the next available provider in the priority list.
 - **Final Result**: If ALL providers for a chain fail, the request returns `502 Bad Gateway`.
 
-### 4. JWT Secret Compromise
+### 4. JWT signing key compromise (RS256)
 
 **Behavior**: **MANUAL INTERVENTION REQUIRED**
 
-- **Impact**: An attacker with the `JWT_SECRET` can forge valid Access Tokens.
-- **Resilience**: Rotation of the secret will immediately invalidate all existing Access Tokens, forcing all users to re-authenticate (via their Refresh Tokens, unless those are also compromised).
+- **Impact**: An attacker with `JWT_PRIVATE_KEY` can forge valid access tokens for the current `kid`.
+- **Resilience**: Use emergency key purge / rotation (`emergencyKeyRotation`) and global invalidation so previously issued access tokens fail verification. Rotate PEMs, publish new JWKS, and force re-authentication. Refresh tokens remain valid only until revoked/rotated under Redis stores.
+- **Note**: Do **not** use a shared HMAC `JWT_SECRET`. Runtime signing is RS256 only.
 
 ## <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg> Recovery Procedures
 

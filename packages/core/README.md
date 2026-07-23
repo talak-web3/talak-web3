@@ -23,16 +23,29 @@ pnpm add @talak-web3/core
 ## Quick Start
 
 ```typescript
+import {
+  InMemoryNonceStore,
+  InMemoryRefreshStore,
+  InMemoryRevocationStore,
+} from "@talak-web3/auth";
 import { talakWeb3 } from "@talak-web3/core";
 
+// Development only — production requires Redis stores from @talak-web3/auth/stores
+// and RS256 env keys: JWT_PRIVATE_KEY, JWT_PUBLIC_KEY (not JWT_SECRET).
 const app = talakWeb3({
   chains: [
-    { id: 1, rpcUrls: ["https://eth-mainnet.g.alchemy.com/v2/demo_api_key"] },
-    { id: 137, rpcUrls: ["https://polygon-mainnet.g.alchemy.com/v2/demo_api_key"] },
+    {
+      id: 1,
+      name: "Ethereum",
+      rpcUrls: ["https://eth-mainnet.g.alchemy.com/v2/demo_api_key"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    },
   ],
   auth: {
     domain: "yourdomain.com",
-    secret: process.env.JWT_SECRET,
+    nonceStore: new InMemoryNonceStore(),
+    refreshStore: new InMemoryRefreshStore(),
+    revocationStore: new InMemoryRevocationStore(),
   },
 });
 

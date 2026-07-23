@@ -38,10 +38,28 @@
     "lint:types": "attw --profile esm-only --pack ."
   },
   "dependencies": {
-    "@ceramicnetwork/http-client": "^6.0.0",
-    "@ceramicnetwork/stream-tile": "^6.0.0",
-    "@tableland/sdk": "^7.0.0",
     "@talak-web3/errors": "workspace:*",
     "@talak-web3/types": "workspace:*"
+  },
+  "peerDependencies": {
+    "@ceramicnetwork/http-client": "^6.0.0",
+    "@ceramicnetwork/stream-tile": "^6.0.0",
+    "@tableland/sdk": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@ceramicnetwork/http-client": {
+      "optional": true
+    },
+    "@ceramicnetwork/stream-tile": {
+      "optional": true
+    },
+    "@tableland/sdk": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@ceramicnetwork/http-client": "^6.0.0",
+    "@ceramicnetwork/stream-tile": "^6.0.0",
+    "@tableland/sdk": "^7.0.0"
   }
 }

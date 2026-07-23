@@ -132,7 +132,10 @@ export interface TalakWeb3Auth extends IAuth {
   revokeSession(accessToken: string, refreshToken?: string): Promise<void>;
   generateNonce(): string;
   createNonce(address: string, meta?: { ip?: string; ua?: string }): Promise<string>;
-  refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }>;
+  refresh(
+    refreshToken: string,
+    context?: { ip: string; userAgent: string },
+  ): Promise<{ accessToken: string; refreshToken: string }>;
 }
 
 export type TalakWeb3EventsMap = {

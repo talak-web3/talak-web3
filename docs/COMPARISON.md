@@ -179,11 +179,14 @@ import { SiweMessage } from "siwe";
 
 import { talakWeb3 } from "talak-web3";
 
+// Production: Redis stores + JWT_PRIVATE_KEY / JWT_PUBLIC_KEY (RS256), not JWT_SECRET
 const app = talakWeb3({
   preset: "mainnet",
   auth: {
     domain: "myapp.com",
-    secret: process.env.JWT_SECRET!,
+    nonceStore: /* RedisNonceStore */,
+    refreshStore: /* RedisRefreshStore */,
+    revocationStore: /* RedisRevocationStore */,
   },
 });
 ```

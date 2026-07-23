@@ -13,20 +13,26 @@ This document provides the complete API reference for Talak Web3.
 Creates a new talak-web3 application instance. Every instance exposes `app.handler` for HTTP auth routes.
 
 ```typescript
+import Redis from "ioredis";
 import { talakWeb3 } from "talak-web3";
+import {
+  RedisNonceStore,
+  RedisRefreshStore,
+  RedisRevocationStore,
+} from "@talak-web3/auth/stores";
+
+// Production: RS256 keys via JWT_PRIVATE_KEY / JWT_PUBLIC_KEY (not JWT_SECRET)
+const redis = new Redis(process.env.REDIS_URL!);
 
 const app = talakWeb3({
   preset: "mainnet",
   auth: {
     domain: "myapp.com",
-    secret: process.env.JWT_SECRET!,
-    sessionDuration: 900,
-  },
-  rpc: {
-    providers: [
-      { url: "https://eth-mainnet.g.alchemy.com/v2/demo", weight: 1 },
-      { url: "https://mainnet.infura.io/v3/demo", weight: 1 },
-    ],
+    nonceStore: new RedisNonceStore({ redis }),
+    refreshStore: new RedisRefreshStore({ redis }),
+    revocationStore: new RedisRevocationStore({ redis }),
+    accessTtlSeconds: 900,
+    refreshTtlSeconds: 604800,
   },
 });
 
@@ -35,15 +41,15 @@ await app.init();
 
 ### Configuration Options
 
-| Option                 | Type               | Default     | Description                  |
-| ---------------------- | ------------------ | ----------- | ---------------------------- |
-| `auth.domain`          | `string`           | required    | SIWE domain                  |
-| `auth.secret`          | `string`           | required    | JWT signing secret           |
-| `auth.sessionDuration` | `number`           | `900`       | Access token TTL in seconds  |
-| `auth.refreshDuration` | `number`           | `604800`    | Refresh token TTL in seconds |
-| `rpc.providers`        | `ProviderConfig[]` | `[]`        | RPC provider configurations  |
-| `rpc.timeout`          | `number`           | `30000`     | RPC request timeout in ms    |
-| `redis.url`            | `string`           | `undefined` | Redis connection URL         |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `auth.domain` | `string` | env `SIWE_DOMAIN` | SIWE domain binding |
+| `auth.nonceStore` | `NonceStore` | InMemory (**dev only**) | Nonce store |
+| `auth.refreshStore` | `RefreshStore` | InMemory (**dev only**) | Refresh store |
+| `auth.revocationStore` | `RevocationStore` | InMemory (**dev only**) | Revocation store |
+| `auth.accessTtlSeconds` | `number` | `900` | Access token TTL |
+| `auth.refreshTtlSeconds` | `number` | `604800` | Refresh token TTL |
+| `REDIS_URL` / JWT PEMs | env | required in production | Durable stores + RS256 keys |
 
 ### Context API
 
@@ -281,40 +287,28 @@ app.on("rpc:failover", ({ from, to, chainId }) => {
 
 ## Middleware
 
-### Express Middleware
+### Protecting routes (framework-agnostic)
+
+Prefer verifying the access token with `app.context.auth.verifySession(token, context)` in your framework middleware. RS256 keys come from `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` — there is no shared `TALAK_SECRET` / `JWT_SECRET` HMAC mode.
 
 ```typescript
-import { authMiddleware } from "@talak-web3/middleware";
-import express from "express";
+import { createAuthHandler } from "@talak-web3/core";
 
-const app = express();
-
-app.use(
-  authMiddleware({
-    secret: process.env.TALAK_SECRET!,
-    issuer: "myapp.com",
-  }),
-);
-
-app.get("/protected", (req, res) => {
-  res.json({ address: req.user.address });
+// Browser auth HTTP routes
+const authHttp = createAuthHandler(app, {
+  trustProxy: true,
+  redis, // multi-instance rate limits
 });
-```
 
-### Hono Middleware
-
-```typescript
-import { authMiddleware } from "@talak-web3/middleware/hono";
-import { Hono } from "hono";
-
-const app = new Hono();
-
-app.use(
-  "/api/*",
-  authMiddleware({
-    secret: process.env.TALAK_SECRET!,
-  }),
-);
+// Example: custom gate for other APIs
+async function requireSession(request: Request) {
+  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!token) return null;
+  return app.context.auth.verifySession(token, {
+    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown",
+    userAgent: request.headers.get("user-agent") ?? "unknown",
+  });
+}
 ```
 
 ## Utilities

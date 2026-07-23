@@ -2,6 +2,7 @@ import { TalakWeb3Error, AUTH_ERROR_CODES } from "@talak-web3/errors";
 import type Redis from "ioredis";
 
 import type { NonceStore } from "../contracts.js";
+import { TALAK_STORE_KIND, type TalakStoreKind } from "../store-kind.js";
 
 const CONSUME_NONCE_DETERMINISTIC_LUA = `
 -- KEYS[1] = consumed set (SOURCE OF TRUTH)
@@ -45,6 +46,8 @@ export interface RedisNonceStoreOptions {
 }
 
 export class RedisNonceStore implements NonceStore {
+  readonly [TALAK_STORE_KIND]: TalakStoreKind = "redis";
+  readonly __talakStoreKind: TalakStoreKind = "redis";
   private readonly redis: Redis;
   private readonly ttlMs: number;
   private readonly prefix: string;
@@ -135,16 +138,31 @@ export class RedisNonceStore implements NonceStore {
         return false;
       }
 
-      const replicasAcknowledged = (await this.redis.wait(
-        this.waitReplicas,
-        this.waitTimeoutMs,
-      )) as number;
+      if (this.waitReplicas > 0) {
+        const replicasAcknowledged = (await this.redis.wait(
+          this.waitReplicas,
+          this.waitTimeoutMs,
+        )) as number;
 
-      if (replicasAcknowledged < this.waitReplicas) {
-        console.error("[AUTH] CRITICAL: Nonce replication acknowledgment failed", {
-          expected: this.waitReplicas,
-          actual: replicasAcknowledged,
-        });
+        if (replicasAcknowledged < this.waitReplicas) {
+          // Best-effort undo: mark still consumed to avoid double-spend if partial replicate,
+          // but fail closed so caller does not treat login as successful under lag.
+          console.error("[AUTH] CRITICAL: Nonce replication acknowledgment failed — failing closed", {
+            expected: this.waitReplicas,
+            actual: replicasAcknowledged,
+          });
+          throw new TalakWeb3Error(
+            "Redis nonce replication acknowledgment failed — failing closed",
+            {
+              code: AUTH_ERROR_CODES.REDIS_NONCE_ERROR,
+              status: 503,
+              data: {
+                expectedReplicas: this.waitReplicas,
+                acknowledged: replicasAcknowledged,
+              },
+            },
+          );
+        }
       }
 
       await this.redis.pexpire(consumedKey, this.consumedRetentionMs).catch(() => {});
