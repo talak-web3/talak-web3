@@ -13,7 +13,7 @@ import { infoCommand } from "./commands/info.js";
 import { initCommand } from "./commands/init.js";
 
 const require = createRequire(import.meta.url);
-const { version } = require("../../package.json") as { version: string };
+const { version } = require("../package.json") as { version: string };
 
 export const cli = cac("talak").version(version).help();
 

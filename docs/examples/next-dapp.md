@@ -72,7 +72,7 @@ export function Providers({ children }: { children: ReactNode }) {
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { useAccount, useChain, useGasless, useRpc } from "@talak-web3/hooks";
+import { useAccount, useBalance, useTalakWeb3 } from "@talak-web3/hooks";
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -85,7 +85,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 export default function Page() {
   const account = useAccount();
-  const chain = useChain();
+  const { chainId, switchChain } = useAccount();
   const rpc = useRpc();
   const gasless = useGasless();
 

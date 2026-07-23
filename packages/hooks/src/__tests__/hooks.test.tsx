@@ -1,31 +1,61 @@
-// @vitest-environment jsdom
 import type { TalakWeb3Instance, TalakWeb3Context, IRpc } from "@talak-web3/types";
-import { renderHook, act } from "@testing-library/react";
+// @vitest-environment jsdom
+import { renderHook, act, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import { HookRegistry } from "../hook-registry.js";
-import {
-  TalakWeb3Provider,
-  useTalakWeb3,
-  useChain,
-  useAccount,
-  useRpc,
-  useGasless,
-  useIdentity,
-} from "../index.js";
+import { useAccount } from "../hooks/use-account.js";
+import { useBalance } from "../hooks/use-balance.js";
+import { TalakWeb3Provider } from "../provider.js";
+import { useTalakWeb3 } from "../shared/use-talak.js";
+import { TalakWeb3Store } from "../store.js";
 
-type Events = {
-  "chain-changed": number;
-  "chain-switch": number;
-  "account-changed": string | null;
-};
+type Events = Record<string, unknown>;
+class MockHookRegistry {
+  private map = new Map<string, Set<(data: unknown) => void>>();
+
+  on<K extends keyof Events>(event: K, handler: (data: Events[K]) => void): () => void {
+    const key = event as string;
+    let handlers = this.map.get(key);
+    if (!handlers) {
+      handlers = new Set();
+      this.map.set(key, handlers);
+    }
+    handlers.add(handler as (data: unknown) => void);
+    return () => handlers?.delete(handler as (data: unknown) => void);
+  }
+
+  off(_event: string, _handler: (...args: unknown[]) => void): void {
+    /* no-op */
+  }
+  emit<K extends keyof Events>(event: K, data: Events[K]): void {
+    this.map.get(event as string)?.forEach((h) => h(data));
+  }
+  clear(): void {
+    /* no-op */
+  }
+}
+
+function mockEthereum(overrides: Partial<Window["ethereum"]> = {}) {
+  const ethereum = {
+    isMetaMask: true,
+    request: vi.fn(),
+    on: vi.fn(),
+    removeListener: vi.fn(),
+    ...overrides,
+  };
+  Object.defineProperty(window, "ethereum", {
+    value: ethereum,
+    writable: true,
+    configurable: true,
+  });
+  return ethereum;
+}
 
 function createMockInstance(overrides?: { rpc?: Partial<IRpc> }): TalakWeb3Instance {
-  const hooks = new HookRegistry<Events>();
-
+  const hooks = new MockHookRegistry() as unknown as TalakWeb3Instance["hooks"];
   const rpc: IRpc = {
-    request: vi.fn().mockResolvedValue(null),
+    request: vi.fn().mockResolvedValue("0x0"),
     getProvider: vi.fn().mockResolvedValue(undefined),
     pauseHealthChecks: vi.fn(),
     resumeHealthChecks: vi.fn(),
@@ -71,7 +101,9 @@ function createMockInstance(overrides?: { rpc?: Partial<IRpc> }): TalakWeb3Insta
     handler: vi.fn().mockResolvedValue(new Response()),
     init: vi.fn().mockResolvedValue(undefined),
     destroy: vi.fn().mockResolvedValue(undefined),
-  };
+    healthCheck: vi.fn().mockReturnValue({ status: "ok" as const, checks: {} }),
+    shutdown: vi.fn().mockResolvedValue(undefined),
+  } satisfies TalakWeb3Instance as unknown as TalakWeb3Instance;
 }
 
 function createWrapper(instance: TalakWeb3Instance) {
@@ -80,328 +112,165 @@ function createWrapper(instance: TalakWeb3Instance) {
   };
 }
 
-describe("TalakWeb3Provider + useTalakWeb3", () => {
-  it("provides instance to children via context", () => {
+describe("TalakWeb3Provider", () => {
+  it("renders children without throwing", () => {
     const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useTalakWeb3(), { wrapper });
-    expect(result.current).toBe(instance);
+    const { result } = renderHook(() => useAccount(), { wrapper: createWrapper(instance) });
+    expect(result.current.address).toBeNull();
   });
 
   it("throws when used outside provider", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    expect(() => {
-      renderHook(() => useTalakWeb3());
-    }).toThrow("useTalakWeb3 must be used within a TalakWeb3Provider");
-
+    expect(() => renderHook(() => useAccount())).toThrow("StoreContext");
     spy.mockRestore();
   });
 });
 
-describe("useChain", () => {
-  it("returns default chain id from config", () => {
+describe("useTalakWeb3", () => {
+  it("returns the SDK instance", () => {
     const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useChain(), { wrapper });
-    expect(result.current.chainId).toBe(1);
-    expect(result.current.chains).toHaveLength(2);
+    const { result } = renderHook(() => useTalakWeb3(), { wrapper: createWrapper(instance) });
+    expect(result.current).toBe(instance);
   });
 
-  it("switchChain emits chain-switch event", () => {
-    const instance = createMockInstance();
-    const emitSpy = vi.spyOn(instance.hooks, "emit");
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useChain(), { wrapper });
-
-    act(() => {
-      result.current.switchChain(10);
-    });
-
-    expect(emitSpy).toHaveBeenCalledWith("chain-switch", 10);
-  });
-
-  it("updates chainId when chain-changed event fires", () => {
-    const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useChain(), { wrapper });
-    expect(result.current.chainId).toBe(1);
-
-    act(() => {
-      instance.hooks.emit("chain-changed", 10);
-    });
-
-    expect(result.current.chainId).toBe(10);
+  it("throws outside provider", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => renderHook(() => useTalakWeb3())).toThrow("StoreContext");
+    spy.mockRestore();
   });
 });
 
 describe("useAccount", () => {
-  it("returns disconnected state by default", () => {
-    const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
+  beforeEach(() => mockEthereum());
 
-    const { result } = renderHook(() => useAccount(), { wrapper });
+  it("starts with null address and first chain", () => {
+    const { result } = renderHook(() => useAccount(), {
+      wrapper: createWrapper(createMockInstance()),
+    });
+    expect(result.current.address).toBeNull();
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.chainId).toBe(1);
+    expect(result.current.chains).toHaveLength(2);
+  });
+
+  it("connect requests accounts via eth_requestAccounts", async () => {
+    const eth = mockEthereum({ request: vi.fn().mockResolvedValue(["0xABC"]) });
+    const { result } = renderHook(() => useAccount(), {
+      wrapper: createWrapper(createMockInstance()),
+    });
+
+    await act(async () => {
+      await result.current.connect();
+    });
+
+    expect(eth.request).toHaveBeenCalledWith({ method: "eth_requestAccounts" });
+    expect(result.current.address).toBe("0xABC");
+    expect(result.current.isConnected).toBe(true);
+  });
+
+  it("disconnect clears address", async () => {
+    mockEthereum({ request: vi.fn().mockResolvedValue(["0xABC"]) });
+    const { result } = renderHook(() => useAccount(), {
+      wrapper: createWrapper(createMockInstance()),
+    });
+
+    await act(async () => {
+      await result.current.connect();
+    });
+    act(() => result.current.disconnect());
+
     expect(result.current.address).toBeNull();
     expect(result.current.isConnected).toBe(false);
   });
 
-  it("connect emits account-changed and updates state", () => {
+  it("reacts to account-changed events", () => {
     const instance = createMockInstance();
-    const emitSpy = vi.spyOn(instance.hooks, "emit");
-    const wrapper = createWrapper(instance);
+    const { result } = renderHook(() => useAccount(), { wrapper: createWrapper(instance) });
 
-    const { result } = renderHook(() => useAccount(), { wrapper });
-
-    act(() => {
-      result.current.connect("0xABC");
-    });
-
-    expect(emitSpy).toHaveBeenCalledWith("account-changed", "0xABC");
-  });
-
-  it("updates address when account-changed event fires", () => {
-    const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useAccount(), { wrapper });
-
-    act(() => {
-      instance.hooks.emit("account-changed", "0xDEF");
-    });
-
-    expect(result.current.address).toBe("0xDEF");
+    act(() => instance.hooks.emit("account-changed", "0xABC"));
+    expect(result.current.address).toBe("0xABC");
     expect(result.current.isConnected).toBe(true);
   });
 
-  it("disconnect sets address to null", () => {
+  it("reacts to chain-changed events", () => {
     const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
+    const { result } = renderHook(() => useAccount(), { wrapper: createWrapper(instance) });
 
-    const { result } = renderHook(() => useAccount(), { wrapper });
+    expect(result.current.chainId).toBe(1);
+    act(() => instance.hooks.emit("chain-changed", 10));
+    expect(result.current.chainId).toBe(10);
+  });
 
-    act(() => {
-      instance.hooks.emit("account-changed", "0xDEF");
-    });
-    expect(result.current.isConnected).toBe(true);
+  it("switchChain emits chain-switch event", () => {
+    const instance = createMockInstance();
+    const spy = vi.spyOn(instance.hooks, "emit");
+    const { result } = renderHook(() => useAccount(), { wrapper: createWrapper(instance) });
 
-    act(() => {
-      result.current.disconnect();
-    });
-    expect(result.current.address).toBeNull();
-    expect(result.current.isConnected).toBe(false);
+    act(() => result.current.switchChain(10));
+    expect(spy).toHaveBeenCalledWith("chain-switch", 10);
+  });
+
+  it("throws outside provider", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => renderHook(() => useAccount())).toThrow("StoreContext");
+    spy.mockRestore();
   });
 });
 
-describe("useRpc", () => {
-  it("delegates request to instance.context.rpc.request", async () => {
-    const mockRequest = vi.fn().mockResolvedValue({ blockNumber: 42 });
-    const instance = createMockInstance({ rpc: { request: mockRequest } });
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useRpc(), { wrapper });
-
-    let response: unknown;
-    await act(async () => {
-      response = await result.current.request("eth_blockNumber");
+describe("useBalance", () => {
+  it("fetches and returns balance", async () => {
+    const mockRequest = vi.fn().mockResolvedValue("0x1bc16d674ec80000"); // 2 ETH
+    const { result } = renderHook(() => useBalance({ address: "0xABC" }), {
+      wrapper: createWrapper(createMockInstance({ rpc: { request: mockRequest } })),
     });
 
-    expect(mockRequest).toHaveBeenCalledWith(1, "eth_blockNumber", []);
-    expect(response).toEqual({ blockNumber: 42 });
-  });
-
-  it("passes params through to rpc.request", async () => {
-    const mockRequest = vi.fn().mockResolvedValue("0x1");
-    const instance = createMockInstance({ rpc: { request: mockRequest } });
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useRpc(), { wrapper });
-
-    await act(async () => {
-      await result.current.request("eth_getBalance", ["0xABC", "latest"]);
-    });
-
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data).toBe(2000000000000000000n);
     expect(mockRequest).toHaveBeenCalledWith(1, "eth_getBalance", ["0xABC", "latest"]);
   });
-});
 
-describe("useGasless", () => {
-  it("starts with idle state", () => {
-    const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useGasless(), { wrapper });
-    expect(result.current.loading).toBe(false);
-    expect(result.current.lastHash).toBeNull();
-    expect(result.current.error).toBeNull();
-  });
-
-  it("sets error when AA plugin not loaded", async () => {
-    const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useGasless(), { wrapper });
-
-    await act(async () => {
-      try {
-        await result.current.sendGasless("0xtarget", "0xdata");
-      } catch {
-        // expected error
-      }
-    });
-    expect(result.current.error).toBe("AccountAbstraction plugin not loaded");
-    expect(result.current.loading).toBe(false);
-  });
-
-  it("calls aa.sendGasless and returns hash on success", async () => {
-    const instance = createMockInstance();
-    const sendGasless = vi.fn().mockResolvedValue("0xhash123");
-    instance.context.plugins.set("aa", { sendGasless });
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useGasless(), { wrapper });
-
-    let hash: string | undefined;
-    await act(async () => {
-      hash = await result.current.sendGasless("0xtarget", "0xdata");
+  it("exposes error state on failure", async () => {
+    const mockRequest = vi.fn().mockRejectedValue(new Error("RPC timeout"));
+    const { result } = renderHook(() => useBalance({ address: "0xABC" }), {
+      wrapper: createWrapper(createMockInstance({ rpc: { request: mockRequest } })),
     });
 
-    expect(hash).toBe("0xhash123");
-    expect(result.current.lastHash).toBe("0xhash123");
-    expect(result.current.loading).toBe(false);
-    expect(sendGasless).toHaveBeenCalledWith("0xtarget", "0xdata");
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data).toBeNull();
+    expect(result.current.error).toBe("RPC timeout");
   });
 });
 
-describe("useIdentity", () => {
-  it("starts with null profile", () => {
+describe("TalakWeb3Store", () => {
+  it("is exported for advanced use", () => {
     const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useIdentity(), { wrapper });
-    expect(result.current.profile).toBeNull();
-    expect(result.current.loading).toBe(false);
+    const store = new TalakWeb3Store(instance);
+    expect(store.getSnapshot().chainId).toBe(1);
+    expect(store.getSnapshot().chains).toHaveLength(2);
+    expect(store.getSnapshot().address).toBeNull();
   });
 
-  it("returns address as fallback when identity plugin not loaded", async () => {
+  it("notifies on chain-changed", () => {
     const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
+    const store = new TalakWeb3Store(instance);
+    const cb = vi.fn();
+    const unsub = store.subscribe(cb);
 
-    const { result } = renderHook(() => useIdentity(), { wrapper });
+    instance.hooks.emit("chain-changed", 10);
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot().chainId).toBe(10);
 
-    await act(async () => {
-      await result.current.resolve("0xABC");
-    });
-
-    expect(result.current.profile).toEqual({ address: "0xABC" });
-    expect(result.current.loading).toBe(false);
+    unsub();
+    instance.hooks.emit("chain-changed", 1);
+    expect(cb).toHaveBeenCalledTimes(1);
   });
 
-  it("calls identity.resolve and sets profile", async () => {
+  it("setAddress emits account-changed and updates state", () => {
     const instance = createMockInstance();
-    const mockProfile = { did: "did:key:z123", ens: "alice.eth", address: "0xDEF" };
-    const resolve = vi.fn().mockResolvedValue(mockProfile);
-    instance.context.plugins.set("identity", { resolve });
-    const wrapper = createWrapper(instance);
+    const store = new TalakWeb3Store(instance);
+    const spy = vi.spyOn(instance.hooks, "emit");
 
-    const { result } = renderHook(() => useIdentity(), { wrapper });
-
-    await act(async () => {
-      await result.current.resolve("0xDEF");
-    });
-
-    expect(resolve).toHaveBeenCalledWith("0xDEF");
-    expect(result.current.profile).toEqual(mockProfile);
-    expect(result.current.loading).toBe(false);
-  });
-});
-
-describe("Edge cases", () => {
-  it("useChain with single chain config", () => {
-    const instance = createMockInstance();
-    (instance.config as Record<string, unknown>)["chains"] = [
-      {
-        id: 1,
-        name: "Ethereum",
-        rpcUrls: ["https://rpc.example.com"],
-        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-        testnet: false,
-      },
-    ];
-    const wrapper = createWrapper(instance);
-    const { result } = renderHook(() => useChain(), { wrapper });
-    expect(result.current.chainId).toBe(1);
-    expect(result.current.chains).toHaveLength(1);
-  });
-
-  it("useRpc propagates errors", async () => {
-    const mockRequest = vi.fn().mockRejectedValue(new Error("RPC error"));
-    const instance = createMockInstance({ rpc: { request: mockRequest } });
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useRpc(), { wrapper });
-
-    await act(async () => {
-      try {
-        await result.current.request("eth_blockNumber");
-      } catch {
-        // expected error
-      }
-    });
-
-    expect(result.current).toBeDefined();
-  });
-
-  it("useGasless propagates internal errors", async () => {
-    const instance = createMockInstance();
-    const sendGasless = vi.fn().mockRejectedValue(new Error("bundler down"));
-    instance.context.plugins.set("aa", { sendGasless });
-    const wrapper = createWrapper(instance);
-
-    const { result } = renderHook(() => useGasless(), { wrapper });
-
-    await act(async () => {
-      try {
-        await result.current.sendGasless("0xtarget", "0xdata");
-      } catch {
-        // expected error
-      }
-    });
-
-    expect(result.current.error).toBe("bundler down");
-    expect(result.current.loading).toBe(false);
-  });
-
-  it("useAccount connect emits and tracks state", () => {
-    const instance = createMockInstance();
-    const wrapper = createWrapper(instance);
-    const { result } = renderHook(() => useAccount(), { wrapper });
-
-    act(() => {
-      result.current.connect("0xAAA");
-    });
-    expect(result.current.address).toBe("0xAAA");
-    expect(result.current.isConnected).toBe(true);
-
-    act(() => {
-      result.current.disconnect();
-    });
-    expect(result.current.address).toBeNull();
-    expect(result.current.isConnected).toBe(false);
-  });
-
-  it("useChain switchChain emits event", () => {
-    const instance = createMockInstance();
-    const emitSpy = vi.spyOn(instance.hooks, "emit");
-    const wrapper = createWrapper(instance);
-    const { result } = renderHook(() => useChain(), { wrapper });
-
-    act(() => {
-      result.current.switchChain(10);
-    });
-    expect(emitSpy).toHaveBeenCalledWith("chain-switch", 10);
+    store.setAddress("0xABC");
+    expect(spy).toHaveBeenCalledWith("account-changed", "0xABC");
   });
 });

@@ -163,10 +163,10 @@ Re-exports from `@talak-web3/hooks`. There is **no** `useSIWE` helper — wire S
 import { TalakWeb3Provider, useTalakWeb3 } from "talak-web3/react";
 ```
 
-### `useAccount` / `useChain` / `useRpc`
+### `useAccount`
 
 ```typescript
-import { useAccount, useChain, useRpc } from "talak-web3/react";
+import { useAccount } from "talak-web3/react";
 ```
 
 ## Client (`TalakWeb3Client`)

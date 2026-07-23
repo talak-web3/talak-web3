@@ -1,5 +1,6 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
+
 import { Terminal, TypingAnimation } from "@/components/terminal";
 
 export const metadata: Metadata = {

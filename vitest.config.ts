@@ -82,7 +82,8 @@ export default defineConfig({
     alias: {
       "@talak-web3/core": path.resolve(__dirname, "./packages/core/src/index.ts"),
       "@talak-web3/config": path.resolve(__dirname, "./packages/config/src/index.ts"),
-      "@talak-web3/hooks": path.resolve(__dirname, "./packages/hooks/src/index.tsx"),
+      "@talak-web3/hooks": path.resolve(__dirname, "./packages/hooks/src/index.ts"),
+      "@talak-web3/client": path.resolve(__dirname, "./packages/client/src/index.ts"),
       "@talak-web3/types": path.resolve(__dirname, "./packages/types/src/index.ts"),
       "@talak-web3/errors": path.resolve(__dirname, "./packages/errors/src/index.ts"),
       "@talak-web3/rate-limit": path.resolve(__dirname, "./packages/rate-limit/src/index.ts"),

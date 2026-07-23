@@ -1,10 +1,9 @@
-import { useTalakWeb3, useChain, useAccount } from "@talak-web3/hooks";
+import { useAccount, useTalakWeb3 } from "@talak-web3/hooks";
 import React from "react";
 
 export function AdminDashboard() {
   const instance = useTalakWeb3();
-  const { chainId } = useChain();
-  const { address, isConnected } = useAccount();
+  const { chainId, address, isConnected } = useAccount();
 
   return (
     <div className="p-6 bg-gray-900 text-white min-h-screen">

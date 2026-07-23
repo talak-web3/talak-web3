@@ -1,9 +1,1 @@
-export {
-  TalakWeb3Provider,
-  useTalakWeb3,
-  useChain,
-  useAccount,
-  useRpc,
-  useGasless,
-  useIdentity,
-} from "@talak-web3/hooks";
+export { TalakWeb3Provider, useAccount, useBalance, useTalakWeb3 } from "@talak-web3/hooks";

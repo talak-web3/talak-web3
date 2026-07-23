@@ -12,76 +12,64 @@ yarn add @talak-web3/hooks
 pnpm add @talak-web3/hooks
 ```
 
-## Hooks
+## Quick Start
 
-### useWallet
+```tsx
+import { talakWeb3 } from "talak-web3";
+import { TalakWeb3Provider, useAccount, useBalance } from "@talak-web3/hooks";
 
-Manage wallet connections and state.
+const instance = talakWeb3({
+  chains: [
+    {
+      id: 1,
+      name: "Ethereum",
+      rpcUrls: ["https://cloudflare-eth.com"],
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      testnet: false,
+    },
+  ],
+});
+await instance.init();
 
-```typescript
-import { useWallet } from '@talak-web3/hooks';
-
-function WalletButton() {
-  const { connect, disconnect, address, isConnected, chainId } = useWallet();
-
+function App() {
   return (
-    <button onClick={isConnected ? disconnect : connect}>
-      {isConnected ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connect Wallet'}
-    </button>
+    <TalakWeb3Provider instance={instance}>
+      <Wallet />
+    </TalakWeb3Provider>
   );
 }
-```
 
-### Sign-In with Ethereum (Next.js)
+function Wallet() {
+  const { address, chainId, isConnected, connect, switchChain } = useAccount();
+  return (
+    <div>
+      <p>Chain: {chainId}</p>
+      {isConnected ? <p>{address}</p> : <button onClick={connect}>Connect</button>}
+    </div>
+  );
+}
 
-There is no `useSIWE` hook. In Next.js client components, use `TalakWeb3Client` against `/api/auth/*`:
-
-```typescript
-import { TalakWeb3Client } from "talak-web3";
-
-const client = new TalakWeb3Client({ baseUrl: "/api" });
-
-// 1. client.getNonce(address)
-// 2. sign SIWE message with wallet
-// 3. client.loginWithSiwe(message, signature)
-```
-
-See [docs/NEXTJS.md](../../docs/NEXTJS.md) for the full App Router setup (`toNextJsHandler`, `nextCookies`, `getSession`).
-
-### useContract
-
-Interact with smart contracts.
-
-```typescript
-import { useContract } from '@talak-web3/hooks';
-
-function TokenBalance() {
-  const { read, write } = useContract({
-    address: '0x1111111111111111111111111111111111111111',
-    abi: ERC20_ABI,
-  });
-
-  const { data: balance } = read('balanceOf', [address]);
-
-  return <div>Balance: {balance?.toString()}</div>;
+function BalanceDisplay({ address }: { address: `0x${string}` }) {
+  const { data, isLoading } = useBalance({ address });
+  if (isLoading) return <p>Loading…</p>;
+  return <p>{data ? formatEther(data) : "—"} ETH</p>;
 }
 ```
 
-### useBalance
+---
 
-Fetch native token balance.
+## Hooks
 
-```typescript
-import { useBalance } from '@talak-web3/hooks';
+| Hook                        | Description                                      |
+| --------------------------- | ------------------------------------------------ |
+| [`useAccount`](#useaccount) | Address, chain, connect, disconnect, switchChain |
+| [`useBalance`](#usebalance) | Native token balance                             |
 
-function Balance() {
-  const { data: balance, isLoading } = useBalance({
-    address: '0x1111111111111111111111111111111111111111',
-  });
+Advanced / escape hatch:
 
-  return <div>{isLoading ? 'Loading...' : `${balance} ETH`}</div>;
-}
-```
+- [`useTalakWeb3`](#usetalakweb3) — raw SDK instance for plugins, middleware, etc.
+
+---
 
 ## License
 

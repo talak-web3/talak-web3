@@ -5,7 +5,7 @@ Optional admin UI building blocks for talak-web3: default navigation metadata an
 ## Contents
 
 - **`getDefaultNav()`** — Returns default admin nav items (`/admin`, `/admin/analytics`).
-- **`AdminDashboard`** (React, in `src/index.tsx`) — Example dashboard showing chain, account, and loaded plugins via `useTalakWeb3`, `useChain`, and `useAccount`.
+- **`AdminDashboard`** (React, in `src/index.tsx`) — Example dashboard showing chain, account, and loaded plugins via `useAccount` and `useTalakWeb3`.
 
 ## Requirements
 

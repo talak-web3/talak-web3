@@ -3,9 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { getDefaultNav } from "../index.js";
 
 vi.mock("@talak-web3/hooks", () => ({
-  useTalakWeb3: vi.fn(),
-  useChain: vi.fn(),
   useAccount: vi.fn(),
+  useTalakWeb3: vi.fn(),
 }));
 
 vi.mock("react", async () => {

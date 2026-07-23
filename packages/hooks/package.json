@@ -1,6 +1,7 @@
 {
   "name": "@talak-web3/hooks",
   "version": "1.1.0",
+  "description": "React hooks for talak-web3. Wallet connection, balance, and message signing.",
   "homepage": "https://github.com/dagimabebe/talak-web3/tree/main/packages/hooks#readme",
   "bugs": {
     "url": "https://github.com/dagimabebe/talak-web3/issues"
@@ -26,15 +27,20 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./hook-registry": {
-      "types": "./dist/hook-registry.d.ts",
-      "default": "./dist/hook-registry.js"
+    "./use-account": {
+      "types": "./dist/hooks/use-account.d.ts",
+      "default": "./dist/hooks/use-account.js"
+    },
+    "./use-balance": {
+      "types": "./dist/hooks/use-balance.d.ts",
+      "default": "./dist/hooks/use-balance.js"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "lint": "oxlint .",
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
@@ -42,6 +48,7 @@
     "lint:types": "attw --profile esm-only --pack ."
   },
   "dependencies": {
+    "@talak-web3/client": "workspace:*",
     "@talak-web3/types": "workspace:*"
   },
   "devDependencies": {
@@ -50,8 +57,8 @@
     "@types/react": "^18.0.0 || ^19.0.0",
     "@types/react-dom": "^18.0.0 || ^19.0.0",
     "jsdom": "^29.1.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"

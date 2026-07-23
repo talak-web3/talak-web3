@@ -86,7 +86,7 @@ Client-side SIWE: `TalakWeb3Client({ baseUrl: "/api" })` or `fetch("/api/auth/..
 ### React Integration
 
 ```tsx
-import { TalakWeb3Provider, useAccount, useChain } from "talak-web3/react";
+import { TalakWeb3Provider, useAccount } from "talak-web3/react";
 
 function App() {
   return (
@@ -97,8 +97,7 @@ function App() {
 }
 
 function YourComponent() {
-  const { address, isConnected } = useAccount();
-  const { chain } = useChain();
+  const { address, chainId, isConnected } = useAccount();
 
   if (!isConnected) return <ConnectWallet />;
 
@@ -224,7 +223,7 @@ import type {
 ```typescript
 import { MultiChainRouter } from "talak-web3/multichain";
 
-import { TalakWeb3Provider, useTalakWeb3, useAccount, useChain } from "talak-web3/react";
+import { TalakWeb3Provider, useAccount, useTalakWeb3 } from "talak-web3/react";
 
 import { toNextJsHandler, nextCookies, getSession } from "talak-web3/nextjs";
 ```

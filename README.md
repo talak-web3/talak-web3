@@ -42,7 +42,7 @@ Consult [`docs/MINIMAL_SETUP.md`](./docs/MINIMAL_SETUP.md) and the [`@talak-web3
 
 ### React integration
 
-`talak-web3/react` re-exports hooks from `@talak-web3/hooks` (e.g. `TalakWeb3Provider`, `useTalakWeb3`, `useAccount`, `useChain`). Wire your own SIWE signing flow against your API; there is no `useSIWE` helper in the current release.
+`talak-web3/react` re-exports hooks from `@talak-web3/hooks` (`TalakWeb3Provider`, `useAccount`, `useBalance`, `useTalakWeb3`). Wire your own SIWE signing flow against your API; there is no `useSIWE` helper in the current release.
 
 ### Instance lifecycle
 

@@ -129,7 +129,7 @@ await client.login(message, signature);
 
 - `TalakWeb3Provider` - Context provider component
 - `useAccount()` - Wallet connection state and methods
-- `useChain()` - Current chain and switcher
+- `useAccount()` — Address, chain, connect, disconnect, switchChain
 - `useRpc()` - RPC request interface
 - `useGasless()` - Gasless transaction methods
 

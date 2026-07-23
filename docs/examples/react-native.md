@@ -61,12 +61,12 @@ export default function App() {
 
 ```tsx
 import { View, Text, Button } from "react-native";
-import { useAccount, useChain } from "@talak-web3/hooks";
+import { useAccount } from "@talak-web3/hooks";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 export default function HomeScreen({ navigation }: any) {
   const account = useAccount();
-  const chain = useChain();
+  const { chainId } = useAccount();
 
   return (
     <View style={{ padding: 16, gap: 12 }}>
@@ -164,5 +164,5 @@ expo start --ios
 - Uses Expo for development
 - React Native 0.74.5
 - Navigation using @react-navigation/native-stack
-- Uses same hooks as web (useAccount, useChain, useRpc)
+- Uses same hooks as web (useAccount, useBalance)
 - Mock connect uses hardcoded address `0x000000000000000000000000000000000000dEaD`

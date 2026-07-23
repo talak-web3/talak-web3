@@ -1,6 +1,13 @@
 "use client";
 
 import {
+  motion,
+  useInView,
+  type DOMMotionComponents,
+  type HTMLMotionProps,
+  type MotionProps,
+} from "motion/react";
+import {
   Children,
   createContext,
   useContext,
@@ -11,13 +18,6 @@ import {
   type ComponentType,
   type RefAttributes,
 } from "react";
-import {
-  motion,
-  useInView,
-  type DOMMotionComponents,
-  type HTMLMotionProps,
-  type MotionProps,
-} from "motion/react";
 
 import { cn } from "@/lib/utils";
 
