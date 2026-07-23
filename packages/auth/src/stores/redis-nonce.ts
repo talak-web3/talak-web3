@@ -147,10 +147,13 @@ export class RedisNonceStore implements NonceStore {
         if (replicasAcknowledged < this.waitReplicas) {
           // Best-effort undo: mark still consumed to avoid double-spend if partial replicate,
           // but fail closed so caller does not treat login as successful under lag.
-          console.error("[AUTH] CRITICAL: Nonce replication acknowledgment failed — failing closed", {
-            expected: this.waitReplicas,
-            actual: replicasAcknowledged,
-          });
+          console.error(
+            "[AUTH] CRITICAL: Nonce replication acknowledgment failed — failing closed",
+            {
+              expected: this.waitReplicas,
+              actual: replicasAcknowledged,
+            },
+          );
           throw new TalakWeb3Error(
             "Redis nonce replication acknowledgment failed — failing closed",
             {

@@ -64,14 +64,16 @@ export async function createExpiredAccessToken(
   const past = Math.floor(Date.now() / 1000) - 60 * 60;
   const jti = crypto.randomUUID();
 
-  return new SignJWT({ address, chainId })
-    // Test helper only — production runtime uses RS256 exclusively.
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(address.toLowerCase())
-    .setJti(jti)
-    .setIssuedAt(past)
-    .setExpirationTime(past + 15 * 60)
-    .sign(jwtSecret);
+  return (
+    new SignJWT({ address, chainId })
+      // Test helper only — production runtime uses RS256 exclusively.
+      .setProtectedHeader({ alg: "HS256" })
+      .setSubject(address.toLowerCase())
+      .setJti(jti)
+      .setIssuedAt(past)
+      .setExpirationTime(past + 15 * 60)
+      .sign(jwtSecret)
+  );
 }
 
 export function createMalformedToken(): string {
@@ -87,11 +89,13 @@ export async function createInvalidSignatureToken(
 
   const now = Math.floor(Date.now() / 1000);
 
-  return new SignJWT({ address, chainId })
-    // Test helper only — production runtime uses RS256 exclusively.
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(address.toLowerCase())
-    .setIssuedAt()
-    .setExpirationTime(now + 15 * 60)
-    .sign(wrongSecret);
+  return (
+    new SignJWT({ address, chainId })
+      // Test helper only — production runtime uses RS256 exclusively.
+      .setProtectedHeader({ alg: "HS256" })
+      .setSubject(address.toLowerCase())
+      .setIssuedAt()
+      .setExpirationTime(now + 15 * 60)
+      .sign(wrongSecret)
+  );
 }

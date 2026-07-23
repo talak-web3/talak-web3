@@ -48,11 +48,7 @@ REQUIRE_REDIS_RATE_LIMIT=true
 ```typescript
 import Redis from "ioredis";
 import { talakWeb3 } from "talak-web3";
-import {
-  RedisNonceStore,
-  RedisRefreshStore,
-  RedisRevocationStore,
-} from "@talak-web3/auth/stores";
+import { RedisNonceStore, RedisRefreshStore, RedisRevocationStore } from "@talak-web3/auth/stores";
 import { createAuthHandler } from "@talak-web3/core";
 
 const redis = new Redis(process.env.REDIS_URL!);

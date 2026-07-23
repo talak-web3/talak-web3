@@ -9,11 +9,7 @@ import { verifyMessage } from "viem";
 import type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from "./contracts.js";
 import type { KeyRotationConfig } from "./jwks.js";
 import { createKeyProvider, type KeyProviderType, JwtManager } from "./key-management.js";
-import {
-  assertProductionSafeStores,
-  TALAK_STORE_KIND,
-  type TalakStoreKind,
-} from "./store-kind.js";
+import { assertProductionSafeStores, TALAK_STORE_KIND, type TalakStoreKind } from "./store-kind.js";
 import { getAuthoritativeTime, type AuthoritativeTime } from "./time.js";
 
 export type { NonceStore, RefreshSession, RefreshStore, RevocationStore } from "./contracts.js";
