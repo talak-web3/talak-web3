@@ -23,7 +23,7 @@ if (typeof MainnetPreset !== "object" || !MainnetPreset.chains) {
 console.log("✓ MainnetPreset is properly structured");
 
 try {
-  new InMemoryTokenStorage();
+  void new InMemoryTokenStorage();
   console.log("✓ InMemoryTokenStorage can be instantiated");
 } catch (error) {
   console.error("❌ FAIL: InMemoryTokenStorage cannot be instantiated:", error.message);

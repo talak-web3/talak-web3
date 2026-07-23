@@ -138,7 +138,8 @@
       {
         "allow": ["arrowFunctions"]
       }
-    ]
+    ],
+    "oxc/no-map-spread": "off"
   },
   "env": {
     "builtin": true

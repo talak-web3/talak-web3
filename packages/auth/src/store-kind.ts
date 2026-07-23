@@ -14,7 +14,7 @@ export type StoreKindCarrier = {
 export function getStoreKind(store: unknown): TalakStoreKind {
   if (!store || typeof store !== "object") return "custom";
   const s = store as StoreKindCarrier;
-  return s[TALAK_STORE_KIND] ?? s.__talakStoreKind ?? "custom";
+  return s[TALAK_STORE_KIND] ?? s.__talakStoreKind ?? "custom"; // oxlint-disable-line no-underscore-dangle
 }
 
 export function isMemoryStore(store: unknown): boolean {

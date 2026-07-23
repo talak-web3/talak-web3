@@ -270,7 +270,7 @@ export class IncidentResponseManager {
     return actionMap[type]?.[severity] ?? [];
   }
 
-  private async executeContainmentAction(action: string, incident: Incident): Promise<void> {
+  private async executeContainmentAction(action: string, _incident: Incident): Promise<void> {
     switch (action) {
       case "immediate_key_rotation":
         await this.executeEmergencyKeyRotation();
@@ -346,7 +346,7 @@ export class IncidentResponseManager {
     };
   }
 
-  private async executeGlobalJwtRevocation(context: RevocationContext): Promise<RevocationResult> {
+  private async executeGlobalJwtRevocation(_context: RevocationContext): Promise<RevocationResult> {
     const startTime = Date.now();
     const errors: string[] = [];
     let revokedCount = 0;
@@ -552,22 +552,22 @@ export class IncidentResponseManager {
   }
 
   private async getJwtsForWallet(
-    walletAddress: string,
+    _walletAddress: string,
   ): Promise<Array<{ jti: string; exp: number }>> {
     return [];
   }
 
-  private async getJwtsForIp(ip: string): Promise<Array<{ jti: string; exp: number }>> {
+  private async getJwtsForIp(_ip: string): Promise<Array<{ jti: string; exp: number }>> {
     return [];
   }
 
   private async getJwtsIssuedAfter(
-    timestamp: number,
+    _timestamp: number,
   ): Promise<Array<{ jti: string; exp: number }>> {
     return [];
   }
 
-  private async revokeJwt(jti: string, exp: number): Promise<void> {
+  private async revokeJwt(jti: string, _exp: number): Promise<void> {
     console.info(`[REVOCATION] Revoking JWT: ${jti}`);
   }
 

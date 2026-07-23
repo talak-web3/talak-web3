@@ -7,6 +7,7 @@ import {
 } from "@talak-web3/rate-limit";
 import type { TalakWeb3Auth } from "@talak-web3/types";
 import type { TalakWeb3Context, TalakWeb3Instance } from "@talak-web3/types";
+import type Redis from "ioredis";
 
 import {
   appendAuthCookies,
@@ -86,7 +87,7 @@ function memoryRateLimiters(): ResolvedAuthHandlerOptions["rateLimiters"] {
   };
 }
 
-function redisRateLimiters(redis: any): ResolvedAuthHandlerOptions["rateLimiters"] {
+function redisRateLimiters(redis: Redis): ResolvedAuthHandlerOptions["rateLimiters"] {
   // Sliding window: capacity roughly matches prior token-bucket burst sizes.
   const windowMs = 60_000;
   return {

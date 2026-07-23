@@ -37,6 +37,7 @@ function registerShutdown(): void {
   });
 }
 
+// oxlint-disable-next-line typescript-eslint/no-extraneous-class
 export class ConnectionManager {
   private static redisInstances = new Map<string, Redis>();
 

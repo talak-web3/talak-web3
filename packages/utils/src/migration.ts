@@ -1,5 +1,6 @@
 export type SDKType = "ethers" | "viem" | "web3js" | "rainbowkit" | "thirdweb";
 
+// oxlint-disable-next-line typescript-eslint/no-extraneous-class
 export class MigrationTool {
   static suggestConfig(sdk: SDKType, existingConfig: unknown) {
     switch (sdk) {

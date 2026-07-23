@@ -10,7 +10,7 @@ export type CorsPolicy = {
 function validateOrigins(origins: readonly string[]): void {
   for (const origin of origins) {
     try {
-      new URL(origin);
+      void new URL(origin);
     } catch {
       console.error(
         `[CORS] Invalid origin format: "${origin}" — must be full URL like https://example.com`,

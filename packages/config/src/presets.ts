@@ -132,6 +132,7 @@ export function resolvePreset(input: Record<string, unknown>): Record<string, un
   return { ...preset, ...rest, chains: mergedChains };
 }
 
+// oxlint-disable-next-line typescript-eslint/no-extraneous-class
 export class ConfigManager {
   static validate(config: unknown) {
     return TalakWeb3ConfigSchema.parse(config);

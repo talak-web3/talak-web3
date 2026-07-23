@@ -14,6 +14,7 @@ export interface RequestContext extends TalakWeb3Context {
   };
 }
 
+// oxlint-disable-next-line typescript-eslint/no-extraneous-class
 export class ContextFactory {
   static create(
     instance: TalakWeb3Instance,

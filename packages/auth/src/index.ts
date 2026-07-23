@@ -48,7 +48,7 @@ interface SiweFields {
 
 function isValidHostname(domain: string): boolean {
   try {
-    new URL(`https://${domain}`);
+    void new URL(`https://${domain}`);
     return !domain.includes("://") && !domain.includes("/");
   } catch {
     return false;
@@ -178,7 +178,7 @@ function parseSiweMessage(message: string): SiweFields {
 
   if (uriMatch?.[1]) {
     try {
-      new URL(uriMatch[1]);
+      void new URL(uriMatch[1]);
     } catch (cause) {
       throw new TalakWeb3Error("Invalid SIWE URI format", {
         code: AUTH_ERROR_CODES.SIWE_PARSE_ERROR,

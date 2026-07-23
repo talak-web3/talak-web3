@@ -334,7 +334,7 @@ export class JwtManager {
       return (this.keyProvider as EnvironmentKeyProvider).getJwks();
     }
 
-    const keys = await this.keyProvider.getVerificationKeys();
+    await this.keyProvider.getVerificationKeys();
     const jwks: JwksResponse = { keys: [] };
 
     return jwks;

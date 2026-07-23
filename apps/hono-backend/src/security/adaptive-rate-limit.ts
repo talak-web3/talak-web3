@@ -241,7 +241,7 @@ export class AdaptiveRateLimiter {
     const window = 60000;
 
     const requests = await this.getRecentItems(burstKey, now, window);
-    const totalRequests = Array.from(requests).reduce((sum, timestamp) => sum + 1, 0);
+    const totalRequests = Array.from(requests).reduce((sum, _timestamp) => sum + 1, 0);
 
     if (totalRequests + cost > this.config.burstProtection.maxBurstSize) {
       return { allowed: false };

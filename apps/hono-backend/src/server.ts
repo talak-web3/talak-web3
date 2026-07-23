@@ -568,8 +568,6 @@ app.post("/rpc/:chainId", authMiddleware(auth), async (c) => {
     return c.json({ error: `Chain ID ${chainId} is not supported` }, 400);
   }
 
-  const authHeader = c.req.header("Authorization") ?? "";
-
   const ip = getIp(c);
   const session = c.get("session");
   const wallet = session?.address;
