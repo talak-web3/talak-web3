@@ -3,7 +3,9 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 import { RedisRateLimiter } from "../../index.js";
 
-describe("RedisRateLimiter Integration", () => {
+const redisAvailable = process.env.REDIS_HOST !== undefined || process.env.CI === "true";
+
+describe.skipIf(!redisAvailable)("RedisRateLimiter Integration", () => {
   let redis: Redis;
   let limiter: RedisRateLimiter;
 
@@ -12,6 +14,7 @@ describe("RedisRateLimiter Integration", () => {
       host: process.env.REDIS_HOST || "localhost",
       port: parseInt(process.env.REDIS_PORT || "6379"),
       password: process.env.REDIS_PASSWORD || undefined,
+      connectTimeout: 2000,
     });
 
     await redis.ping();
@@ -76,15 +79,5 @@ describe("RedisRateLimiter Integration", () => {
 
     expect(allowed).toBe(5);
     expect(blocked).toBe(5);
-  });
-});
-
-describe("RedisRateLimiter Without Redis", () => {
-  it("should skip tests if Redis is unavailable", () => {
-    const redisAvailable = process.env.REDIS_HOST !== undefined;
-    if (!redisAvailable) {
-      console.log("Skipping Redis integration tests (REDIS_HOST not set)");
-    }
-    expect(true).toBe(true);
   });
 });

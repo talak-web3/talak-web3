@@ -513,8 +513,7 @@ function normalizeConfigInput(input: unknown): unknown {
       const id = typeof chainObj["id"] === "number" ? chainObj["id"] : i + 1;
       const currency = chainCurrencyMap[id] ?? { symbol: "ETH", name: "Ether" };
       const nc = chainObj["nativeCurrency"];
-      return {
-        ...chainObj,
+      return Object.assign({}, chainObj, {
         name:
           typeof chainObj["name"] === "string" &&
           (chainObj["name"] as string).length > 0 // SAFETY: narrowed by typeof check above
@@ -524,7 +523,7 @@ function normalizeConfigInput(input: unknown): unknown {
           typeof nc === "object" && nc !== null
             ? nc
             : { name: currency.name, symbol: currency.symbol, decimals: 18 },
-      };
+      });
     });
   }
 

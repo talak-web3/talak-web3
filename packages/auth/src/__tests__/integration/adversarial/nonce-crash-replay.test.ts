@@ -1,9 +1,11 @@
 import Redis from "ioredis";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { RedisNonceStore } from "../../stores/redis-nonce.js";
+import { RedisNonceStore } from "../../../stores/redis-nonce.js";
 
-describe("Adversarial: Nonce Crash Replay", () => {
+const redisAvailable = process.env.REDIS_HOST !== undefined || process.env.CI === "true";
+
+describe.skipIf(!redisAvailable)("Adversarial: Nonce Crash Replay", () => {
   let redis: Redis;
   let nonceStore: RedisNonceStore;
   const testAddress = "0x1234567890abcdef1234567890abcdef12345678";
@@ -13,6 +15,7 @@ describe("Adversarial: Nonce Crash Replay", () => {
       host: "localhost",
       port: 6379,
       db: 15,
+      connectTimeout: 2000,
     });
 
     nonceStore = new RedisNonceStore({ redis });

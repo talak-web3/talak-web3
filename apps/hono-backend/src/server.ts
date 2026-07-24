@@ -413,15 +413,13 @@ app.onError((err, c) => {
   return c.json({ error: "Internal Server Error" }, 500);
 });
 
-import type { Context } from "hono";
-
 import { getIp } from "./security/ip-utils.js";
 
 app.get("/health", (c) => c.json({ ok: true, now: Date.now() }));
 
 app.get("/.well-known/jwks.json", createJwksEndpoint(auth));
 
-app.get("/security/status", (c) => {
+app.get("/security/status", authMiddleware(auth), (c) => {
   const anchoring = auditLogger.getAnchoringStatus();
   const mode = auditLogger.getMode();
   return c.json({
@@ -438,7 +436,7 @@ app.get("/security/status", (c) => {
   });
 });
 
-app.get("/metrics", async (c) => {
+app.get("/metrics", authMiddleware(auth), async (c) => {
   const data = await metrics.getMetrics();
   return c.text(data, 200, { "Content-Type": "text/plain; version=0.0.4" });
 });
@@ -496,8 +494,6 @@ app.post("/rpc/:chainId", authMiddleware(auth), async (c) => {
   if (!configuredChains.includes(chainId)) {
     return c.json({ error: `Chain ID ${chainId} is not supported` }, 400);
   }
-
-  const authHeader = c.req.header("Authorization") ?? "";
 
   const ip = getIp(c);
   const session = c.get("session");

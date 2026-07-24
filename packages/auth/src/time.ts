@@ -76,6 +76,7 @@ export class AuthoritativeTime {
 
   private readonly lastDriftKey: string;
   private maxHistoricalDriftMs: number = 0;
+  public initError: unknown = null;
 
   constructor(
     opts: {
@@ -96,36 +97,34 @@ export class AuthoritativeTime {
     this.monotonicFloorKey = opts.monotonicFloorKey ?? "talak:time:monotonic_floor";
     this.lastDriftKey = opts.lastDriftKey ?? "talak:time:last_drift";
 
-    this.initialize();
+    this.initialize().catch((err) => {
+      this.initError = err;
+      console.error("[AUTH] CRITICAL: Time initialization failed:", err);
+    });
   }
 
   private async initialize(): Promise<void> {
-    try {
-      if (this.redisClient) {
-        const floorStr = await this.redisClient.get(this.monotonicFloorKey);
-        if (floorStr) {
-          this.lastObservedTime = parseInt(floorStr, 10);
-        }
-
-        const driftStr = await this.redisClient.get(this.lastDriftKey);
-        if (driftStr) {
-          this.maxHistoricalDriftMs = parseInt(driftStr, 10);
-
-          if (this.maxHistoricalDriftMs > this.maxDriftMs) {
-            throw new TalakWeb3Error(
-              `Historical time drift exceeded bound: ${this.maxHistoricalDriftMs}ms > ${this.maxDriftMs}ms — possible clock attack or misconfiguration`,
-              { code: AUTH_ERROR_CODES.TIME_HISTORICAL_DRIFT, status: 503 },
-            );
-          }
-        }
+    if (this.redisClient) {
+      const floorStr = await this.redisClient.get(this.monotonicFloorKey);
+      if (floorStr) {
+        this.lastObservedTime = parseInt(floorStr, 10);
       }
 
-      await this.sync();
-      this.initialized = true;
-    } catch (err) {
-      console.error("[AUTH] CRITICAL: Time initialization failed:", err);
-      throw err;
+      const driftStr = await this.redisClient.get(this.lastDriftKey);
+      if (driftStr) {
+        this.maxHistoricalDriftMs = parseInt(driftStr, 10);
+
+        if (this.maxHistoricalDriftMs > this.maxDriftMs) {
+          throw new TalakWeb3Error(
+            `Historical time drift exceeded bound: ${this.maxHistoricalDriftMs}ms > ${this.maxDriftMs}ms — possible clock attack or misconfiguration`,
+            { code: AUTH_ERROR_CODES.TIME_HISTORICAL_DRIFT, status: 503 },
+          );
+        }
+      }
     }
+
+    await this.sync();
+    this.initialized = true;
   }
 
   now(): number {

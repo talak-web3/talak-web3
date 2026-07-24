@@ -1,6 +1,23 @@
 import { TalakWeb3Error, SECURITY_ERROR_CODES } from "@talak-web3/errors";
 import type { TalakWeb3Context, MiddlewareHandler } from "@talak-web3/types";
 
+function hasDangerousKeys(obj: unknown, depth = 0): boolean {
+  if (depth > 10) return false;
+  if (obj === null || typeof obj !== "object") return false;
+  if (Array.isArray(obj)) {
+    return obj.some((item) => hasDangerousKeys(item, depth + 1));
+  }
+  for (const key of Object.keys(obj as Record<PropertyKey, unknown>)) {
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      return true;
+    }
+    if (hasDangerousKeys((obj as Record<PropertyKey, unknown>)[key], depth + 1)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export class SecurityInvariant {
   static validateOrigin(ctx: TalakWeb3Context): void {
     const allowed = ctx.config.allowedOrigins;
@@ -73,23 +90,6 @@ export class SecurityInvariant {
   }
 
   static validateRpcParams(params: unknown[]): void {
-    function hasDangerousKeys(obj: unknown, depth = 0): boolean {
-      if (depth > 10) return false;
-      if (obj === null || typeof obj !== "object") return false;
-      if (Array.isArray(obj)) {
-        return obj.some((item) => hasDangerousKeys(item, depth + 1));
-      }
-      for (const key of Object.keys(obj as Record<PropertyKey, unknown>)) {
-        if (key === "__proto__" || key === "constructor" || key === "prototype") {
-          return true;
-        }
-        if (hasDangerousKeys((obj as Record<PropertyKey, unknown>)[key], depth + 1)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
     if (hasDangerousKeys(params)) {
       throw new TalakWeb3Error("Disallowed parameter key detected", {
         code: SECURITY_ERROR_CODES.INVALID_PARAM,
