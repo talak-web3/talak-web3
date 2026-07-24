@@ -1,5 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 
+import { logger } from "./logger.js";
+
 export interface MetricsClient {
   increment(name: string, tags?: Record<string, string>): void;
   timing(name: string, duration: number, tags?: Record<string, string>): void;
@@ -7,10 +9,10 @@ export interface MetricsClient {
 
 class ConsoleMetricsClient implements MetricsClient {
   increment(name: string, tags?: Record<string, string>): void {
-    console.debug(`[metrics] increment ${name}`, tags);
+    logger.debug({ name, tags }, "metrics increment");
   }
   timing(name: string, duration: number, tags?: Record<string, string>): void {
-    console.debug(`[metrics] timing ${name} ${duration}ms`, tags);
+    logger.debug({ name, duration, tags }, "metrics timing");
   }
 }
 

@@ -52,7 +52,7 @@ interface SiweFields {
 
 function isValidHostname(domain: string): boolean {
   try {
-    new URL(`https://${domain}`);
+    void new URL(`https://${domain}`);
     return !domain.includes("://") && !domain.includes("/");
   } catch {
     return false;
@@ -182,7 +182,7 @@ function parseSiweMessage(message: string): SiweFields {
 
   if (uriMatch?.[1]) {
     try {
-      new URL(uriMatch[1]);
+      void new URL(uriMatch[1]);
     } catch (cause) {
       throw new TalakWeb3Error("Invalid SIWE URI format", {
         code: AUTH_ERROR_CODES.SIWE_PARSE_ERROR,
@@ -275,7 +275,7 @@ function parseSiweMessage(message: string): SiweFields {
 
 export class InMemoryNonceStore implements NonceStore {
   readonly [TALAK_STORE_KIND]: TalakStoreKind = "memory";
-  readonly __talakStoreKind: TalakStoreKind = "memory";
+  readonly talakStoreKind: TalakStoreKind = "memory";
   private readonly ttlMs: number;
 
   private readonly entries = new Map<string, Map<string, number>>();
@@ -375,7 +375,7 @@ function computeIpSubnet(ip: string): string | undefined {
 
 export class InMemoryRefreshStore implements RefreshStore {
   readonly [TALAK_STORE_KIND]: TalakStoreKind = "memory";
-  readonly __talakStoreKind: TalakStoreKind = "memory";
+  readonly talakStoreKind: TalakStoreKind = "memory";
   private readonly sessions = new Map<string, RefreshSession>();
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -464,7 +464,7 @@ export class InMemoryRefreshStore implements RefreshStore {
 
 export class InMemoryRevocationStore implements RevocationStore {
   readonly [TALAK_STORE_KIND]: TalakStoreKind = "memory";
-  readonly __talakStoreKind: TalakStoreKind = "memory";
+  readonly talakStoreKind: TalakStoreKind = "memory";
   private readonly entries = new Map<string, number>();
   private globalInvalidationAt = 0;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;

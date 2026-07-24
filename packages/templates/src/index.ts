@@ -1,3 +1,4 @@
+/** Scaffold templates for quick-start project setup (Next.js, Hono). */
 export const Templates = {
   nextjs: {
     files: {

@@ -187,8 +187,9 @@ export class DistributedCircuitBreaker {
     let failureWeight = 1;
 
     if (shouldUseAdaptiveThreshold && isLatencyFailure) {
-      const excessLatency = latency - this.config.latencyThreshold!;
-      failureWeight = Math.min(3, 1 + excessLatency / this.config.latencyThreshold!);
+      const threshold = this.config.latencyThreshold ?? 1000;
+      const excessLatency = latency - threshold;
+      failureWeight = Math.min(3, 1 + excessLatency / threshold);
     }
 
     const shouldCountFailure =
@@ -312,7 +313,7 @@ export class DistributedCircuitBreaker {
       if (!stats || typeof stats.average !== "number") return this.config.failureThreshold;
 
       const baseThreshold = this.config.failureThreshold;
-      const latencyRatio = stats.average / this.config.latencyThreshold!;
+      const latencyRatio = stats.average / (this.config.latencyThreshold ?? 1000);
 
       if (latencyRatio > 1.5) {
         return Math.max(1, Math.floor(baseThreshold * 0.5));

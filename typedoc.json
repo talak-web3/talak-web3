@@ -1,6 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
+    "packages/talak-web3/src/index.ts",
     "packages/types/src/index.ts",
     "packages/errors/src/index.ts",
     "packages/core/src/index.ts",
@@ -10,7 +11,15 @@
     "packages/utils/src/index.ts",
     "packages/config/src/index.ts",
     "packages/client/src/index.ts",
-    "packages/hooks/src/index.tsx"
+    "packages/hooks/src/index.ts",
+    "packages/adapters/src/index.ts",
+    "packages/ai/src/index.ts",
+    "packages/cli/src/index.ts",
+    "packages/dashboard/src/index.ts",
+    "packages/identity/src/index.ts",
+    "packages/realtime/src/index.ts",
+    "packages/templates/src/index.ts",
+    "packages/test-utils/src/index.ts"
   ],
   "out": "docs/api",
   "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],

@@ -1,3 +1,4 @@
+import type Redis from "ioredis";
 import { TalakWeb3Error, CONFIG_ERROR_CODES } from "@talak-web3/errors";
 import {
   InMemoryRateLimiter,
@@ -48,8 +49,7 @@ export interface AuthHandlerOptions {
    * Optional Redis (ioredis) client for distributed auth rate limiting.
    * When set, defaults to Redis sliding-window limiters for all auth routes.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  redis?: any;
+  redis?: Redis;
   /**
    * When true (or REQUIRE_REDIS_RATE_LIMIT=true) and NODE_ENV=production,
    * refuse to start without Redis-backed rate limiters.
@@ -86,7 +86,7 @@ function memoryRateLimiters(): ResolvedAuthHandlerOptions["rateLimiters"] {
   };
 }
 
-function redisRateLimiters(redis: any): ResolvedAuthHandlerOptions["rateLimiters"] {
+function redisRateLimiters(redis: Redis): ResolvedAuthHandlerOptions["rateLimiters"] {
   // Sliding window: capacity roughly matches prior token-bucket burst sizes.
   const windowMs = 60_000;
   return {
@@ -386,8 +386,8 @@ const handleSession: AuthRouteHandler = async (request, auth, ctx, options) => {
       const needsRefresh =
         exp !== null && exp - now <= SESSION_REFRESH_THRESHOLD_SECONDS && !!refreshToken;
 
-      if (needsRefresh && !getShouldSkipSessionRefresh()) {
-        const refreshed = await auth.refresh(refreshToken!, context);
+      if (needsRefresh && !getShouldSkipSessionRefresh() && refreshToken) {
+        const refreshed = await auth.refresh(refreshToken, context);
         const response = jsonResponse({
           address: payload.address,
           chainId: payload.chainId,

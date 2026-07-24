@@ -4,6 +4,7 @@ import type { NonceStore, RefreshStore } from "@talak-web3/auth";
 import { TalakWeb3Error } from "@talak-web3/errors";
 import type { RedisClientType } from "redis";
 
+import { logger } from "../logger.js";
 import { rateLimitRedis } from "./rateLimit.js";
 import { RedisNonceStore, RedisRefreshStore } from "./stores.js";
 
@@ -91,7 +92,7 @@ export class RedisAuthStorage implements AuthStorage {
       multi.pExpire(fullKey, windowMs);
       await multi.exec();
     } catch (err) {
-      console.error("[RedisAuthStorage] Failed to apply penalty:", err);
+      logger.error("[RedisAuthStorage] Failed to apply penalty:", err);
     }
   }
 }

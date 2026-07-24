@@ -1,6 +1,7 @@
 import { createPublicKey } from "node:crypto";
 
 import { TalakWeb3Error } from "@talak-web3/errors";
+import { logger } from "../logger.js";
 
 function validateKeyStrength(pem: string, label: string): void {
   try {
@@ -32,8 +33,8 @@ export function validateEnv(): void {
     );
   }
 
-  const priv = process.env["JWT_PRIVATE_KEY"]!;
-  const pub = process.env["JWT_PUBLIC_KEY"]!;
+  const priv = process.env["JWT_PRIVATE_KEY"] ?? "";
+  const pub = process.env["JWT_PUBLIC_KEY"] ?? "";
 
   if (!priv.includes("-----BEGIN PRIVATE KEY-----")) {
     throw new TalakWeb3Error(
@@ -62,6 +63,39 @@ export function validateEnv(): void {
     );
   }
 
-  console.log("[BOOTSTRAP] Environment validation: PASSED");
-  console.log("[BOOTSTRAP] JWT mode: RS256");
+  const maxConns = parseInt(process.env["REDIS_MAX_CONNECTIONS"] ?? "100", 10);
+  if (Number.isNaN(maxConns) || maxConns < 1 || maxConns > 10000) {
+    throw new TalakWeb3Error(
+      "INVALID CONFIGURATION: REDIS_MAX_CONNECTIONS must be a number between 1 and 10000",
+      { code: "ENV_REDIS_CONFIG_INVALID", status: 500 },
+    );
+  }
+
+  const keyProvider = process.env["KEY_PROVIDER"];
+  if (keyProvider === "vault") {
+    if (!process.env["VAULT_TOKEN"]) {
+      throw new TalakWeb3Error(
+        "INVALID CONFIGURATION: VAULT_TOKEN is required when KEY_PROVIDER=vault",
+        { code: "ENV_VAULT_CONFIG_MISSING", status: 500 },
+      );
+    }
+    if (!process.env["VAULT_SECRET_PATH"]) {
+      throw new TalakWeb3Error(
+        "INVALID CONFIGURATION: VAULT_SECRET_PATH is required when KEY_PROVIDER=vault",
+        { code: "ENV_VAULT_CONFIG_MISSING", status: 500 },
+      );
+    }
+  }
+
+  if (keyProvider === "aws") {
+    if (!process.env["AWS_KMS_KEY_ID"]) {
+      throw new TalakWeb3Error(
+        "INVALID CONFIGURATION: AWS_KMS_KEY_ID is required when KEY_PROVIDER=aws",
+        { code: "ENV_AWS_CONFIG_MISSING", status: 500 },
+      );
+    }
+  }
+
+  logger.info("Environment validation: PASSED");
+  logger.info("JWT mode: RS256");
 }

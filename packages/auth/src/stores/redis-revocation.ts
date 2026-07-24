@@ -26,7 +26,7 @@ export interface RedisRevocationStoreOptions {
 
 export class RedisRevocationStore implements RevocationStore {
   readonly [TALAK_STORE_KIND]: TalakStoreKind = "redis";
-  readonly __talakStoreKind: TalakStoreKind = "redis";
+  readonly talakStoreKind: TalakStoreKind = "redis";
   private readonly redis: Redis;
   private readonly prefix: string;
   private readonly enablePubSub: boolean;

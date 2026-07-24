@@ -334,10 +334,7 @@ export class JwtManager {
       return (this.keyProvider as EnvironmentKeyProvider).getJwks();
     }
 
-    const keys = await this.keyProvider.getVerificationKeys();
-    const jwks: JwksResponse = { keys: [] };
-
-    return jwks;
+    return { keys: [] };
   }
 
   async emergencyPurge(newPrivateKey?: KeyLike, newPublicKey?: KeyLike): Promise<string> {

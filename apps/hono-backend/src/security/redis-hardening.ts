@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { TalakWeb3Error } from "@talak-web3/errors";
 import type { RedisClientType, RedisClientOptions } from "redis";
 
+import { logger } from "../logger.js";
+
 export interface RedisHardeningConfig {
   auth: {
     enabled: boolean;
@@ -84,11 +86,11 @@ export function createHardenedRedisClient(
   const finalConfig = { ...DEFAULT_REDIS_HARDENING, ...config };
 
   if (!finalConfig.auth.enabled) {
-    console.warn("[SECURITY] Redis AUTH is disabled - this is not recommended for production");
+    logger.warn("Redis AUTH is disabled - this is not recommended for production");
   }
 
   if (!finalConfig.tls.enabled) {
-    console.warn("[SECURITY] Redis TLS is disabled - traffic will be unencrypted");
+    logger.warn("Redis TLS is disabled - traffic will be unencrypted");
   }
 
   const url = new URL(redisUrl);
@@ -99,7 +101,7 @@ export function createHardenedRedisClient(
     socket: {
       reconnectStrategy: (retries: number) => {
         if (retries > 5) {
-          console.error("[CRITICAL] Redis connection failed after 5 retries. Exiting.");
+          logger.error("Redis connection failed after 5 retries. Exiting.");
           process.exit(1);
         }
         return Math.min(retries * 500, 2000);
@@ -263,28 +265,24 @@ export class RedisSecurityAuditor {
       const protectedMode = await this.redis.configGet("protected-mode");
       if (protectedMode["protected-mode"] === "no") {
         await this.redis.configSet("protected-mode", "yes");
-        console.log("[REDIS] Enabled protected mode");
+        logger.info("Enabled protected mode");
       }
 
       const maxmemory = await this.redis.configGet("maxmemory");
       if (maxmemory["maxmemory"] === "0") {
         await this.redis.configSet("maxmemory", "1073741824");
-        console.log("[REDIS] Set maxmemory to 1GB");
+        logger.info("Set maxmemory to 1GB");
       }
 
       const evictionPolicy = await this.redis.configGet("maxmemory-policy");
       if (evictionPolicy["maxmemory-policy"] !== "noeviction") {
-        console.warn(
-          "[REDIS] maxmemory-policy is not set to noeviction - critical auth data may be evicted",
-        );
+        logger.warn("maxmemory-policy is not set to noeviction - critical auth data may be evicted");
       }
 
-      console.log("[REDIS] Security hardening applied successfully");
-      console.log(
-        "[REDIS] NOTE: Command renaming must be configured in redis.conf, not at runtime",
-      );
+      logger.info("Security hardening applied successfully");
+      logger.info("NOTE: Command renaming must be configured in redis.conf, not at runtime");
     } catch (err) {
-      console.error("[REDIS] Failed to apply security hardening:", err);
+      logger.error({ err }, "Failed to apply security hardening");
       throw new TalakWeb3Error("Redis security hardening failed", {
         code: "REDIS_HARDENING_FAILED",
         status: 500,

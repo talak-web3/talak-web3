@@ -1,5 +1,6 @@
 import { TalakWeb3Error, REALTIME_ERROR_CODES } from "@talak-web3/errors";
 
+/** A real-time message within a conversation. */
 export interface Message {
   id: string;
   sentAtMs: number;
@@ -7,12 +8,14 @@ export interface Message {
   body: string;
 }
 
+/** A conversation channel containing messages and participants. */
 export interface Conversation {
   id: string;
   title?: string;
   participants?: string[];
 }
 
+/** Interface for real-time messaging clients (WebSocket, polling, etc.). */
 export interface MessagingClient {
   connect(): Promise<void>;
   disconnect(): void;
@@ -36,6 +39,7 @@ type OutboundEnvelope =
   | { type: "get_history"; conversationId: string }
   | { type: "send"; conversationId: string; body: string; from: string };
 
+/** Options for configuring the WebSocket messaging client. */
 export interface WebSocketMessagingOptions {
   serverUrl: string;
   from: string;

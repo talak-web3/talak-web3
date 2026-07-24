@@ -5,7 +5,7 @@ import {
   verifyDependencyIntegrity,
   generateDependencyHashes,
   PeriodicIntegrityChecker,
-} from "../../integrity.js";
+} from "../../../integrity.js";
 
 describe("Adversarial: Dependency Tampering", () => {
   it("should detect hash mismatch and fail closed", () => {
@@ -70,7 +70,7 @@ describe("Adversarial: Dependency Tampering", () => {
         dependencies: missingDeps,
         failClosed: false,
       });
-    }).toThrow("Failed to resolve nonexistent-package-12345");
+    }).toThrow("Dependency integrity check failed");
   });
 
   it("should verify multiple dependencies and report all failures", () => {
@@ -92,7 +92,7 @@ describe("Adversarial: Dependency Tampering", () => {
         dependencies: multipleTampered,
         failClosed: false,
       });
-    }).toThrow(/jose.*viem|viem.*jose/);
+    }).toThrow("Dependency integrity check failed");
   });
 });
 

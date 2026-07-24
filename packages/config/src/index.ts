@@ -6,6 +6,7 @@ export * from "./schema";
 
 export * from "./presets";
 
+/** Validates and returns a TalakWeb3 config, throwing on invalid input. */
 export function validateConfig(input: unknown): TalakWeb3Config {
   const result = TalakWeb3ConfigSchema.safeParse(input || {});
 

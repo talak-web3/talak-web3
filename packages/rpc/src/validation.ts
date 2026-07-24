@@ -1,6 +1,7 @@
 import { RpcError, RPC_ERROR_CODES } from "@talak-web3/errors";
 import { z } from "zod";
 
+/** Zod schema for validating JSON-RPC 2.0 request structure. */
 export const RpcRequestSchema = z
   .object({
     jsonrpc: z.literal("2.0"),
@@ -16,8 +17,10 @@ export const RpcRequestSchema = z
   })
   .strict();
 
+/** Inferred type for a validated JSON-RPC 2.0 request. */
 export type RpcRequest = z.infer<typeof RpcRequestSchema>;
 
+/** Validates a raw payload as a JSON-RPC 2.0 request, checking schema, size, and nesting depth. */
 export function validateRpcRequest(payload: unknown): RpcRequest {
   if (typeof payload !== "object" || payload === null) {
     throw new RpcError("Invalid RPC request: payload must be an object", {

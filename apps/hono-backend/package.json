@@ -26,7 +26,7 @@
   "devDependencies": {
     "tsx": "^4.23.1",
     "typescript": "catalog:",
-    "viem": "^2.48.1",
+    "viem": "catalog:",
     "vitest": "catalog:"
   }
 }

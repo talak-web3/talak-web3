@@ -1,5 +1,7 @@
 import { randomBytes } from "node:crypto";
 
+import { logger } from "../logger.js";
+
 export interface SecurityEvent {
   id: string;
   timestamp: number;
@@ -77,7 +79,7 @@ export class ElasticsearchSink implements SecurityEventSink {
         throw new Error(`Elasticsearch indexing failed: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
-      console.error("[SECURITY_EVENTS] Failed to send event to Elasticsearch:", err);
+      logger.error("[SECURITY_EVENTS] Failed to send event to Elasticsearch:", err);
       throw err;
     }
   }
@@ -140,7 +142,7 @@ export class SplunkSink implements SecurityEventSink {
         throw new Error(`Splunk indexing failed: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
-      console.error("[SECURITY_EVENTS] Failed to send event to Splunk:", err);
+      logger.error("[SECURITY_EVENTS] Failed to send event to Splunk:", err);
       throw err;
     }
   }
@@ -187,7 +189,7 @@ export class HttpSiemSink implements SecurityEventSink {
         throw new Error(`SIEM HTTP endpoint failed: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
-      console.error("[SECURITY_EVENTS] Failed to send event to SIEM:", err);
+      logger.error("[SECURITY_EVENTS] Failed to send event to SIEM:", err);
       throw err;
     }
   }
@@ -351,7 +353,7 @@ export class SecurityEventManager {
     const promises = this.sinks.map((sink) =>
       sink
         .send(event)
-        .catch((err) => console.error(`[SECURITY_EVENTS] Sink ${sink.name} failed:`, err)),
+        .catch((err) => logger.error(`[SECURITY_EVENTS] Sink ${sink.name} failed:`, err)),
     );
     await Promise.allSettled(promises);
   }
@@ -359,7 +361,7 @@ export class SecurityEventManager {
   private startFlushTimer(): void {
     this.flushTimer = setInterval(() => {
       this.flushEvents().catch((err) =>
-        console.error("[SECURITY_EVENTS] Flush timer failed:", err),
+        logger.error("[SECURITY_EVENTS] Flush timer failed:", err),
       );
     }, this.flushInterval);
   }

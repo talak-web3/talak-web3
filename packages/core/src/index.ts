@@ -180,31 +180,34 @@ export type { TalakWeb3Instance, MiddlewareHandler, IMiddlewareChain } from "@ta
 function extractAuthFromInput(input: unknown): TalakWeb3Auth | undefined {
   if (input === null || typeof input !== "object") return undefined;
   if (!("auth" in input)) return undefined;
-  const auth = (input as Record<string, unknown>)["auth"];
+  const rec = input as Record<PropertyKey, unknown>;
+  const auth = rec["auth"];
   return auth instanceof TalakWeb3Auth ? auth : undefined;
 }
 
 function extractAuthStoresFromInput(input: unknown): Partial<TalakWeb3AuthOptions> {
   if (input === null || typeof input !== "object") return {};
   if (!("auth" in input)) return {};
-  const auth = (input as Record<string, unknown>)["auth"];
+  const rec = input as Record<PropertyKey, unknown>;
+  const auth = rec["auth"];
   if (auth === null || typeof auth !== "object" || auth instanceof TalakWeb3Auth) return {};
 
   const options: Partial<TalakWeb3AuthOptions> = {};
+  const authRec = auth as Record<PropertyKey, unknown>;
 
-  if ("nonceStore" in auth) options.nonceStore = auth["nonceStore"] as NonceStore;
-  if ("refreshStore" in auth) options.refreshStore = auth["refreshStore"] as RefreshStore;
-  if ("revocationStore" in auth) {
-    options.revocationStore = auth["revocationStore"] as RevocationStore;
+  if ("nonceStore" in authRec) options.nonceStore = authRec["nonceStore"] as NonceStore;
+  if ("refreshStore" in authRec) options.refreshStore = authRec["refreshStore"] as RefreshStore;
+  if ("revocationStore" in authRec) {
+    options.revocationStore = authRec["revocationStore"] as RevocationStore;
   }
-  if ("accessTtlSeconds" in auth) {
-    options.accessTtlSeconds = auth["accessTtlSeconds"] as number;
+  if ("accessTtlSeconds" in authRec) {
+    options.accessTtlSeconds = authRec["accessTtlSeconds"] as number;
   }
-  if ("refreshTtlSeconds" in auth) {
-    options.refreshTtlSeconds = auth["refreshTtlSeconds"] as number;
+  if ("refreshTtlSeconds" in authRec) {
+    options.refreshTtlSeconds = authRec["refreshTtlSeconds"] as number;
   }
-  if ("domain" in auth && typeof auth["domain"] === "string") {
-    options.expectedDomain = auth["domain"];
+  if ("domain" in authRec && typeof authRec["domain"] === "string") {
+    options.expectedDomain = authRec["domain"] as string;
   }
 
   return options;
@@ -272,14 +275,14 @@ class PendingRpc implements IRpc {
  * ```
  */
 export function createTalakWeb3(input: TalakWeb3Input = {}): TalakWeb3Instance {
-  const resolvedInput = resolvePreset(input as Record<string, unknown>);
+  const resolvedInput = resolvePreset(input as Record<PropertyKey, unknown>);
   const normalizedInput = normalizeConfigInput(resolvedInput);
   const injectedAuth = extractAuthFromInput(normalizedInput);
   const injectedAuthStores = extractAuthStoresFromInput(normalizedInput);
   SecurityInvariant.checkSecrets(normalizedInput);
 
   const validatedConfig: TalakWeb3Config = validateConfig(normalizedInput);
-  const config = validatedConfig as TalakWeb3BaseConfig;
+  const config = validatedConfig as unknown as TalakWeb3BaseConfig;
   const logger = new ConsoleLogger();
   const hooks = new HookRegistry<TalakWeb3EventsMap>(logger);
   const plugins = new Map<string, TalakWeb3Plugin>();
@@ -478,22 +481,21 @@ export function talakWeb3(input: TalakWeb3Input = {}): TalakWeb3Instance {
 }
 
 function isTalakWeb3Plugin(input: unknown): input is TalakWeb3Plugin {
+  if (typeof input !== "object" || input === null) return false;
+  const obj = input as Record<PropertyKey, unknown>;
   return (
-    typeof input === "object" &&
-    input !== null &&
-    typeof (input as Record<string, unknown>)["name"] === "string" &&
-    typeof (input as Record<string, unknown>)["version"] === "string" &&
-    typeof (input as Record<string, unknown>)["setup"] === "function"
+    typeof obj["name"] === "string" &&
+    typeof obj["version"] === "string" &&
+    typeof obj["setup"] === "function"
   );
 }
 
 function normalizeConfigInput(input: unknown): unknown {
   if (input === null || typeof input !== "object") return {};
-  const rawChains = Array.isArray((input as Record<string, unknown>)["chains"])
-    ? (input as Record<string, unknown>)["chains"]
-    : undefined;
+  const obj = input as Record<PropertyKey, unknown>;
+  const rawChains = Array.isArray(obj["chains"]) ? obj["chains"] : undefined;
 
-  const result: Record<string, unknown> = { ...(input as Record<string, unknown>) };
+  const result: Record<string, unknown> = { ...obj };
 
   if (rawChains) {
     const chainCurrencyMap: Record<number, { symbol: string; name: string }> = {
@@ -507,21 +509,21 @@ function normalizeConfigInput(input: unknown): unknown {
 
     result["chains"] = (rawChains as unknown[]).map((chain: unknown, i: number) => {
       if (typeof chain !== "object" || chain === null) return chain;
-      const chainObj = chain as Record<string, unknown>;
+      const chainObj = chain as Record<PropertyKey, unknown>;
       const id = typeof chainObj["id"] === "number" ? chainObj["id"] : i + 1;
       const currency = chainCurrencyMap[id] ?? { symbol: "ETH", name: "Ether" };
       const nc = chainObj["nativeCurrency"];
-      return {
-        ...chainObj,
+      return Object.assign({}, chainObj, {
         name:
-          typeof chainObj["name"] === "string" && (chainObj["name"] as string).length > 0
+          typeof chainObj["name"] === "string" &&
+          (chainObj["name"] as string).length > 0 // SAFETY: narrowed by typeof check above
             ? chainObj["name"]
             : `Chain ${id}`,
         nativeCurrency:
           typeof nc === "object" && nc !== null
             ? nc
             : { name: currency.name, symbol: currency.symbol, decimals: 18 },
-      };
+      });
     });
   }
 

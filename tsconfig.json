@@ -18,6 +18,10 @@
     { "path": "./packages/dashboard" },
     { "path": "./packages/templates" },
     { "path": "./packages/cli" },
-    { "path": "./apps/docs" }
+    { "path": "./packages/test-utils" },
+    { "path": "./packages/rate-limit" },
+    { "path": "./packages/talak-web3" },
+    { "path": "./apps/docs" },
+    { "path": "./apps/hono-backend" }
   ]
 }

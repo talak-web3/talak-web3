@@ -1,6 +1,7 @@
 import type { RedisClientType } from "redis";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+import { logger } from "../logger.js";
 import { rateLimitRedis } from "./rateLimit.js";
 import { RedisNonceStore, RedisRefreshStore } from "./stores.js";
 
@@ -188,7 +189,7 @@ describe("RedisNonceStore", () => {
   });
 
   it("constructor warns and clamps TTL > 5 min", () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const warnSpy = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
     const s = new RedisNonceStore(redis, 10 * 60_000);
     expect(warnSpy).toHaveBeenCalled();
     expect((s as unknown as { ttlMs: number }).ttlMs).toBe(5 * 60_000);

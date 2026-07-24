@@ -27,6 +27,7 @@
       "default": "./dist/index.js"
     }
   },
+  "experimental": true,
   "publishConfig": {
     "access": "public"
   },
@@ -40,6 +41,6 @@
   "dependencies": {
     "@talak-web3/errors": "workspace:*",
     "@talak-web3/types": "workspace:*",
-    "viem": "^2.21.0"
+    "viem": "catalog:"
   }
 }

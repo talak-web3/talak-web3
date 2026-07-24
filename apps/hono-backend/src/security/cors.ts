@@ -1,5 +1,7 @@
 import type { Context, MiddlewareHandler } from "hono";
 
+import { logger } from "../logger.js";
+
 export type CorsPolicy = {
   allowedOrigins: readonly string[];
   allowedMethods?: readonly string[];
@@ -10,10 +12,10 @@ export type CorsPolicy = {
 function validateOrigins(origins: readonly string[]): void {
   for (const origin of origins) {
     try {
-      new URL(origin);
+      void new URL(origin);
     } catch {
-      console.error(
-        `[CORS] Invalid origin format: "${origin}" — must be full URL like https://example.com`,
+      logger.error(
+        `Invalid origin format: "${origin}" — must be full URL like https://example.com`,
       );
       process.exit(1);
     }

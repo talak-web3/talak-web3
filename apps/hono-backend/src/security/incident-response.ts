@@ -2,6 +2,8 @@ import { randomBytes } from "node:crypto";
 
 import { TalakWeb3Error } from "@talak-web3/errors";
 
+import { logger } from "../logger.js";
+
 export interface Incident {
   id: string;
   type: IncidentType;
@@ -83,7 +85,7 @@ export class IncidentResponseManager {
       await this.triggerEmergencyResponse(newIncident);
     }
 
-    console.warn(
+    logger.warn(
       `[INCIDENT] New incident created: ${newIncident.id} - ${newIncident.type} (${newIncident.severity})`,
     );
 
@@ -107,7 +109,7 @@ export class IncidentResponseManager {
 
     this.incidents.set(id, updatedIncident);
 
-    console.info(`[INCIDENT] Incident updated: ${id}`);
+    logger.info(`[INCIDENT] Incident updated: ${id}`);
     return updatedIncident;
   }
 
@@ -142,7 +144,7 @@ export class IncidentResponseManager {
   }
 
   private async triggerEmergencyResponse(incident: Incident): Promise<void> {
-    console.error(`[EMERGENCY] Critical incident detected: ${incident.id}`);
+    logger.error(`[EMERGENCY] Critical incident detected: ${incident.id}`);
 
     await this.executeContainmentActions(incident);
 
@@ -158,10 +160,10 @@ export class IncidentResponseManager {
 
     for (const action of actions) {
       try {
-        console.info(`[INCIDENT] Executing containment action: ${action}`);
-        await this.executeContainmentAction(action, incident);
+        logger.info(`[INCIDENT] Executing containment action: ${action}`);
+        await this.executeContainmentAction(action);
       } catch (err) {
-        console.error(`[INCIDENT] Failed to execute containment action ${action}:`, err);
+        logger.error(`[INCIDENT] Failed to execute containment action ${action}:`, err);
       }
     }
   }
@@ -270,7 +272,7 @@ export class IncidentResponseManager {
     return actionMap[type]?.[severity] ?? [];
   }
 
-  private async executeContainmentAction(action: string, incident: Incident): Promise<void> {
+  private async executeContainmentAction(action: string): Promise<void> {
     switch (action) {
       case "immediate_key_rotation":
         await this.executeEmergencyKeyRotation();
@@ -286,7 +288,7 @@ export class IncidentResponseManager {
         break;
 
       default:
-        console.warn(`[INCIDENT] Unknown containment action: ${action}`);
+        logger.warn(`[INCIDENT] Unknown containment action: ${action}`);
     }
   }
 
@@ -294,7 +296,7 @@ export class IncidentResponseManager {
     this.revocationStrategies.set("global_jwt_revocation", {
       name: "Global JWT Revocation",
       description: "Revoke all active JWT tokens immediately",
-      execute: async (context) => this.executeGlobalJwtRevocation(context),
+      execute: async (_context) => this.executeGlobalJwtRevocation(),
     });
 
     this.revocationStrategies.set("selective_wallet_revocation", {
@@ -328,7 +330,7 @@ export class IncidentResponseManager {
       });
     }
 
-    console.info(
+    logger.info(
       `[REVOCATION] Executing strategy: ${strategyName} for incident: ${context.incidentId}`,
     );
 
@@ -336,7 +338,7 @@ export class IncidentResponseManager {
     const result = await strategy.execute(context);
     const duration = Date.now() - startTime;
 
-    console.info(
+    logger.info(
       `[REVOCATION] Strategy ${strategyName} completed: ${result.revokedCount} tokens revoked in ${duration}ms`,
     );
 
@@ -346,7 +348,7 @@ export class IncidentResponseManager {
     };
   }
 
-  private async executeGlobalJwtRevocation(context: RevocationContext): Promise<RevocationResult> {
+  private async executeGlobalJwtRevocation(): Promise<RevocationResult> {
     const startTime = Date.now();
     const errors: string[] = [];
     let revokedCount = 0;
@@ -356,7 +358,7 @@ export class IncidentResponseManager {
 
       for (const jwt of activeJwts) {
         try {
-          await this.revokeJwt(jwt.jti, jwt.exp);
+          await this.revokeJwt(jwt.jti);
           revokedCount++;
         } catch (err) {
           errors.push(`Failed to revoke JWT ${jwt.jti}: ${err}`);
@@ -390,7 +392,7 @@ export class IncidentResponseManager {
           const walletJwts = await this.getJwtsForWallet(walletAddress);
 
           for (const jwt of walletJwts) {
-            await this.revokeJwt(jwt.jti, jwt.exp);
+            await this.revokeJwt(jwt.jti);
             revokedCount++;
           }
         } catch (err) {
@@ -421,7 +423,7 @@ export class IncidentResponseManager {
           const ipJwts = await this.getJwtsForIp(ipOrRange);
 
           for (const jwt of ipJwts) {
-            await this.revokeJwt(jwt.jti, jwt.exp);
+            await this.revokeJwt(jwt.jti);
             revokedCount++;
           }
         } catch (err) {
@@ -454,7 +456,7 @@ export class IncidentResponseManager {
 
       for (const jwt of recentJwts) {
         try {
-          await this.revokeJwt(jwt.jti, jwt.exp);
+          await this.revokeJwt(jwt.jti);
           revokedCount++;
         } catch (err) {
           errors.push(`Failed to revoke JWT ${jwt.jti}: ${err}`);
@@ -474,7 +476,7 @@ export class IncidentResponseManager {
   }
 
   private async executeEmergencyRevocation(incident: Incident): Promise<void> {
-    console.error(`[EMERGENCY] Executing emergency revocation for incident: ${incident.id}`);
+    logger.error(`[EMERGENCY] Executing emergency revocation for incident: ${incident.id}`);
 
     const context: RevocationContext = {
       incidentId: incident.id,
@@ -489,11 +491,11 @@ export class IncidentResponseManager {
   }
 
   private async executeEmergencyKeyRotation(): Promise<void> {
-    console.error("[EMERGENCY] Executing emergency key rotation");
+    logger.error("[EMERGENCY] Executing emergency key rotation");
   }
 
   private async revokeAllActiveTokens(): Promise<void> {
-    console.warn("[EMERGENCY] Revoking all active tokens");
+    logger.warn("[EMERGENCY] Revoking all active tokens");
 
     const context: RevocationContext = {
       incidentId: "emergency",
@@ -508,37 +510,28 @@ export class IncidentResponseManager {
   }
 
   private async restrictSystemAccess(): Promise<void> {
-    console.warn("[EMERGENCY] Restricting system access");
+    logger.warn("[EMERGENCY] Restricting system access");
   }
 
   private async applyEmergencyRateLimits(): Promise<void> {
-    console.warn("[EMERGENCY] Applying emergency rate limits");
+    logger.warn("[EMERGENCY] Applying emergency rate limits");
   }
 
   private async notifyEmergencyContacts(incident: Incident): Promise<void> {
-    const message =
-      `CRITICAL INCIDENT: ${incident.type}\n\n` +
-      `Incident ID: ${incident.id}\n` +
-      `Severity: ${incident.severity}\n` +
-      `Description: ${incident.description}\n` +
-      `Affected Systems: ${incident.affectedSystems.join(", ")}\n` +
-      `Created: ${new Date(incident.createdAt).toISOString()}`;
-
     for (const contact of this.emergencyContacts) {
       try {
-        await this.sendEmergencyNotification(contact, message, incident.severity);
+        await this.sendEmergencyNotification(contact, incident.severity);
       } catch (err) {
-        console.error(`[INCIDENT] Failed to notify emergency contact ${contact.name}:`, err);
+        logger.error(`[INCIDENT] Failed to notify emergency contact ${contact.name}:`, err);
       }
     }
   }
 
   private async sendEmergencyNotification(
     contact: EmergencyContact,
-    message: string,
     severity: IncidentSeverity,
   ): Promise<void> {
-    console.info(
+    logger.info(
       `[NOTIFICATION] Sending ${severity} alert to ${contact.name} (${contact.method}): ${contact.contact}`,
     );
   }
@@ -552,27 +545,27 @@ export class IncidentResponseManager {
   }
 
   private async getJwtsForWallet(
-    walletAddress: string,
+    _walletAddress: string,
   ): Promise<Array<{ jti: string; exp: number }>> {
     return [];
   }
 
-  private async getJwtsForIp(ip: string): Promise<Array<{ jti: string; exp: number }>> {
+  private async getJwtsForIp(_ip: string): Promise<Array<{ jti: string; exp: number }>> {
     return [];
   }
 
   private async getJwtsIssuedAfter(
-    timestamp: number,
+    _timestamp: number,
   ): Promise<Array<{ jti: string; exp: number }>> {
     return [];
   }
 
-  private async revokeJwt(jti: string, exp: number): Promise<void> {
-    console.info(`[REVOCATION] Revoking JWT: ${jti}`);
+  private async revokeJwt(jti: string): Promise<void> {
+    logger.info(`[REVOCATION] Revoking JWT: ${jti}`);
   }
 
   private async clearJwtCache(): Promise<void> {
-    console.info("[REVOCATION] Clearing JWT cache");
+    logger.info("[REVOCATION] Clearing JWT cache");
   }
 
   addEmergencyContact(contact: EmergencyContact): void {

@@ -43,6 +43,7 @@
       }
     }
   },
+  "experimental": true,
   "publishConfig": {
     "access": "public"
   },
