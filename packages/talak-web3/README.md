@@ -347,16 +347,16 @@ RPC provider with automatic failover.
 
 ## Environment Variables
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `JWT_PRIVATE_KEY` | **Yes** (production) | PKCS#8 PEM RSA private key (RS256, ≥2048 bits) |
-| `JWT_PUBLIC_KEY` | **Yes** (production) | SPKI PEM RSA public key |
-| `JWT_PRIMARY_KID` | No | JWT key id (default `v1`) |
-| `REDIS_URL` | **Yes** (production) | Redis for durable nonce/refresh/revocation stores |
-| `SIWE_DOMAIN` | Recommended | Expected SIWE domain |
-| `TRUST_PROXY` | No | Set `true` to honor `X-Forwarded-For` behind a reverse proxy |
-| `NODE_ENV` | No | `production` rejects in-memory auth stores |
-| `LOG_FORMAT` | No | Set to `json` for structured logging |
+| Variable          | Required             | Description                                                  |
+| ----------------- | -------------------- | ------------------------------------------------------------ |
+| `JWT_PRIVATE_KEY` | **Yes** (production) | PKCS#8 PEM RSA private key (RS256, ≥2048 bits)               |
+| `JWT_PUBLIC_KEY`  | **Yes** (production) | SPKI PEM RSA public key                                      |
+| `JWT_PRIMARY_KID` | No                   | JWT key id (default `v1`)                                    |
+| `REDIS_URL`       | **Yes** (production) | Redis for durable nonce/refresh/revocation stores            |
+| `SIWE_DOMAIN`     | Recommended          | Expected SIWE domain                                         |
+| `TRUST_PROXY`     | No                   | Set `true` to honor `X-Forwarded-For` behind a reverse proxy |
+| `NODE_ENV`        | No                   | `production` rejects in-memory auth stores                   |
+| `LOG_FORMAT`      | No                   | Set to `json` for structured logging                         |
 
 ## Examples
 

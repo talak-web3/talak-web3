@@ -276,7 +276,9 @@ export class RedisSecurityAuditor {
 
       const evictionPolicy = await this.redis.configGet("maxmemory-policy");
       if (evictionPolicy["maxmemory-policy"] !== "noeviction") {
-        logger.warn("maxmemory-policy is not set to noeviction - critical auth data may be evicted");
+        logger.warn(
+          "maxmemory-policy is not set to noeviction - critical auth data may be evicted",
+        );
       }
 
       logger.info("Security hardening applied successfully");

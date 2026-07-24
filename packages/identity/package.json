@@ -27,7 +27,6 @@
       "default": "./dist/index.js"
     }
   },
-  "experimental": true,
   "publishConfig": {
     "access": "public"
   },
@@ -41,5 +40,6 @@
   "dependencies": {
     "@talak-web3/adapters": "workspace:*",
     "@talak-web3/types": "workspace:*"
-  }
+  },
+  "experimental": true
 }

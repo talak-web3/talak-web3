@@ -15,11 +15,7 @@ Creates a new talak-web3 application instance. Every instance exposes `app.handl
 ```typescript
 import Redis from "ioredis";
 import { talakWeb3 } from "talak-web3";
-import {
-  RedisNonceStore,
-  RedisRefreshStore,
-  RedisRevocationStore,
-} from "@talak-web3/auth/stores";
+import { RedisNonceStore, RedisRefreshStore, RedisRevocationStore } from "@talak-web3/auth/stores";
 
 // Production: RS256 keys via JWT_PRIVATE_KEY / JWT_PUBLIC_KEY (not JWT_SECRET)
 const redis = new Redis(process.env.REDIS_URL!);
@@ -41,15 +37,15 @@ await app.init();
 
 ### Configuration Options
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `auth.domain` | `string` | env `SIWE_DOMAIN` | SIWE domain binding |
-| `auth.nonceStore` | `NonceStore` | InMemory (**dev only**) | Nonce store |
-| `auth.refreshStore` | `RefreshStore` | InMemory (**dev only**) | Refresh store |
-| `auth.revocationStore` | `RevocationStore` | InMemory (**dev only**) | Revocation store |
-| `auth.accessTtlSeconds` | `number` | `900` | Access token TTL |
-| `auth.refreshTtlSeconds` | `number` | `604800` | Refresh token TTL |
-| `REDIS_URL` / JWT PEMs | env | required in production | Durable stores + RS256 keys |
+| Option                   | Type              | Default                 | Description                 |
+| ------------------------ | ----------------- | ----------------------- | --------------------------- |
+| `auth.domain`            | `string`          | env `SIWE_DOMAIN`       | SIWE domain binding         |
+| `auth.nonceStore`        | `NonceStore`      | InMemory (**dev only**) | Nonce store                 |
+| `auth.refreshStore`      | `RefreshStore`    | InMemory (**dev only**) | Refresh store               |
+| `auth.revocationStore`   | `RevocationStore` | InMemory (**dev only**) | Revocation store            |
+| `auth.accessTtlSeconds`  | `number`          | `900`                   | Access token TTL            |
+| `auth.refreshTtlSeconds` | `number`          | `604800`                | Refresh token TTL           |
+| `REDIS_URL` / JWT PEMs   | env               | required in production  | Durable stores + RS256 keys |
 
 ### Context API
 

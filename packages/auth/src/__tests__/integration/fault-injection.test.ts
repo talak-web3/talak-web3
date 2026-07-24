@@ -8,7 +8,10 @@ const redisAvailable = process.env.REDIS_HOST !== undefined || process.env.CI ==
 
 describe.skipIf(!redisAvailable)("FAULT INJECTION: Nonce Durability (I2)", () => {
   let redis: Redis;
-  let nonceStore: { create: (addr: string) => Promise<string>; consume: (addr: string, nonce: string) => Promise<boolean> };
+  let nonceStore: {
+    create: (addr: string) => Promise<string>;
+    consume: (addr: string, nonce: string) => Promise<boolean>;
+  };
 
   beforeEach(async () => {
     const { RedisNonceStore } = await import("../stores/redis-nonce");
@@ -68,7 +71,11 @@ describe.skipIf(!redisAvailable)("FAULT INJECTION: Nonce Durability (I2)", () =>
 
 describe.skipIf(!redisAvailable)("FAULT INJECTION: Revocation Propagation (I4)", () => {
   let redis: Redis;
-  let revocationStore: { revoke: (jti: string, expiresAt: number) => Promise<void>; isRevoked: (jti: string) => Promise<boolean>; close: () => Promise<void> };
+  let revocationStore: {
+    revoke: (jti: string, expiresAt: number) => Promise<void>;
+    isRevoked: (jti: string) => Promise<boolean>;
+    close: () => Promise<void>;
+  };
 
   beforeEach(async () => {
     const { RedisRevocationStore } = await import("../stores/redis-revocation");

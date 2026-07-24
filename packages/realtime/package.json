@@ -33,7 +33,6 @@
       }
     }
   },
-  "experimental": true,
   "publishConfig": {
     "access": "public"
   },
@@ -50,5 +49,6 @@
   },
   "devDependencies": {
     "@types/node": "catalog:"
-  }
+  },
+  "experimental": true
 }

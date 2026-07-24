@@ -458,7 +458,16 @@ export function createAdaptiveRateLimitMiddleware(
     });
 
     if (!result.allowed) {
-      logger.warn({ ip, wallet, type: options.type, penalties: result.penalties, riskScore: result.riskScore }, "Rate limit exceeded");
+      logger.warn(
+        {
+          ip,
+          wallet,
+          type: options.type,
+          penalties: result.penalties,
+          riskScore: result.riskScore,
+        },
+        "Rate limit exceeded",
+      );
 
       await rateLimiter.applyRateLimitPenalty(ip, wallet, options.type);
 

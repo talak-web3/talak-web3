@@ -1,4 +1,3 @@
-import type Redis from "ioredis";
 import { TalakWeb3Error, CONFIG_ERROR_CODES } from "@talak-web3/errors";
 import {
   InMemoryRateLimiter,
@@ -8,6 +7,7 @@ import {
 } from "@talak-web3/rate-limit";
 import type { TalakWeb3Auth } from "@talak-web3/types";
 import type { TalakWeb3Context, TalakWeb3Instance } from "@talak-web3/types";
+import type Redis from "ioredis";
 
 import {
   appendAuthCookies,

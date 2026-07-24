@@ -27,7 +27,6 @@
       "default": "./dist/index.js"
     }
   },
-  "experimental": true,
   "publishConfig": {
     "access": "public"
   },
@@ -37,5 +36,6 @@
     "test": "vitest run --passWithNoTests",
     "lint:package": "publint run --strict --pack false",
     "lint:types": "attw --profile esm-only --pack ."
-  }
+  },
+  "experimental": true
 }

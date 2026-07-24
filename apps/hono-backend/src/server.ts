@@ -113,10 +113,16 @@ try {
   const audit = await auditor.auditSecurity();
 
   if (audit.status === "critical") {
-    logger.error({ issues: audit.issues, recommendations: audit.recommendations }, "Redis security issues detected");
+    logger.error(
+      { issues: audit.issues, recommendations: audit.recommendations },
+      "Redis security issues detected",
+    );
     process.exit(1);
   } else if (audit.status === "warning") {
-    logger.warn({ issues: audit.issues, recommendations: audit.recommendations }, "Redis security warnings");
+    logger.warn(
+      { issues: audit.issues, recommendations: audit.recommendations },
+      "Redis security warnings",
+    );
   }
 
   if (process.env["NODE_ENV"] === "production") {

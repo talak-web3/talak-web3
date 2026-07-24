@@ -515,8 +515,7 @@ function normalizeConfigInput(input: unknown): unknown {
       const nc = chainObj["nativeCurrency"];
       return Object.assign({}, chainObj, {
         name:
-          typeof chainObj["name"] === "string" &&
-          (chainObj["name"] as string).length > 0 // SAFETY: narrowed by typeof check above
+          typeof chainObj["name"] === "string" && (chainObj["name"] as string).length > 0 // SAFETY: narrowed by typeof check above
             ? chainObj["name"]
             : `Chain ${id}`,
         nativeCurrency:

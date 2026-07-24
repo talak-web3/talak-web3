@@ -360,9 +360,7 @@ export class SecurityEventManager {
 
   private startFlushTimer(): void {
     this.flushTimer = setInterval(() => {
-      this.flushEvents().catch((err) =>
-        logger.error("[SECURITY_EVENTS] Flush timer failed:", err),
-      );
+      this.flushEvents().catch((err) => logger.error("[SECURITY_EVENTS] Flush timer failed:", err));
     }, this.flushInterval);
   }
 

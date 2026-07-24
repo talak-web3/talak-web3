@@ -1,6 +1,7 @@
 import { createPublicKey } from "node:crypto";
 
 import { TalakWeb3Error } from "@talak-web3/errors";
+
 import { logger } from "../logger.js";
 
 function validateKeyStrength(pem: string, label: string): void {
