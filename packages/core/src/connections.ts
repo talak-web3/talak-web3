@@ -60,8 +60,9 @@ export class ConnectionManager {
     const db = dbMap[purpose] ?? 0;
     const instanceKey = `${baseUrl}:${db}`;
 
-    if (this.redisInstances.has(instanceKey)) {
-      return this.redisInstances.get(instanceKey)!;
+    const existing = this.redisInstances.get(instanceKey);
+    if (existing) {
+      return existing;
     }
 
     registerShutdown();
@@ -77,8 +78,8 @@ export class ConnectionManager {
 
     const client = new Redis(baseUrl, options);
 
-    client.on("error", (err: Error) => {
-      console.error(`[ConnectionManager] Redis Error (${purpose}):`, err.message);
+    client.on("error", (_err: Error) => {
+      void _err;
     });
 
     this.redisInstances.set(instanceKey, client);

@@ -1,6 +1,23 @@
 import { TalakWeb3Error } from "@talak-web3/errors";
 import type { Context } from "hono";
 
+import { logger } from "../logger.js";
+
+/**
+ * Deployment Isolation Module
+ *
+ * This module intentionally mutates process.env to configure per-environment
+ * settings (log levels, Redis DB numbers, rate limit multipliers, security
+ * flags). This pattern is used to propagate deployment-specific configuration
+ * to all modules that read process.env without requiring explicit parameter
+ * passing.
+ *
+ * Security note: process.env mutations are global and affect all concurrent
+ * requests. The isolateEnvironment() method must be called once at startup
+ * before accepting traffic. Concurrent calls to different environments are
+ * NOT supported.
+ */
+
 export type Environment = "development" | "staging" | "production";
 
 export interface EnvironmentConfig {
@@ -391,14 +408,14 @@ export function createEnvironmentValidationMiddleware(envManager: EnvironmentMan
       const proto = c.req.header("x-forwarded-proto");
 
       if (proto !== "https") {
-        console.warn("[SECURITY] Non-HTTPS request in production");
+        logger.warn("Non-HTTPS request in production");
       }
 
       const requiredHeaders = ["x-request-id", "user-agent"];
       const missingHeaders = requiredHeaders.filter((header) => !c.req.header(header));
 
       if (missingHeaders.length > 0) {
-        console.warn("[SECURITY] Missing required headers in production:", missingHeaders);
+        logger.warn({ headers: missingHeaders }, "Missing required headers in production");
       }
     }
 

@@ -41,6 +41,11 @@
     "@talak-web3/errors": "workspace:*",
     "@talak-web3/types": "workspace:*"
   },
+  "devDependencies": {
+    "@ceramicnetwork/http-client": "^6.0.0",
+    "@ceramicnetwork/stream-tile": "^6.0.0",
+    "@tableland/sdk": "^7.0.0"
+  },
   "peerDependencies": {
     "@ceramicnetwork/http-client": "^6.0.0",
     "@ceramicnetwork/stream-tile": "^6.0.0",
@@ -56,10 +61,5 @@
     "@tableland/sdk": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "@ceramicnetwork/http-client": "^6.0.0",
-    "@ceramicnetwork/stream-tile": "^6.0.0",
-    "@tableland/sdk": "^7.0.0"
   }
 }

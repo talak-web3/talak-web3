@@ -1,11 +1,16 @@
+/** Numeric chain ID (EIP-155). */
 export type ChainId = number;
 
+/** 0x-prefixed hex string. */
 export type Hex = `0x${string}`;
 
+/** EVM address (0x-prefixed, 20 bytes). */
 export type Address = Hex;
 
+/** Unix timestamp in milliseconds. */
 export type UnixMs = number;
 
+/** Minimal logging interface. */
 export interface Logger {
   info(message: string, ...args: unknown[]): void;
   warn(message: string, ...args: unknown[]): void;
@@ -19,6 +24,7 @@ export interface NonceStore {
   consume(address: string, nonce: string): Promise<boolean>;
 }
 
+/** A refresh-session record stored by the refresh store. */
 export interface RefreshSession {
   id: string;
   address: string;
@@ -48,6 +54,7 @@ export interface RevocationStore {
   getGlobalInvalidationTime(): Promise<number>;
 }
 
+/** JSON-RPC endpoint with health metadata. */
 export interface RpcEndpoint {
   url: string;
   chainId: number;
@@ -61,12 +68,14 @@ export interface RpcEndpoint {
   };
 }
 
+/** Options for individual JSON-RPC requests. */
 export interface RpcOptions {
   retries?: number;
   timeout?: number;
   failover?: boolean;
 }
 
+/** JSON-RPC client interface. */
 export interface IRpc {
   request<T = unknown>(
     chainId: number,
@@ -80,6 +89,7 @@ export interface IRpc {
   stop(): void;
 }
 
+/** LRU-like RPC response cache. */
 export interface RpcCache {
   get<T = unknown>(key: string): T | undefined;
   set<T = unknown>(key: string, value: T, ttlMs?: number): void;
@@ -87,11 +97,13 @@ export interface RpcCache {
   clear(): void;
 }
 
+/** Auth provider interface for JWT validation. */
 export interface IAuth {
   coldStart(): Promise<void>;
   validateJwt(token: string): Promise<boolean>;
 }
 
+/** JWT session payload. */
 export interface SessionPayload {
   address: string;
   chainId: number;
@@ -99,6 +111,7 @@ export interface SessionPayload {
   ipSubnet?: string;
 }
 
+/** JSON Web Key (RS256). */
 export interface JsonWebKey {
   kty: "RSA";
   use: "sig";
@@ -111,10 +124,12 @@ export interface JsonWebKey {
   "x5t#S256"?: string;
 }
 
+/** JWKS endpoint response. */
 export interface JwksResponse {
   keys: JsonWebKey[];
 }
 
+/** TalakWeb3 auth handler — SIWE login, JWT sign/verify, session lifecycle. */
 export interface TalakWeb3Auth extends IAuth {
   forceGlobalInvalidation(): Promise<void>;
   signJwt(payload: SessionPayload): Promise<string>;
@@ -138,6 +153,7 @@ export interface TalakWeb3Auth extends IAuth {
   ): Promise<{ accessToken: string; refreshToken: string }>;
 }
 
+/** Event map for TalakWeb3 hook registry. */
 export type TalakWeb3EventsMap = {
   "plugin-load": { name: string };
   "rpc-error": {
@@ -167,6 +183,7 @@ export type TalakWeb3EventsMap = {
   "ai:run-end": { output: unknown };
 };
 
+/** Typed hook registry for emitting and subscribing to SDK events. */
 export interface IHookRegistry<Events extends Record<string, unknown> = TalakWeb3EventsMap> {
   on<K extends keyof Events>(event: K, handler: (data: Events[K]) => void): () => void;
   off<K extends keyof Events>(event: K, handler: (data: Events[K]) => void): void;
@@ -174,6 +191,7 @@ export interface IHookRegistry<Events extends Record<string, unknown> = TalakWeb
   clear(): void;
 }
 
+/** Middleware chain that executes handlers sequentially. */
 export interface IMiddlewareChain<T = unknown, R = unknown> {
   use(handler: MiddlewareHandler<T, R>): void;
   execute(req: T, ctx: TalakWeb3Context, finalHandler: () => Promise<R>): Promise<R>;
@@ -232,12 +250,14 @@ export interface TalakWeb3Plugin {
   teardown?(): void | Promise<void>;
 }
 
+/** Middleware handler function. */
 export type MiddlewareHandler<T = unknown, R = unknown> = (
   req: T,
   next: () => Promise<R>,
   ctx: TalakWeb3Context,
 ) => Promise<R>;
 
+/** Named middleware with optional request/response hooks. */
 export interface TalakWeb3Middleware {
   name: string;
   onRequest?: MiddlewareHandler;
@@ -280,6 +300,7 @@ export interface TalakWeb3Instance {
   healthCheck(): { status: "ok" | "degraded" | "error"; checks: Record<string, boolean> };
 }
 
+/** AI tool definition for agent tool-calling. */
 export type ToolDefinition = {
   name: string;
   description?: string;
@@ -287,16 +308,19 @@ export type ToolDefinition = {
   handler: (input: unknown) => Promise<unknown>;
 };
 
+/** Input for an AI agent run. */
 export type AgentRunInput = {
   prompt: string;
   tools?: ToolDefinition[];
 };
 
+/** Output from an AI agent run. */
 export type AgentRunOutput = {
   text: string;
   toolCalls?: Array<{ tool: string; input: unknown; output?: unknown }>;
 };
 
+/** AI agent interface with optional streaming support. */
 export interface AiAgent {
   run(input: AgentRunInput): Promise<AgentRunOutput>;
   runStream?(
@@ -306,23 +330,28 @@ export interface AiAgent {
   >;
 }
 
+/** Analytics event payload. */
 export type AnalyticsEvent = {
   name: string;
   tsMs: number;
   properties?: Record<string, unknown>;
 };
 
+/** Analytics event sink for ingesting events. */
 export interface AnalyticsSink {
   ingest(events: AnalyticsEvent[]): Promise<void>;
 }
 
+/** Organization member role. */
 export type Role = "member" | "admin" | "owner";
 
+/** Organization metadata. */
 export type Organization = {
   id: string;
   name: string;
 };
 
+/** Organization access gate. */
 export interface OrgGate {
   hasRole(input: { orgId: string; address: string; role: Role }): Promise<boolean>;
 }

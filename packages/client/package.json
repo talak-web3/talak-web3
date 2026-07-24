@@ -41,6 +41,6 @@
     "@talak-web3/types": "workspace:*"
   },
   "peerDependencies": {
-    "viem": "^2.0.0"
+    "viem": "catalog:"
   }
 }

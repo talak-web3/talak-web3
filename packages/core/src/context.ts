@@ -14,6 +14,7 @@ export interface RequestContext extends TalakWeb3Context {
   };
 }
 
+/** @internal Context factory — not part of the public API. */
 export class ContextFactory {
   static create(
     instance: TalakWeb3Instance,

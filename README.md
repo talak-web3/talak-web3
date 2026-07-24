@@ -40,6 +40,38 @@ npm run dev
 
 Consult [`docs/MINIMAL_SETUP.md`](./docs/MINIMAL_SETUP.md) and the [`@talak-web3/core`](./packages/core/README.md) README — `talakWeb3()` is configured via `@talak-web3/config` presets and plugins. Production requires **RS256** keys (`JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY`) and durable auth stores (Redis); in-memory stores are rejected when `NODE_ENV=production`.
 
+### Usage Example
+
+```typescript
+import { talakWeb3 } from "@talak-web3/core";
+import { TalakWeb3Auth } from "@talak-web3/auth";
+import { RpcClient } from "@talak-web3/rpc";
+
+// 1. Create instance with SIWE login
+const instance = talakWeb3({
+  chains: [{ id: 1, name: "Ethereum", rpcUrls: ["https://rpc.ankr.com/eth"] }],
+  auth: new TalakWeb3Auth({
+    jwtPrivateKey: process.env.JWT_PRIVATE_KEY,
+    jwtPublicKey: process.env.JWT_PUBLIC_KEY,
+  }),
+});
+
+await instance.init();
+
+// 2. Login via SIWE
+const { accessToken, refreshToken } = await instance.context.auth.loginWithSiwe(
+  message,
+  signature,
+);
+
+// 3. Check session
+const payload = await instance.context.auth.verifySession(accessToken);
+
+// 4. Make RPC request
+const rpc = new RpcClient({ endpoints: [...], ctx: instance.context });
+const blockNumber = await rpc.request<bigint>(1, "eth_blockNumber");
+```
+
 ### React integration
 
 `talak-web3/react` re-exports hooks from `@talak-web3/hooks` (`TalakWeb3Provider`, `useAccount`, `useBalance`, `useTalakWeb3`). Wire your own SIWE signing flow against your API; there is no `useSIWE` helper in the current release.

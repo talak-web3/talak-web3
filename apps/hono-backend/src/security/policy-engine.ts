@@ -1,6 +1,8 @@
 import { TalakWeb3Error } from "@talak-web3/errors";
 import type { Context } from "hono";
 
+import { logger } from "../logger.js";
+
 export interface PolicyDecision {
   allowed: boolean;
   reason?: string;
@@ -137,7 +139,7 @@ export class PolicyEngine {
           break;
         }
       } catch (error) {
-        console.warn(`Policy rule ${rule.id} evaluation failed:`, error);
+        logger.warn(`Policy rule ${rule.id} evaluation failed:`, error);
       }
     }
 

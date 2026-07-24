@@ -4,8 +4,10 @@ import { encodeFunctionData, keccak256, encodeAbiParameters, parseAbiParameters 
 
 import type { UserOperation, PartialUserOp, GasEstimate, UserOperationReceipt } from "./index.js";
 
+/** Entry point contract address for ERC-4337 v0.6. */
 export const ENTRY_POINT_V06 = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789" as Address;
 
+/** Entry point contract address for ERC-4337 v0.7. */
 export const ENTRY_POINT_V07 = "0x0000000071727De22E5E9d8BAf0edAc6f37da032" as Address;
 
 class BundlerRpc {
@@ -28,6 +30,7 @@ class BundlerRpc {
   }
 }
 
+/** Configuration for creating an Account Abstraction client. */
 export interface AaClientOptions {
   bundlerUrl: string;
   paymasterUrl?: string;
@@ -37,6 +40,7 @@ export interface AaClientOptions {
   entryPoint?: Address;
 }
 
+/** Client for interacting with ERC-4337 account abstraction bundlers and paymasters. */
 export class AccountAbstractionClient {
   private readonly bundler: BundlerRpc;
   private readonly paymaster: BundlerRpc | undefined;

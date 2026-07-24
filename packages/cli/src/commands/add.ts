@@ -85,7 +85,7 @@ function generateIntegrationConfig(integration: string): string {
       return `import { WalletConnectPlugin } from 'talak-web3/plugins';
 
 export const walletConnectConfig = {
-  projectId: process.env.WALLETCONNECT_PROJECT_ID!,
+  projectId: process.env.WALLETCONNECT_PROJECT_ID ?? "YOUR_WALLETCONNECT_PROJECT_ID",
   chains: [1, 137, 42161],
 };
 
@@ -101,7 +101,7 @@ export const mfaConfig = {
   },
   webauthn: {
     rpName: 'Your App',
-    rpId: process.env.SIWE_DOMAIN!,
+    rpId: process.env.SIWE_DOMAIN ?? "localhost",
   },
 };
 

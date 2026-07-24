@@ -61,13 +61,6 @@ export default defineConfig({
           branches: 85,
           statements: 90,
         },
-        "packages/middleware/": {
-          lines: 90,
-          functions: 90,
-          branches: 85,
-          statements: 90,
-        },
-
         "packages/": {
           lines: 85,
           functions: 85,

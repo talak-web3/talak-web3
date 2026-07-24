@@ -4,7 +4,7 @@
 # Security-critical packages
 /packages/auth/ @dagimabebe
 /packages/core/ @dagimabebe
-/packages/middleware/ @dagimabebe
+/packages/rate-limit/ @dagimabebe
 
 # Documentation
 /docs/ @dagimabebe

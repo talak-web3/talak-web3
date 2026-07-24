@@ -101,6 +101,7 @@ const PRESETS: Record<string, TalakWeb3Config> = {
 
 export type PresetName = keyof typeof PRESETS;
 
+/** Resolves a preset name from a config object, merging user chains with preset chains. */
 export function resolvePreset(input: Record<string, unknown>): Record<string, unknown> {
   const presetName = input["preset"];
   if (!presetName || typeof presetName !== "string") return input;
@@ -132,6 +133,7 @@ export function resolvePreset(input: Record<string, unknown>): Record<string, un
   return { ...preset, ...rest, chains: mergedChains };
 }
 
+/** Utility class for validating, loading, and merging TalakWeb3 configs. */
 export class ConfigManager {
   static validate(config: unknown) {
     return TalakWeb3ConfigSchema.parse(config);

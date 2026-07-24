@@ -12,6 +12,8 @@ import { validateRpcRequest } from "./validation.js";
 
 export type { RpcEndpoint } from "@talak-web3/types";
 
+/** Middleware that validates incoming RPC requests against the JSON-RPC 2.0 schema. */
+/** @internal RPC validation middleware — not yet wired into the default middleware chain. */
 export const rpcValidationMiddleware: MiddlewareHandler = async (req, next) => {
   validateRpcRequest(req);
   return next();
@@ -25,6 +27,7 @@ function hasExecuteMethod<T>(
   return typeof candidate["execute"] === "function";
 }
 
+/** Unified RPC client with health checking, load balancing, and circuit breaking. */
 export class UnifiedRpc implements IRpc {
   private endpointsByChain: Map<number, RpcEndpoint[]>;
   ctx: TalakWeb3Context;
@@ -302,7 +305,7 @@ export class UnifiedRpc implements IRpc {
         const nextEndpoint = await this.getBestEndpoint(chainId, lastFailedUrl);
         if (nextEndpoint && nextEndpoint.url !== lastFailedUrl) {
           this.ctx.hooks.emit("rpc:failover", {
-            from: lastFailedUrl!,
+            from: lastFailedUrl ?? endpoint.url,
             to: nextEndpoint.url,
             chainId,
             method,

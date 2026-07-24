@@ -48,10 +48,9 @@ describe("C-001 production in-memory store guard", () => {
     } catch (err: unknown) {
       // Factory check or TalakWeb3Auth brand assert
       const code = (err as { code?: string }).code;
-      expect([
-        CONFIG_ERROR_CODES.INMEMORY_STORES_IN_PRODUCTION,
-        "AUTH_STORES_MISSING",
-      ]).toContain(code);
+      expect([CONFIG_ERROR_CODES.INMEMORY_STORES_IN_PRODUCTION, "AUTH_STORES_MISSING"]).toContain(
+        code,
+      );
     }
   });
 

@@ -9,7 +9,7 @@ export class MockNonceStore implements NonceStore {
     timestamp: number;
   }> = [];
 
-  async create(address: string, meta?: { ip?: string; ua?: string }): Promise<string> {
+  async create(address: string, _meta?: { ip?: string; ua?: string }): Promise<string> {
     const addr = address.toLowerCase();
     const nonce = this.generateNonce();
     const expiresAt = Date.now() + 5 * 60 * 1000;

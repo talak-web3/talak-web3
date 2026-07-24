@@ -4,6 +4,8 @@ import type { NonceStore, RefreshStore, RefreshSession } from "@talak-web3/auth"
 import { TalakWeb3Error } from "@talak-web3/errors";
 import type { RedisClientType } from "redis";
 
+import { logger } from "../logger.js";
+
 export type { NonceStore, RefreshStore, RefreshSession };
 
 export interface NonceRecord {
@@ -25,9 +27,7 @@ export class RedisNonceStore implements NonceStore {
     private readonly ttlMs: number,
   ) {
     if (ttlMs > 5 * 60_000) {
-      console.warn(
-        "[RedisNonceStore] ttlMs exceeds 5 minutes — clamping to 5 minutes for security.",
-      );
+      logger.warn("ttlMs exceeds 5 minutes — clamping to 5 minutes for security.");
       this.ttlMs = 5 * 60_000;
     }
   }

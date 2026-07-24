@@ -87,17 +87,17 @@
     "lint:types": "attw --profile node16 --pack ."
   },
   "dependencies": {
-    "ioredis": "^5.0.0",
-    "jose": "^6.0.0",
-    "viem": "^2.21.0",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
     "@talak-web3/client": "workspace:*",
     "@talak-web3/config": "workspace:*",
     "@talak-web3/core": "workspace:*",
     "@talak-web3/hooks": "workspace:*",
     "@talak-web3/rpc": "workspace:*",
+    "ioredis": "^5.0.0",
+    "jose": "^6.0.0",
+    "viem": "catalog:",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
     "@talak-web3/types": "workspace:*",
     "next": "16.2.11"
   },

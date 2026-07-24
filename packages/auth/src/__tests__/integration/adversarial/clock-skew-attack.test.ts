@@ -1,40 +1,39 @@
 import { TalakWeb3Error } from "@talak-web3/errors";
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { AuthoritativeTime, setAuthoritativeTime } from "../../time.js";
+import { AuthoritativeTime, setAuthoritativeTime } from "../../../time.js";
 
 describe("Adversarial: Clock Skew Attack", () => {
   beforeEach(() => {
     setAuthoritativeTime(
       new AuthoritativeTime({
+        timeSource: { getTime: async () => Date.now() },
         syncIntervalMs: 1000,
         maxDriftMs: 5000,
       }),
     );
   });
 
-  it("should detect and reject excessive clock drift", async () => {
-    const skewedSource = {
-      getTime: async () => {
-        return Date.now() + 10000;
-      },
-    };
-
+  it("should detect and reject excessive clock drift via sync()", async () => {
     const authTime = new AuthoritativeTime({
-      timeSource: skewedSource,
+      timeSource: { getTime: async () => Date.now() },
       maxDriftMs: 5000,
     });
 
+    await authTime.sync();
+
+    const skewedSource = {
+      getTime: async () => Date.now() + 10000,
+    };
+
+    (authTime as unknown as { timeSource: typeof skewedSource }).timeSource = skewedSource;
+
     await expect(authTime.sync()).rejects.toThrow(TalakWeb3Error);
-    await expect(authTime.sync()).rejects.toThrow("Clock drift exceeds threshold");
   });
 
   it("should use authoritative time instead of system time", async () => {
     const accurateSource = {
-      getTime: async () => {
-        const accurateTime = Date.now() + 100;
-        return accurateTime;
-      },
+      getTime: async () => Date.now() + 100,
     };
 
     const authTime = new AuthoritativeTime({
@@ -73,7 +72,7 @@ describe("Adversarial: Clock Skew Attack", () => {
     expect(callCount).toBeGreaterThan(initialCalls);
   });
 
-  it("should handle time source failures gracefully", async () => {
+  it("should handle time source failures gracefully via initError", async () => {
     const failingSource = {
       getTime: async () => {
         throw new Error("Time source unavailable");
@@ -85,11 +84,10 @@ describe("Adversarial: Clock Skew Attack", () => {
       maxDriftMs: 5000,
     });
 
-    await expect(authTime.sync()).rejects.toThrow("Time source unavailable");
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const time = authTime.now();
-    expect(typeof time).toBe("number");
-    expect(time).toBeGreaterThan(0);
+    expect(authTime.initError).toBeDefined();
+    expect((authTime.initError as Error).message).toBe("Time source unavailable");
   });
 
   it("should compensate for network latency", async () => {

@@ -15,11 +15,7 @@ JWT signing uses **RS256** with PEM keys — not a shared HMAC secret.
 ```typescript
 import Redis from "ioredis";
 import { talakWeb3 } from "talak-web3";
-import {
-  RedisNonceStore,
-  RedisRefreshStore,
-  RedisRevocationStore,
-} from "@talak-web3/auth/stores";
+import { RedisNonceStore, RedisRefreshStore, RedisRevocationStore } from "@talak-web3/auth/stores";
 
 const redis = new Redis(process.env.REDIS_URL!);
 
@@ -48,25 +44,25 @@ await app.init();
 
 #### Required environment (production auth)
 
-| Variable | Description |
-| --- | --- |
-| `JWT_PRIVATE_KEY` | PKCS#8 PEM RSA private key (RS256, ≥2048 bits) |
-| `JWT_PUBLIC_KEY` | SPKI PEM RSA public key |
-| `JWT_PRIMARY_KID` | Optional key id (default `v1`) |
-| `SIWE_DOMAIN` | Expected SIWE domain |
-| `REDIS_URL` | Redis connection (`redis://` or `rediss://`) |
+| Variable                          | Description                                                     |
+| --------------------------------- | --------------------------------------------------------------- |
+| `JWT_PRIVATE_KEY`                 | PKCS#8 PEM RSA private key (RS256, ≥2048 bits)                  |
+| `JWT_PUBLIC_KEY`                  | SPKI PEM RSA public key                                         |
+| `JWT_PRIMARY_KID`                 | Optional key id (default `v1`)                                  |
+| `SIWE_DOMAIN`                     | Expected SIWE domain                                            |
+| `REDIS_URL`                       | Redis connection (`redis://` or `rediss://`)                    |
 | `TRUST_PROXY` / `TRUSTED_PROXIES` | Set when behind a reverse proxy so `X-Forwarded-For` is trusted |
 
 #### Configuration options (auth stores)
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `auth.domain` / `expectedDomain` | `string` | env `SIWE_DOMAIN` | SIWE domain binding |
-| `auth.nonceStore` | `NonceStore` | InMemory (**dev only**) | Nonce store |
-| `auth.refreshStore` | `RefreshStore` | InMemory (**dev only**) | Refresh store |
-| `auth.revocationStore` | `RevocationStore` | InMemory (**dev only**) | Revocation store |
-| `auth.accessTtlSeconds` | `number` | `900` | Access token TTL |
-| `auth.refreshTtlSeconds` | `number` | `604800` | Refresh token TTL |
+| Option                           | Type              | Default                 | Description         |
+| -------------------------------- | ----------------- | ----------------------- | ------------------- |
+| `auth.domain` / `expectedDomain` | `string`          | env `SIWE_DOMAIN`       | SIWE domain binding |
+| `auth.nonceStore`                | `NonceStore`      | InMemory (**dev only**) | Nonce store         |
+| `auth.refreshStore`              | `RefreshStore`    | InMemory (**dev only**) | Refresh store       |
+| `auth.revocationStore`           | `RevocationStore` | InMemory (**dev only**) | Revocation store    |
+| `auth.accessTtlSeconds`          | `number`          | `900`                   | Access token TTL    |
+| `auth.refreshTtlSeconds`         | `number`          | `604800`                | Refresh token TTL   |
 
 ### Context API
 
@@ -85,11 +81,10 @@ const nonce = await app.context.auth.createNonce(address, { ip, ua });
 Verifies SIWE and issues access + refresh tokens. Pass `context` for IP/UA token binding.
 
 ```typescript
-const { accessToken, refreshToken } = await app.context.auth.loginWithSiwe(
-  message,
-  signature,
-  { ip: "1.2.3.4", userAgent: "…" },
-);
+const { accessToken, refreshToken } = await app.context.auth.loginWithSiwe(message, signature, {
+  ip: "1.2.3.4",
+  userAgent: "…",
+});
 ```
 
 ##### `refresh(refreshToken, context?)`

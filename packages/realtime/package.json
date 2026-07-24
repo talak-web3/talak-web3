@@ -49,5 +49,6 @@
   },
   "devDependencies": {
     "@types/node": "catalog:"
-  }
+  },
+  "experimental": true
 }

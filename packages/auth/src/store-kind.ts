@@ -8,13 +8,13 @@ export const TALAK_STORE_KIND = Symbol.for("talak.web3.storeKind");
 export type StoreKindCarrier = {
   readonly [TALAK_STORE_KIND]?: TalakStoreKind;
   /** Optional string brand for JSON-friendly introspection */
-  readonly __talakStoreKind?: TalakStoreKind;
+  readonly talakStoreKind?: TalakStoreKind;
 };
 
 export function getStoreKind(store: unknown): TalakStoreKind {
   if (!store || typeof store !== "object") return "custom";
   const s = store as StoreKindCarrier;
-  return s[TALAK_STORE_KIND] ?? s.__talakStoreKind ?? "custom";
+  return s[TALAK_STORE_KIND] ?? s.talakStoreKind ?? "custom";
 }
 
 export function isMemoryStore(store: unknown): boolean {

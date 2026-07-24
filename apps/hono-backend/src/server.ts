@@ -40,31 +40,31 @@ import { RedisAuthStorage } from "./security/storage.js";
 try {
   validateEnv();
 } catch (err) {
-  console.error("[CRITICAL] Startup failed: Environment validation error");
-  console.error(err);
+  logger.error("[CRITICAL] Startup failed: Environment validation error");
+  logger.error(err as Error);
   process.exit(1);
 }
 
 const app = new Hono();
 
-const redisUrl = process.env["REDIS_URL"]!;
+const redisUrl = process.env["REDIS_URL"] ?? "";
 const redisHardeningConfig: Parameters<typeof createHardenedRedisClient>[1] = {
   auth: {
     enabled: process.env["REDIS_AUTH_ENABLED"] !== "false",
     ...(process.env["REDIS_PASSWORD"] !== undefined && {
-      password: process.env["REDIS_PASSWORD"]!,
+      password: process.env["REDIS_PASSWORD"] ?? "",
     }),
   },
   tls: {
     enabled: process.env["REDIS_TLS_ENABLED"] !== "false",
     ...(process.env["REDIS_TLS_CERT_PATH"] !== undefined && {
-      certPath: process.env["REDIS_TLS_CERT_PATH"]!,
+      certPath: process.env["REDIS_TLS_CERT_PATH"] ?? "",
     }),
     ...(process.env["REDIS_TLS_KEY_PATH"] !== undefined && {
-      keyPath: process.env["REDIS_TLS_KEY_PATH"]!,
+      keyPath: process.env["REDIS_TLS_KEY_PATH"] ?? "",
     }),
     ...(process.env["REDIS_TLS_CA_PATH"] !== undefined && {
-      caPath: process.env["REDIS_TLS_CA_PATH"]!,
+      caPath: process.env["REDIS_TLS_CA_PATH"] ?? "",
     }),
   },
   connectionLimits: {
@@ -107,18 +107,22 @@ try {
     redisRateLimit.connect(),
     redisAudit.connect(),
   ]);
-  console.log("[BOOTSTRAP] All Redis clusters connected: OK");
+  logger.info("All Redis clusters connected: OK");
 
   const auditor = new RedisSecurityAuditor(redis as RedisClientType);
   const audit = await auditor.auditSecurity();
 
   if (audit.status === "critical") {
-    console.error("[CRITICAL] Redis security issues detected:", audit.issues);
-    console.error("[CRITICAL] Recommendations:", audit.recommendations);
+    logger.error(
+      { issues: audit.issues, recommendations: audit.recommendations },
+      "Redis security issues detected",
+    );
     process.exit(1);
   } else if (audit.status === "warning") {
-    console.warn("[WARNING] Redis security warnings:", audit.issues);
-    console.warn("[WARNING] Recommendations:", audit.recommendations);
+    logger.warn(
+      { issues: audit.issues, recommendations: audit.recommendations },
+      "Redis security warnings",
+    );
   }
 
   if (process.env["NODE_ENV"] === "production") {
@@ -130,7 +134,7 @@ try {
     ]);
   }
 } catch {
-  console.error("[CRITICAL] Could not connect to Redis clusters at startup. Exiting.");
+  logger.error("Could not connect to Redis clusters at startup. Exiting.");
   process.exit(1);
 }
 
@@ -193,10 +197,10 @@ const securityEventSinks: SecurityEventSink[] = [];
 if (process.env["ELASTICSEARCH_URL"]) {
   securityEventSinks.push(
     new ElasticsearchSink({
-      url: process.env["ELASTICSEARCH_URL"]!,
+      url: process.env["ELASTICSEARCH_URL"] ?? "",
       index: process.env["ELASTICSEARCH_INDEX"] ?? "security-events",
       ...(process.env["ELASTICSEARCH_API_KEY"] !== undefined && {
-        apiKey: process.env["ELASTICSEARCH_API_KEY"]!,
+        apiKey: process.env["ELASTICSEARCH_API_KEY"] ?? "",
       }),
     }),
   );
@@ -204,8 +208,8 @@ if (process.env["ELASTICSEARCH_URL"]) {
 if (process.env["SPLUNK_URL"]) {
   securityEventSinks.push(
     new SplunkSink({
-      url: process.env["SPLUNK_URL"]!,
-      token: process.env["SPLUNK_TOKEN"]!,
+      url: process.env["SPLUNK_URL"] ?? "",
+      token: process.env["SPLUNK_TOKEN"] ?? "",
     }),
   );
 }
@@ -225,7 +229,7 @@ const keyProviderOptions = {
 };
 
 const auth = new TalakWeb3Auth({
-  expectedDomain: process.env["SIWE_DOMAIN"]!,
+  expectedDomain: process.env["SIWE_DOMAIN"] ?? "localhost",
   nonceStore: storage.nonceStore,
   refreshStore: storage.refreshStore,
   revocationStore,
@@ -346,6 +350,14 @@ app.use(
 
     xXssProtection: "0",
 
+    referrerPolicy: "no-referrer",
+
+    permissionsPolicy: {
+      geolocation: [],
+      microphone: [],
+      camera: [],
+    },
+
     contentSecurityPolicy: {
       defaultSrc: ["'none'"],
       baseUri: ["'none'"],
@@ -353,6 +365,11 @@ app.use(
     },
   }),
 );
+
+app.use("*", async (c, next) => {
+  await next();
+  c.header("Cache-Control", "private, no-cache");
+});
 
 app.use("*", createMetricsMiddleware(metrics));
 
@@ -402,97 +419,13 @@ app.onError((err, c) => {
   return c.json({ error: "Internal Server Error" }, 500);
 });
 
-import type { Context } from "hono";
-
-const TRUSTED_PROXY_RANGES = process.env["TRUSTED_PROXY_RANGES"]
-  ? process.env["TRUSTED_PROXY_RANGES"].split(",")
-  : [
-      "173.245.48.0/20",
-      "103.21.244.0/22",
-      "103.22.200.0/22",
-      "104.16.0.0/13",
-      "104.24.0.0/14",
-      "131.0.72.0/22",
-      "141.101.64.0/18",
-      "162.158.0.0/15",
-      "172.64.0.0/13",
-      "173.245.48.0/20",
-      "188.114.96.0/20",
-      "190.93.240.0/20",
-      "197.234.240.0/22",
-      "198.41.128.0/17",
-
-      "127.0.0.1",
-      "::1",
-    ];
-
-function isIpInRange(ip: string, range: string): boolean {
-  if (ip === range) return true;
-
-  if (!range.includes("/")) {
-    return ip === range;
-  }
-
-  const parts = range.split("/");
-  if (parts.length !== 2) return false;
-  const baseIp = parts[0]!;
-  const maskBits = parts[1]!;
-  const mask = parseInt(maskBits, 10);
-
-  if (ip.includes(".") && baseIp.includes(".")) {
-    const ipNum = ip.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
-    const baseNum =
-      baseIp.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
-    const maskNum = mask === 0 ? 0 : (~0 << (32 - mask)) >>> 0;
-
-    return (ipNum & maskNum) === (baseNum & maskNum);
-  }
-
-  return false;
-}
-
-function isTrustedProxy(ip: string): boolean {
-  return TRUSTED_PROXY_RANGES.some((range) => isIpInRange(ip, range));
-}
-
-function normalizeIp(ip: string): string {
-  return ip.replace(/^::ffff:/, "");
-}
-
-function getIp(c: Context): string {
-  const cfIp = c.req.header("cf-connecting-ip");
-  if (cfIp && /^[0-9a-f.:]+$/.test(cfIp)) {
-    return normalizeIp(cfIp);
-  }
-
-  const forwarded = c.req.header("x-forwarded-for");
-  if (forwarded) {
-    const socketAddr = (c.req.raw as unknown as { socket?: { remoteAddress?: string } }).socket
-      ?.remoteAddress;
-
-    if (socketAddr && isTrustedProxy(normalizeIp(socketAddr))) {
-      const clientIp = forwarded.split(",")[0]?.trim() ?? "unknown";
-      return normalizeIp(clientIp);
-    }
-
-    if (socketAddr) {
-      logger.warn(
-        { socketAddr, forwarded },
-        "x-forwarded-for received from untrusted source - ignoring",
-      );
-    }
-  }
-
-  const socketAddr = (c.req.raw as unknown as { socket?: { remoteAddress?: string } }).socket
-    ?.remoteAddress;
-  return socketAddr ? normalizeIp(socketAddr) : "unknown";
-}
+import { getIp } from "./security/ip-utils.js";
 
 app.get("/health", (c) => c.json({ ok: true, now: Date.now() }));
 
 app.get("/.well-known/jwks.json", createJwksEndpoint(auth));
 
-app.get("/security/status", (c) => {
+app.get("/security/status", authMiddleware(auth), (c) => {
   const anchoring = auditLogger.getAnchoringStatus();
   const mode = auditLogger.getMode();
   return c.json({
@@ -509,7 +442,7 @@ app.get("/security/status", (c) => {
   });
 });
 
-app.get("/metrics", async (c) => {
+app.get("/metrics", authMiddleware(auth), async (c) => {
   const data = await metrics.getMetrics();
   return c.text(data, 200, { "Content-Type": "text/plain; version=0.0.4" });
 });
@@ -567,8 +500,6 @@ app.post("/rpc/:chainId", authMiddleware(auth), async (c) => {
   if (!configuredChains.includes(chainId)) {
     return c.json({ error: `Chain ID ${chainId} is not supported` }, 400);
   }
-
-  const authHeader = c.req.header("Authorization") ?? "";
 
   const ip = getIp(c);
   const session = c.get("session");

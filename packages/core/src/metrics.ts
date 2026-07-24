@@ -1,3 +1,4 @@
+/** @internal Security metrics collector — not part of the public API. */
 export class SecurityMetrics {
   private static counters = new Map<string, number>();
   private static histograms = new Map<string, number[]>();

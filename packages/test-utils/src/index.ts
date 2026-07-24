@@ -1,3 +1,8 @@
+/**
+ * Test utilities for the talak-web3 monorepo.
+ * Provides mock wallets, SIWE messages, sessions, Redis mocks, and test helpers.
+ */
+
 export { createMockWallet, generateWalletAddress } from "./factories/wallet.js";
 export { createMockSiweMessage, generateSiweMessage } from "./factories/siwe.js";
 export { createMockSession, createMockTokenPair } from "./factories/session.js";

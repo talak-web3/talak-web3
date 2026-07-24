@@ -1,16 +1,19 @@
 import Redis from "ioredis";
 
+/** Result of a rate limit check indicating whether the request is allowed. */
 export interface RateLimitResult {
   allowed: boolean;
   remaining: number;
   resetAt?: number;
 }
 
+/** Interface for rate limiter implementations (in-memory or Redis-backed). */
 export interface RateLimiter {
   check(key: string, cost?: number): Promise<RateLimitResult>;
   reset(key: string): Promise<void>;
 }
 
+/** Extracts a subnet from an IP address for rate limit grouping (IPv4 /30, IPv6 /64). */
 export function extractSubnet(ip: string): string {
   const ipv4Mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
   if (ipv4Mapped?.[1]) {
@@ -74,12 +77,14 @@ redis.call('PEXPIRE', key, windowMs)
 return { allowed, remaining, now + windowMs }
 `;
 
+/** Options for configuring the in-memory token bucket rate limiter. */
 export interface InMemoryRateLimiterOptions {
   capacity: number;
   refillPerSecond: number;
   maxBuckets?: number;
 }
 
+/** Token bucket rate limiter using in-memory storage. Suitable for single-instance deployments. */
 export class InMemoryRateLimiter implements RateLimiter {
   private readonly capacity: number;
   private readonly refillPerSecond: number;
@@ -149,6 +154,7 @@ export class InMemoryRateLimiter implements RateLimiter {
   }
 }
 
+/** Redis-backed sliding window rate limiter for distributed deployments. */
 export class RedisRateLimiter implements RateLimiter {
   private readonly redis: Redis;
   private readonly capacity: number;
@@ -205,6 +211,7 @@ export class RedisRateLimiter implements RateLimiter {
   }
 }
 
+/** Creates a rate limiter instance based on the provided configuration. */
 export function createRateLimiter(opts: {
   redis: Redis;
   capacity: number;
@@ -213,6 +220,7 @@ export function createRateLimiter(opts: {
   return new RedisRateLimiter(opts.redis, opts);
 }
 
+/** Formats rate limit result into standard HTTP headers. */
 export function rateLimitHeaders(
   remaining: number,
   limit: number,

@@ -5,5 +5,6 @@ import { talakWeb3Config } from "../../tsdown.base.ts";
 export default defineConfig(
   talakWeb3Config({
     entry: ["src/index.ts", "src/middleware.ts", "src/security.ts"],
+    deps: { neverBundle: ["ioredis"] },
   }),
 );

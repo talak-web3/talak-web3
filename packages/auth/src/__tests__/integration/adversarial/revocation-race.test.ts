@@ -1,9 +1,11 @@
 import Redis from "ioredis";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { RedisRevocationStore } from "../../stores/redis-revocation.js";
+import { RedisRevocationStore } from "../../../stores/redis-revocation.js";
 
-describe("Adversarial: Multi-Instance Revocation Race", () => {
+const redisAvailable = process.env.REDIS_HOST !== undefined || process.env.CI === "true";
+
+describe.skipIf(!redisAvailable)("Adversarial: Multi-Instance Revocation Race", () => {
   let redis1: Redis;
   let redis2: Redis;
   let store1: RedisRevocationStore;
@@ -11,8 +13,8 @@ describe("Adversarial: Multi-Instance Revocation Race", () => {
   const testJti = "test-jti-12345";
 
   beforeEach(async () => {
-    redis1 = new Redis({ host: "localhost", port: 6379, db: 15 });
-    redis2 = new Redis({ host: "localhost", port: 6379, db: 15 });
+    redis1 = new Redis({ host: "localhost", port: 6379, db: 15, connectTimeout: 2000 });
+    redis2 = new Redis({ host: "localhost", port: 6379, db: 15, connectTimeout: 2000 });
 
     store1 = new RedisRevocationStore({
       redis: redis1,

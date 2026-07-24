@@ -3,6 +3,9 @@ import { randomBytes, createHash } from "node:crypto";
 import type { Context, MiddlewareHandler } from "hono";
 import type { RedisClientType } from "redis";
 
+import { logger } from "../logger.js";
+import { getIp } from "./ip-utils.js";
+
 export interface AdaptiveRateLimitConfig {
   baseLimits: {
     global: { capacity: number; refillPerSecond: number };
@@ -211,7 +214,7 @@ export class AdaptiveRateLimiter {
         this.redis.zRemRangeByScore(walletIpsKey, "-inf", decayWindow),
       ]);
     } catch (err) {
-      console.error("[RATE_LIMIT] Failed to decay correlations:", err);
+      logger.error({ err }, "Failed to decay correlations");
     }
 
     const [ipWallets, walletIps] = await Promise.all([
@@ -241,7 +244,7 @@ export class AdaptiveRateLimiter {
     const window = 60000;
 
     const requests = await this.getRecentItems(burstKey, now, window);
-    const totalRequests = Array.from(requests).reduce((sum, timestamp) => sum + 1, 0);
+    const totalRequests = Array.from(requests).reduce((sum, _timestamp) => sum + 1, 0);
 
     if (totalRequests + cost > this.config.burstProtection.maxBurstSize) {
       return { allowed: false };
@@ -314,7 +317,7 @@ export class AdaptiveRateLimiter {
       await this.redis.zAdd(key, { score: timestamp, value });
       await this.redis.expire(key, 3600);
     } catch (err) {
-      console.error("[RATE_LIMIT] Failed to record item:", err);
+      logger.error({ err }, "Failed to record item");
     }
   }
 
@@ -363,7 +366,7 @@ export class AdaptiveRateLimiter {
       }
       await this.redis.expire(key, windowMs);
     } catch (err) {
-      console.error("[RATE_LIMIT] Failed to apply penalty:", err);
+      logger.error({ err }, "Failed to apply penalty");
     }
   }
 
@@ -425,7 +428,7 @@ export class AdaptiveRateLimiter {
       const remaining = Math.max(0, Number(res[1]));
       return { allowed, remaining };
     } catch (err) {
-      console.error("[RATE_LIMIT] Token bucket check failed:", err);
+      logger.error({ err }, "Token bucket check failed");
       return { allowed: false, remaining: 0 };
     }
   }
@@ -455,13 +458,16 @@ export function createAdaptiveRateLimitMiddleware(
     });
 
     if (!result.allowed) {
-      console.warn("[RATE_LIMIT] Rate limit exceeded", {
-        ip,
-        wallet,
-        type: options.type,
-        penalties: result.penalties,
-        riskScore: result.riskScore,
-      });
+      logger.warn(
+        {
+          ip,
+          wallet,
+          type: options.type,
+          penalties: result.penalties,
+          riskScore: result.riskScore,
+        },
+        "Rate limit exceeded",
+      );
 
       await rateLimiter.applyRateLimitPenalty(ip, wallet, options.type);
 
@@ -483,12 +489,4 @@ export function createAdaptiveRateLimitMiddleware(
 
     await next();
   };
-}
-
-function getIp(c: Context): string {
-  return (
-    (c.req.header("x-forwarded-for") ?? c.req.raw.headers.get("cf-connecting-ip") ?? "unknown")
-      .split(",")[0]
-      ?.trim() ?? "unknown"
-  );
 }
